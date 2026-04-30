@@ -82,18 +82,14 @@ const loginError = document.getElementById('login-error');
 
 const defaultBtnHtml = googleLoginBtn.innerHTML;
 
-// --- Task Management Functions ---
 window.addTaskToForm = function(textStr, isCompleted) {
     const input = document.getElementById('new-task-input');
-    
-    // Safely extract the text, completely ignoring browser event objects
     const taskText = (typeof textStr === 'string' && textStr.trim() !== '') 
         ? textStr.trim() 
         : (input ? input.value.trim() : '');
         
     const completed = typeof isCompleted === 'boolean' ? isCompleted : false;
 
-    // Don't add empty tasks
     if (!taskText) {
         if (input) input.focus();
         return;
@@ -104,8 +100,6 @@ window.addTaskToForm = function(textStr, isCompleted) {
 
     const row = document.createElement('div');
     row.className = 'flex items-center gap-3 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 p-2 rounded-lg task-row';
-    
-    // Safely escape quotes so they don't break the HTML
     const safeText = taskText.replace(/"/g, '&quot;');
     
     row.innerHTML = `
@@ -115,8 +109,6 @@ window.addTaskToForm = function(textStr, isCompleted) {
     `;
     
     container.appendChild(row);
-    
-    // Clear the input field after adding
     if (input) {
         input.value = '';
         input.focus(); 
@@ -719,11 +711,14 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
             await setDoc(docRef, clientData);
             
-            // --- FIX: Auto-Resolve Pending Requests ---
-            // If the Super Admin manually updates a client, we automatically approve
-            // any pending requests for this client so they don't get stuck forever in the normal admin's queue.
-            if (isEditing) {
-                const pendingReqs = requestsList.filter(r => r.targetClientId === clientId && r.status === 'Pending');
+            // --- ROBUST AUTO-RESOLVE PENDING REQUESTS ---
+            try {
+                // Find any pending requests matching this client ID or matching this exact phone number
+                const pendingReqs = requestsList.filter(r => 
+                    r.status === 'Pending' && 
+                    (r.targetClientId === clientId || (r.clientData && r.clientData.phone === clientData.phone))
+                );
+
                 for (const req of pendingReqs) {
                     const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', req.id);
                     await updateDoc(reqRef, { 
@@ -731,6 +726,8 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
                         updatedAt: Date.now()
                     });
                 }
+            } catch (err) {
+                console.error("Auto-resolve failed", err);
             }
             
             showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
@@ -881,17 +878,15 @@ if (localStorage.getItem('theme') === 'light') {
     if(themeText) themeText.innerText = 'Light Mode';
 }
 
-window.editClient = function(id) {
-    const client = clientsList.find(c => c.id === id);
-    if(!client) return;
-    closeModal();
+// --- NEW HELPER: Reusable Population Logic ---
+window.populateFormWithClientData = function(client, overrideId = null) {
     navigate('add-client', true);
     
-    document.getElementById('client-id').value = client.id;
-    document.getElementById('form-name').value = client.name;
-    document.getElementById('form-business').value = client.business;
+    document.getElementById('client-id').value = overrideId || client.id || '';
+    document.getElementById('form-name').value = client.name || '';
+    document.getElementById('form-business').value = client.business || '';
     document.getElementById('form-source').value = client.source || 'Referral';
-    document.getElementById('form-phone').value = client.phone;
+    document.getElementById('form-phone').value = client.phone || '';
     document.getElementById('form-email').value = client.email || '';
     document.getElementById('form-address').value = client.address || '';
     document.getElementById('form-website').value = client.website || 'Landing Page';
@@ -901,7 +896,7 @@ window.editClient = function(id) {
     document.getElementById('form-extra-charge').value = client.extraCharge || '';
     document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
     document.getElementById('form-deadline').value = client.deadline || '';
-    document.getElementById('form-status').value = client.status;
+    document.getElementById('form-status').value = client.status || 'Pending';
     document.getElementById('form-notes').value = client.notes || ''; 
 
     document.getElementById('installments-container').innerHTML = '';
@@ -916,16 +911,23 @@ window.editClient = function(id) {
         client.tasks.forEach(t => addTaskToForm(t.text, t.completed));
     }
 
-    document.getElementById('form-title').innerText = "Edit Client Details";
+    document.getElementById('form-title').innerText = overrideId ? "Review & Edit Request" : "Edit Client Details";
     
     const submitBtn = document.getElementById('form-submit-btn');
     if (submitBtn) {
         submitBtn.innerHTML = isSuperAdminUser 
-            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>'
+            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>'
             : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
         submitBtn.disabled = false;
         submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
     }
+}
+
+window.editClient = function(id) {
+    const client = clientsList.find(c => c.id === id);
+    if(!client) return;
+    closeModal();
+    populateFormWithClientData(client, client.id);
 };
 
 function getStatusBadge(status) {
@@ -1617,6 +1619,7 @@ window.openModal = function(id) {
 
     document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
     document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
+    
     document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
 
     const balanceEl = document.getElementById('modal-balance');
@@ -1804,10 +1807,9 @@ function showToast(message, type = 'info') {
 
 const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-window.openInvoiceModal = function(clientIdentifier, isRequestData = false) {
-    const client = isRequestData 
-        ? clientIdentifier 
-        : clientsList.find(c => c.id === clientIdentifier);
+window.openInvoiceModal = function(clientIdentifier) {
+    // Only fetch live clients! 
+    const client = clientsList.find(c => c.id === clientIdentifier) || (typeof clientIdentifier === 'object' ? clientIdentifier : null);
 
     if (!client) return;
 
@@ -2059,6 +2061,14 @@ function renderRequestsTable() {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
             
+            // --- CORE FIX: LIVE DATA LINKING! ---
+            // Bypass the stale `req.clientData` entirely and fetch the actual, live client from the database!
+            const liveClient = clientsList.find(c => c.id === req.targetClientId);
+            
+            // If the live client doesn't exist yet (because it's a completely new unapproved client), 
+            // fall back to the proposed data. Otherwise, ALWAYS show the live name!
+            const clientName = liveClient ? liveClient.name : req.clientData.name;
+            
             let col1Html = '';
             let col4Html = '';
             
@@ -2100,7 +2110,7 @@ function renderRequestsTable() {
                 <td class="p-3 md:p-4">
                     <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
                 </td>
-                <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${req.clientData.name}</td>
+                <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${clientName}</td>
                 <td class="p-3 md:p-4 text-right">${col4Html}</td>
             `;
             tbody.appendChild(tr);
@@ -2108,12 +2118,72 @@ function renderRequestsTable() {
     }
 }
 
+// --- NEW HELPER: Reusable Population Logic ---
+window.populateFormWithClientData = function(client, overrideId = null) {
+    navigate('add-client', true);
+    
+    document.getElementById('client-id').value = overrideId || client.id || '';
+    document.getElementById('form-name').value = client.name || '';
+    document.getElementById('form-business').value = client.business || '';
+    document.getElementById('form-source').value = client.source || 'Referral';
+    document.getElementById('form-phone').value = client.phone || '';
+    document.getElementById('form-email').value = client.email || '';
+    document.getElementById('form-address').value = client.address || '';
+    document.getElementById('form-website').value = client.website || 'Landing Page';
+    document.getElementById('form-website-url').value = client.websiteUrl || '';
+    document.getElementById('form-price').value = client.price || '';
+    document.getElementById('form-discount').value = client.discount || '';
+    document.getElementById('form-extra-charge').value = client.extraCharge || '';
+    document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
+    document.getElementById('form-deadline').value = client.deadline || '';
+    document.getElementById('form-status').value = client.status || 'Pending';
+    document.getElementById('form-notes').value = client.notes || ''; 
+
+    document.getElementById('installments-container').innerHTML = '';
+    if (client.installments && client.installments.length > 0) {
+        client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
+    } else if (client.advance > 0) {
+        addInstallmentRow('Advance', client.advance, '', 'Paid');
+    }
+
+    document.getElementById('form-tasks-container').innerHTML = '';
+    if (client.tasks && client.tasks.length > 0) {
+        client.tasks.forEach(t => addTaskToForm(t.text, t.completed));
+    }
+
+    document.getElementById('form-title').innerText = overrideId ? "Review & Edit Request" : "Edit Client Details";
+    
+    const submitBtn = document.getElementById('form-submit-btn');
+    if (submitBtn) {
+        submitBtn.innerHTML = isSuperAdminUser 
+            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>'
+            : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
+}
+
+window.editClient = function(id) {
+    const client = clientsList.find(c => c.id === id);
+    if(!client) return;
+    closeModal();
+    populateFormWithClientData(client, client.id);
+};
+
 window.viewRequestDetails = function(reqId) {
     const req = requestsList.find(r => r.id === reqId);
     if(!req) return;
     
-    const client = req.clientData;
-    currentOpenClientId = client.id;
+    // --- CORE FIX: LIVE DATA LINKING! ---
+    // Bypass the stale `req.clientData` and fetch the LIVE client!
+    let client = clientsList.find(c => c.id === req.targetClientId);
+    
+    // Fallback: If the live client doesn't exist yet (because it's a completely new pending client), use the proposed data
+    if (!client) {
+        client = req.clientData;
+    }
+    
+    currentOpenClientId = client.id || req.targetClientId; 
     
     document.getElementById('modal-name').innerText = client.name + ` (${req.type} Request)`;
     document.getElementById('modal-business').innerText = client.business || 'N/A';
@@ -2220,11 +2290,19 @@ window.viewRequestDetails = function(reqId) {
     const invoiceBtn = document.getElementById('modal-invoice-btn');
     if(invoiceBtn) {
         invoiceBtn.classList.remove('hidden');
-        invoiceBtn.onclick = () => openInvoiceModal(client, true); 
+        invoiceBtn.onclick = () => openInvoiceModal(currentOpenClientId); 
     }
     
     const editBtn = document.getElementById('modal-edit-btn');
-    if(editBtn) editBtn.classList.add('hidden');
+    if (isSuperAdminUser) {
+        editBtn.classList.remove('hidden');
+        editBtn.onclick = () => {
+            closeModal();
+            populateFormWithClientData(req.clientData, req.targetClientId);
+        };
+    } else {
+        editBtn.classList.add('hidden');
+    }
     
     const deleteBtn = document.getElementById('modal-delete-btn');
     if(deleteBtn) deleteBtn.classList.add('hidden');
