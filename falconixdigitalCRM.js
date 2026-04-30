@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
 
@@ -713,16 +713,17 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
             
             // --- ROBUST AUTO-RESOLVE PENDING REQUESTS ---
             try {
-                // Find any pending requests matching this client ID or matching this exact phone number
-                const pendingReqs = requestsList.filter(r => 
-                    r.status === 'Pending' && 
-                    (r.targetClientId === clientId || (r.clientData && r.clientData.phone === clientData.phone))
+                // Every project is strictly independent. 
+                // We only auto-resolve if the Super Admin was explicitly editing this exact request ID.
+                const pendingReq = requestsList.find(r => 
+                    r.status === 'Pending' && r.targetClientId === clientId
                 );
 
-                for (const req of pendingReqs) {
-                    const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', req.id);
+                if (pendingReq) {
+                    const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', pendingReq.id);
                     await updateDoc(reqRef, { 
                         status: 'Approved',
+                        targetClientId: clientId, // Force the request to link to the live client ID
                         updatedAt: Date.now()
                     });
                 }
@@ -928,6 +929,13 @@ window.editClient = function(id) {
     if(!client) return;
     closeModal();
     populateFormWithClientData(client, client.id);
+};
+
+window.editRequestFromTable = function(reqId) {
+    const req = requestsList.find(r => r.id === reqId);
+    if(!req) return;
+    closeModal();
+    populateFormWithClientData(req.clientData, req.targetClientId);
 };
 
 function getStatusBadge(status) {
@@ -1807,14 +1815,53 @@ function showToast(message, type = 'info') {
 
 const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-window.openInvoiceModal = function(clientIdentifier) {
-    // Only fetch live clients! 
-    const client = clientsList.find(c => c.id === clientIdentifier) || (typeof clientIdentifier === 'object' ? clientIdentifier : null);
+window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
+    const client = isRequestData 
+        ? clientIdentifier 
+        : clientsList.find(c => c.id === clientIdentifier);
 
     if (!client) return;
 
-    const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
-    const invoiceNo = `FD-${createdAtStr.slice(-6)}`;
+    let invoiceNo = client.invoiceNo;
+    
+    // --- NEW: Sequential Invoice Counter ---
+    if (!invoiceNo) {
+        if (!isSuperAdminUser) {
+            showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
+            return;
+        }
+        
+        try {
+            // Fetch current counter from database
+            const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
+            const counterSnap = await getDoc(counterRef);
+            let currentCount = 1;
+            
+            if (counterSnap.exists()) {
+                currentCount = counterSnap.data().current || 1;
+            }
+            
+            // Format exactly like FD-001, FD-002
+            invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
+            
+            // Save incremented counter
+            await setDoc(counterRef, { current: currentCount + 1 });
+            
+            // Permanently attach this invoice number to the live client
+            if (client.id) {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
+                await updateDoc(clientRef, { invoiceNo: invoiceNo });
+            }
+            
+            client.invoiceNo = invoiceNo; // Update local data
+        } catch (err) {
+            console.error("Counter Error:", err);
+            showToast("Failed to assign official invoice number.", "error");
+            // Fallback to timestamp if database fails temporarily
+            const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
+            invoiceNo = `FD-${createdAtStr.slice(-6)}`;
+        }
+    }
     
     setElText('inv-no', invoiceNo);
     setElText('inv-date', new Date().toLocaleDateString('en-IN'));
@@ -2028,11 +2075,13 @@ function renderRequestsTable() {
         if(descEl) descEl.innerText = "Track the status of your submitted clients and updates.";
         visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
         
+        // Match the rich "Client" table layout perfectly for Normal Admins!
         theadTr.innerHTML = `
-            <th class="p-3 md:p-4 font-medium">Date</th>
-            <th class="p-3 md:p-4 font-medium">Type</th>
-            <th class="p-3 md:p-4 font-medium">Client Name</th>
-            <th class="p-3 md:p-4 font-medium text-right">Status / View</th>
+            <th class="p-3 md:p-4 font-medium">Name & Contact</th>
+            <th class="p-3 md:p-4 font-medium">Business Detail</th>
+            <th class="p-3 md:p-4 font-medium">Finance Status</th>
+            <th class="p-3 md:p-4 font-medium">Req Status</th>
+            <th class="p-3 md:p-4 font-medium text-right">Actions</th>
         `;
     }
 
@@ -2067,56 +2116,97 @@ function renderRequestsTable() {
             
             // If the live client doesn't exist yet (because it's a completely new unapproved client), 
             // fall back to the proposed data. Otherwise, ALWAYS show the live name!
-            const clientName = liveClient ? liveClient.name : req.clientData.name;
-            
-            let col1Html = '';
-            let col4Html = '';
+            const clientToRender = liveClient ? liveClient : req.clientData;
+            const clientName = clientToRender.name;
             
             if (isSuperAdminUser) {
-                col1Html = `
+                const col1Html = `
                     <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
                     <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
                 `;
-                col4Html = `
+                const col4Html = `
                     <div class="flex items-center justify-end gap-2">
                         <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">View</button>
                         <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors shadow-sm">Approve</button>
                         <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors shadow-sm">Reject</button>
                     </div>
                 `;
-            } else {
-                const d = new Date(req.createdAt);
-                col1Html = `
-                    <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>
-                    <p class="text-[10px] md:text-xs text-gray-500">${d.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</p>
+                tr.innerHTML = `
+                    <td class="p-3 md:p-4">${col1Html}</td>
+                    <td class="p-3 md:p-4">
+                        <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
+                    </td>
+                    <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${clientName}</td>
+                    <td class="p-3 md:p-4 text-right">${col4Html}</td>
                 `;
+            } else {
+                // --- RICH TABLE RENDER FOR NORMAL ADMINS ---
+                const expected = Math.max(0, (Number(clientToRender.price) || 0) - (Number(clientToRender.discount) || 0)) + (Number(clientToRender.extraCharge) || 0) + (Number(clientToRender.maintenanceCharge) || 0);
+                const paid = calculatePaidAmount(clientToRender);
+                const balance = Math.max(0, expected - paid);
+
+                let financeHtml = `<div>
+                    <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
+                    ${clientToRender.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                </div>`;
                 
                 let statusColor = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500';
                 if(req.status === 'Approved') statusColor = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500';
                 if(req.status === 'Rejected') statusColor = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500';
-                
-                col4Html = `
+
+                const col4Html = `
                     <div class="flex items-center justify-end gap-2">
-                        <span class="px-3 py-1 rounded-full text-[10px] md:text-xs font-medium ${statusColor}">${req.status}</span>
-                        <button onclick="viewRequestDetails('${req.id}')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
+                        <button onclick="event.stopPropagation(); viewRequestDetails('${req.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
                             <i class="ph ph-eye text-base md:text-lg"></i>
                         </button>
+                        <a href="https://wa.me/${clientToRender.phone.replace(/[^0-9]/g, '')}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
+                            <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
+                        </a>
+                        ${req.status === 'Pending' ? `<button onclick="event.stopPropagation(); window.editRequestFromTable('${req.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Edit Request">
+                            <i class="ph ph-pencil-simple text-base md:text-lg"></i>
+                        </button>` : ''}
                     </div>
                 `;
+                
+                tr.innerHTML = `
+                    <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                        <div class="flex items-center gap-2 md:gap-3">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm md:text-base shrink-0 border border-gray-300 dark:border-transparent">
+                                ${clientName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900 dark:text-gray-200 text-sm md:text-base">${clientName}</p>
+                                <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500 flex items-center gap-1"><i class="ph ph-phone"></i> ${clientToRender.phone}</p>
+                                <span class="mt-1 inline-block px-2 py-0.5 rounded text-[9px] font-bold ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type} REQ</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 md:p-4 cursor-pointer text-xs md:text-sm text-gray-700 dark:text-gray-300" onclick="viewRequestDetails('${req.id}')">
+                        <p class="font-medium">${clientToRender.business || 'N/A'}</p>
+                        <p class="text-[10px] md:text-xs text-gray-500">${clientToRender.website}</p>
+                    </td>
+                    <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                        ${financeHtml}
+                    </td>
+                    <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                        <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium block w-max mb-1 ${statusColor}">${req.status}</span>
+                        <p class="text-[10px] md:text-xs text-gray-500 mt-1">${new Date(req.createdAt).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>
+                    </td>
+                    <td class="p-3 md:p-4 text-right">
+                        ${col4Html}
+                    </td>
+                `;
             }
-            
-            tr.innerHTML = `
-                <td class="p-3 md:p-4">${col1Html}</td>
-                <td class="p-3 md:p-4">
-                    <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
-                </td>
-                <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${clientName}</td>
-                <td class="p-3 md:p-4 text-right">${col4Html}</td>
-            `;
             tbody.appendChild(tr);
         });
     }
 }
+
+window.editRequestFromTable = function(reqId) {
+    const req = requestsList.find(r => r.id === reqId);
+    if(!req) return;
+    populateFormWithClientData(req.clientData, req.targetClientId);
+};
 
 // --- NEW HELPER: Reusable Population Logic ---
 window.populateFormWithClientData = function(client, overrideId = null) {
@@ -2294,7 +2384,8 @@ window.viewRequestDetails = function(reqId) {
     }
     
     const editBtn = document.getElementById('modal-edit-btn');
-    if (isSuperAdminUser) {
+    const canEditReq = isSuperAdminUser || (req.requestedByEmail === currentUser.email && req.status === 'Pending');
+    if (canEditReq) {
         editBtn.classList.remove('hidden');
         editBtn.onclick = () => {
             closeModal();
