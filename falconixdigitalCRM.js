@@ -27,7 +27,6 @@ const RESTRICTED_DASHBOARD_EMAILS = [
 
 const RESTRICTED_CLIENTS_EMAILS = [
     'ayanmondal21836@gmail.com',
-    'pabitramondal.ind@gmail.com',
     'subhadeep0897@gmail.com'
 ];
 
