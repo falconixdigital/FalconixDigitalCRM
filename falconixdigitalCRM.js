@@ -927,6 +927,13 @@ window.populateFormWithClientData = function(client, overrideId = null) {
 window.editClient = function(id) {
     const client = clientsList.find(c => c.id === id);
     if(!client) return;
+    
+    // --- NEW: Security Block ---
+    if (!isSuperAdminUser && client.addedByEmail !== currentUser.email) {
+        showToast("Access Denied: You can only edit clients you created.", "error");
+        return;
+    }
+    
     closeModal();
     populateFormWithClientData(client, client.id);
 };
@@ -934,6 +941,13 @@ window.editClient = function(id) {
 window.editRequestFromTable = function(reqId) {
     const req = requestsList.find(r => r.id === reqId);
     if(!req) return;
+    
+    // --- NEW: Security Block ---
+    if (!isSuperAdminUser && req.requestedByEmail !== currentUser.email) {
+        showToast("Access Denied: You can only edit your own requests.", "error");
+        return;
+    }
+    
     closeModal();
     populateFormWithClientData(req.clientData, req.targetClientId);
 };
@@ -2407,7 +2421,21 @@ window.approveReq = async function(reqId) {
     if(!req) return;
     try {
         const approvedClientData = { ...req.clientData };
-        approvedClientData.activityLog = approvedClientData.activityLog || [];
+        
+        // --- CRITICAL SYNC FIX: Preserve Live Activity, Tasks & Invoices ---
+        // Grab the live client to prevent overwriting real-time updates made while the request was pending
+        const liveClient = clientsList.find(c => c.id === req.targetClientId);
+        if (liveClient) {
+            approvedClientData.activityLog = liveClient.activityLog || [];
+            approvedClientData.tasks = liveClient.tasks || [];
+            approvedClientData.createdAt = liveClient.createdAt; // Preserve original creation date
+            
+            if (liveClient.invoiceNo) approvedClientData.invoiceNo = liveClient.invoiceNo;
+            if (liveClient.completedAt) approvedClientData.completedAt = liveClient.completedAt;
+        } else {
+            approvedClientData.activityLog = approvedClientData.activityLog || [];
+        }
+
         approvedClientData.activityLog.push({
             action: `Approved the update request`,
             performedBy: ADMIN_NAMES[currentUser.email.toLowerCase()] || "Super Admin",
