@@ -65,7 +65,7 @@ let unsubscribeRequests = null;
 let unsubscribeNotifications = null;
 let unsubscribeExpenses = null;
 
-let currentOpenClientId = null; // Helps maintain real-time comments
+let currentOpenClientId = null; 
 
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
@@ -82,7 +82,7 @@ const loginError = document.getElementById('login-error');
 
 const defaultBtnHtml = googleLoginBtn.innerHTML;
 
-// --- NEW: Task Management Functions ---
+// --- Task Management Functions ---
 window.addTaskToForm = function(textStr, isCompleted) {
     const input = document.getElementById('new-task-input');
     
@@ -119,7 +119,7 @@ window.addTaskToForm = function(textStr, isCompleted) {
     // Clear the input field after adding
     if (input) {
         input.value = '';
-        input.focus(); // Keep focus so you can quickly type the next task!
+        input.focus(); 
     }
 }
 
@@ -135,7 +135,6 @@ function getTasksData() {
     return tasks;
 }
 
-// Allow adding task via Enter key
 setTimeout(() => {
     const taskInput = document.getElementById('new-task-input');
     if (taskInput) {
@@ -459,7 +458,6 @@ function setupDatabaseListener() {
         renderLeaderboard();
         renderClientTable(true);
 
-        // Update the Modal in Real-Time if it's currently open
         if (currentOpenClientId) {
             const updatedClient = clientsList.find(c => c.id === currentOpenClientId);
             if (updatedClient) {
@@ -601,7 +599,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    // --- A. Phone Number Validation (+91 Format) ---
     const phoneInputEl = document.getElementById('form-phone');
     const rawPhone = phoneInputEl.value.trim();
     const numericPhone = rawPhone.replace(/\D/g, ''); 
@@ -617,7 +614,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         return; 
     }
     
-    // --- B. Email Validation ---
     const emailInput = document.getElementById('form-email').value.trim();
     if (emailInput !== "") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -628,7 +624,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         }
     }
 
-    // --- C. Financial Validation ---
     const priceInput = parseFloat(document.getElementById('form-price').value);
     const discountInput = parseFloat(document.getElementById('form-discount').value) || 0;
     const extraInput = parseFloat(document.getElementById('form-extra-charge').value) || 0;
@@ -723,6 +718,21 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         if (isSuperAdminUser) {
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
             await setDoc(docRef, clientData);
+            
+            // --- FIX: Auto-Resolve Pending Requests ---
+            // If the Super Admin manually updates a client, we automatically approve
+            // any pending requests for this client so they don't get stuck forever in the normal admin's queue.
+            if (isEditing) {
+                const pendingReqs = requestsList.filter(r => r.targetClientId === clientId && r.status === 'Pending');
+                for (const req of pendingReqs) {
+                    const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', req.id);
+                    await updateDoc(reqRef, { 
+                        status: 'Approved',
+                        updatedAt: Date.now()
+                    });
+                }
+            }
+            
             showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
         } else {
             const reqId = crypto.randomUUID();
@@ -751,6 +761,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         document.getElementById('client-form').reset();
         document.getElementById('client-id').value = "";
         document.getElementById('installments-container').innerHTML = '';
+        document.getElementById('form-tasks-container').innerHTML = '';
         document.getElementById('form-title').innerText = "Add New Client";
         navigate('client-list');
     } catch (error) {
@@ -875,14 +886,15 @@ window.editClient = function(id) {
     if(!client) return;
     closeModal();
     navigate('add-client', true);
+    
     document.getElementById('client-id').value = client.id;
     document.getElementById('form-name').value = client.name;
     document.getElementById('form-business').value = client.business;
     document.getElementById('form-source').value = client.source || 'Referral';
     document.getElementById('form-phone').value = client.phone;
-    document.getElementById('form-email').value = client.email;
+    document.getElementById('form-email').value = client.email || '';
     document.getElementById('form-address').value = client.address || '';
-    document.getElementById('form-website').value = client.website;
+    document.getElementById('form-website').value = client.website || 'Landing Page';
     document.getElementById('form-website-url').value = client.websiteUrl || '';
     document.getElementById('form-price').value = client.price || '';
     document.getElementById('form-discount').value = client.discount || '';
@@ -890,7 +902,7 @@ window.editClient = function(id) {
     document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
     document.getElementById('form-deadline').value = client.deadline || '';
     document.getElementById('form-status').value = client.status;
-    document.getElementById('form-notes').value = client.notes;
+    document.getElementById('form-notes').value = client.notes || ''; 
 
     document.getElementById('installments-container').innerHTML = '';
     if (client.installments && client.installments.length > 0) {
@@ -905,9 +917,15 @@ window.editClient = function(id) {
     }
 
     document.getElementById('form-title').innerText = "Edit Client Details";
-    document.getElementById('form-submit-btn').innerHTML = isSuperAdminUser 
-        ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>'
-        : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
+    
+    const submitBtn = document.getElementById('form-submit-btn');
+    if (submitBtn) {
+        submitBtn.innerHTML = isSuperAdminUser 
+            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>'
+            : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+    }
 };
 
 function getStatusBadge(status) {
@@ -1421,7 +1439,6 @@ if(filterStatusEl) filterStatusEl.addEventListener('change', () => renderClientT
 const filterOwnerEl = document.getElementById('filter-owner');
 if(filterOwnerEl) filterOwnerEl.addEventListener('change', () => renderClientTable(true));
 
-// --- NEW FUNCTION: Post Manual Comment ---
 window.postClientComment = async function(clientId) {
     const commentInput = document.getElementById('modal-new-comment');
     const text = commentInput.value.trim();
@@ -1447,8 +1464,6 @@ window.postClientComment = async function(clientId) {
         });
 
         commentInput.value = '';
-        
-        // Removed manual array push - the onSnapshot listener handles real-time UI updates!
     } catch (error) {
         showToast("Failed to post comment", "error");
     } finally {
@@ -1470,7 +1485,6 @@ function renderActivityLog(client) {
             const dateStr = new Date(log.timestamp).toLocaleString('en-IN');
             
             if (log.isManual) {
-                // Highlighted Chat-Bubble format for manual comments
                 return `
                     <div class="mb-3 ml-[7px] pl-[13px] border-l-2 border-accentPrimary dark:border-accentPrimary relative">
                         <div class="absolute w-3 h-3 rounded-full bg-accentPrimary -left-[7px] top-1 shadow-sm shadow-violet-500/50"></div>
@@ -1482,7 +1496,6 @@ function renderActivityLog(client) {
                     </div>
                 `;
             } else {
-                // Standard minimal timeline format for automated actions
                 return `
                     <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-4 pb-4 last:pb-0 relative">
                         <div class="absolute w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-500 -left-[5.5px] top-1"></div>
@@ -1494,6 +1507,52 @@ function renderActivityLog(client) {
         }).join('');
     }
 }
+
+window.toggleTaskStatus = async function(clientId, taskIndex, checkbox) {
+    const client = clientsList.find(c => c.id === clientId);
+    if (!client || !client.tasks) return;
+    
+    const isCompleted = checkbox.checked;
+    const label = document.querySelector(`label[for="task-${clientId}-${taskIndex}"]`);
+    if (label) {
+        if (isCompleted) {
+            label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+            label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+        } else {
+            label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+            label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+        }
+    }
+    
+    const updatedTasks = [...client.tasks];
+    updatedTasks[taskIndex].completed = isCompleted;
+    
+    const completedCount = updatedTasks.filter(t => t.completed).length;
+    const progressEl = document.getElementById('modal-task-progress');
+    if (progressEl) progressEl.innerText = `${completedCount}/${updatedTasks.length}`;
+
+    try {
+        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+        await updateDoc(clientRef, { tasks: updatedTasks });
+    } catch(e) {
+        showToast("Failed to update task", "error");
+        checkbox.checked = !isCompleted; 
+        
+        if (label) {
+            if (!isCompleted) {
+                label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+            } else {
+                label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+            }
+        }
+        if (progressEl) {
+            const oldCompletedCount = updatedTasks.filter(t => t.completed).length + (isCompleted ? -1 : 1);
+            progressEl.innerText = `${oldCompletedCount}/${updatedTasks.length}`;
+        }
+    }
+};
 
 const modal = document.getElementById('client-modal');
 window.openModal = function(id) {
@@ -1558,7 +1617,6 @@ window.openModal = function(id) {
 
     document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
     document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
-    
     document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
 
     const balanceEl = document.getElementById('modal-balance');
@@ -1592,7 +1650,6 @@ window.openModal = function(id) {
     }
     document.getElementById('modal-installments-list').innerHTML = instHtml;
 
-    // Render Tasks
     const tasksList = document.getElementById('modal-tasks-list');
     const progressEl = document.getElementById('modal-task-progress');
     if (tasksList) {
@@ -1662,54 +1719,6 @@ window.openModal = function(id) {
     
     renderActivityLog(client);
     if(modal) modal.classList.remove('hidden');
-};
-
-// --- NEW FUNCTION: Toggle Task Status Directly from Modal ---
-window.toggleTaskStatus = async function(clientId, taskIndex, checkbox) {
-    const client = clientsList.find(c => c.id === clientId);
-    if (!client || !client.tasks) return;
-    
-    const isCompleted = checkbox.checked;
-    const label = document.querySelector(`label[for="task-${clientId}-${taskIndex}"]`);
-    if (label) {
-        if (isCompleted) {
-            label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
-            label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
-        } else {
-            label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
-            label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
-        }
-    }
-    
-    const updatedTasks = [...client.tasks];
-    updatedTasks[taskIndex].completed = isCompleted;
-    
-    const completedCount = updatedTasks.filter(t => t.completed).length;
-    const progressEl = document.getElementById('modal-task-progress');
-    if (progressEl) progressEl.innerText = `${completedCount}/${updatedTasks.length}`;
-
-    try {
-        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-        await updateDoc(clientRef, { tasks: updatedTasks });
-    } catch(e) {
-        showToast("Failed to update task", "error");
-        checkbox.checked = !isCompleted; 
-        
-        // Revert UI
-        if (label) {
-            if (!isCompleted) {
-                label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
-                label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
-            } else {
-                label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
-                label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
-            }
-        }
-        if (progressEl) {
-            const oldCompletedCount = updatedTasks.filter(t => t.completed).length + (isCompleted ? -1 : 1);
-            progressEl.innerText = `${oldCompletedCount}/${updatedTasks.length}`;
-        }
-    }
 };
 
 window.closeModal = function() {
@@ -2168,6 +2177,26 @@ window.viewRequestDetails = function(reqId) {
         instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded.</p>';
     }
     document.getElementById('modal-installments-list').innerHTML = instHtml;
+
+    const tasksList = document.getElementById('modal-tasks-list');
+    const progressEl = document.getElementById('modal-task-progress');
+    if (tasksList) {
+        if (client.tasks && client.tasks.length > 0) {
+            const completedCount = client.tasks.filter(t => t.completed).length;
+            if(progressEl) progressEl.innerText = `${completedCount}/${client.tasks.length}`;
+            
+            tasksList.innerHTML = client.tasks.map((t, index) => `
+                <div class="flex items-start gap-3 p-2.5 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group">
+                    <input type="checkbox" disabled ${t.completed ? 'checked' : ''} 
+                           class="mt-0.5 w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer shrink-0">
+                    <label class="text-sm flex-1 cursor-pointer transition-colors ${t.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200 group-hover:text-accentPrimary'}">${t.text}</label>
+                </div>
+            `).join('');
+        } else {
+            if(progressEl) progressEl.innerText = `0/0`;
+            tasksList.innerHTML = '<p class="text-xs text-gray-500 italic">No tasks added for this project.</p>';
+        }
+    }
 
     document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
     document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
