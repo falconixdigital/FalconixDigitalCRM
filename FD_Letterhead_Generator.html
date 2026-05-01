@@ -643,20 +643,23 @@
 
         async function fetchNextRefNumber() {
             if (!currentUser) return;
-            try {
-                const counterRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'counters', `ref_${currentYear}`);
-                const counterSnap = await getDoc(counterRef);
-                if (counterSnap.exists()) {
-                    expectedNextCount = (counterSnap.data().current || 0) + 1;
-                } else {
-                    expectedNextCount = 1;
+            let maxCount = 0;
+            const prefix = `FD-${currentYear}/`;
+            
+            lettersList.forEach(letter => {
+                if (letter.ref && letter.ref.startsWith(prefix)) {
+                    const numPart = letter.ref.replace(prefix, '');
+                    const num = parseInt(numPart, 10);
+                    if (!isNaN(num) && num > maxCount) {
+                        maxCount = num;
+                    }
                 }
-                const formattedCount = String(expectedNextCount).padStart(3, '0');
-                inputs.ref.value = `FD-${currentYear}/${formattedCount}`;
-                updatePreview();
-            } catch (err) {
-                console.error("Failed to fetch next ref number:", err);
-            }
+            });
+            
+            expectedNextCount = maxCount + 1;
+            const formattedCount = String(expectedNextCount).padStart(3, '0');
+            inputs.ref.value = `${prefix}${formattedCount}`;
+            updatePreview();
         }
 
         let historyStack = [];
@@ -1245,7 +1248,7 @@
                     btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Downloaded!`;
                     setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
                 }).catch(err => {
-                    console.error(err);
+                    console.error("PDF Generation Error: ", err);
                     previewContainer.style.overflow = origPreviewOverflow;
                     mainContent.style.overflow = origMainOverflow;
                     body.classList.add('h-screen');
@@ -1352,7 +1355,7 @@
                         });
                         
                 }).catch(err => {
-                    console.error(err);
+                    console.error("PDF Generation Error: ", err);
                     previewContainer.style.overflow = origPreviewOverflow;
                     mainContent.style.overflow = origMainOverflow;
                     body.classList.add('h-screen');
@@ -1436,12 +1439,30 @@
                 
                 currentLetterId = crypto.randomUUID();
                 
+                if (row['Ref']) {
+                    inputs.ref.value = row['Ref'];
+                } else {
+                    let maxCount = 0;
+                    const prefix = `FD-${currentYear}/`;
+                    lettersList.forEach(letter => {
+                        if (letter.ref && letter.ref.startsWith(prefix)) {
+                            const numPart = letter.ref.replace(prefix, '');
+                            const num = parseInt(numPart, 10);
+                            if (!isNaN(num) && num > maxCount) {
+                                maxCount = num;
+                            }
+                        }
+                    });
+                    const nextNum = maxCount + 1;
+                    inputs.ref.value = `${prefix}${String(nextNum).padStart(3, '0')}`;
+                }
+
                 if(row['Recipient Name']) inputs.toName.value = row['Recipient Name'];
                 if(row['Recipient Email']) inputs.toEmail.value = row['Recipient Email'];
                 if(row['Date']) inputs.date.value = row['Date'];
                 
                 headers.forEach(h => {
-                    if(!['Recipient Name', 'Recipient Email', 'Date'].includes(h)) {
+                    if(!['Recipient Name', 'Recipient Email', 'Date', 'Ref'].includes(h)) {
                         const tag = h.startsWith('[') ? h : `[${h}]`;
                         customVars[tag] = row[h];
                     }
@@ -1460,6 +1481,12 @@
                     createdAt: Date.now()
                 });
                 
+                lettersList.push({
+                    id: currentLetterId,
+                    ref: inputs.ref.value.trim(),
+                    createdAt: Date.now()
+                });
+
                 await new Promise(r => setTimeout(r, 200)); 
                 
                 const wrapper = document.getElementById('document-wrapper');
@@ -1559,11 +1586,15 @@
                 
                 lettersList.sort((a, b) => b.createdAt - a.createdAt);
                 
+                if (inputs.template.value === 'blank' && !urlParams.get('letterId')) {
+                    fetchNextRefNumber();
+                }
+
                 if (!cloudModal.classList.contains('hidden')) {
                     renderCloudLetters();
                 }
             }, (error) => {
-                console.error(error);
+                console.error("Database sync error:", error);
                 showToast("Real-time database sync failed.", "error");
             });
 
@@ -1627,7 +1658,6 @@
                     saveStateToHistory(true); 
                     updatePreview();
                     setupDatabaseListener();
-                    fetchNextRefNumber();
                 }, 500);
 
             } else {
@@ -1678,6 +1708,16 @@
                 showToast("You must be logged in.", "error");
                 return;
             }
+
+            const currentRef = inputs.ref.value.trim();
+            if (currentRef !== "") {
+                const isDuplicate = lettersList.some(l => l.ref === currentRef && l.id !== currentLetterId);
+                if (isDuplicate) {
+                    showToast("A letter with this Reference Number already exists!", "error");
+                    return;
+                }
+            }
+
             const originalHtml = btnSaveCloud.innerHTML;
             btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Saving...';
             btnSaveCloud.disabled = true;
@@ -1721,16 +1761,42 @@
 
         window.copyShareLink = function(id) {
             const link = window.location.origin + window.location.pathname + '?letterId=' + id;
+            
+            // Create a robust, invisible textarea
             const textArea = document.createElement("textarea");
             textArea.value = link;
+            
+            // Prevent scrolling to bottom of page in certain browsers and ensure it's invisible
+            textArea.style.position = "fixed";
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.width = "2em";
+            textArea.style.height = "2em";
+            textArea.style.padding = "0";
+            textArea.style.border = "none";
+            textArea.style.outline = "none";
+            textArea.style.boxShadow = "none";
+            textArea.style.background = "transparent";
+            
             document.body.appendChild(textArea);
+            
+            // Ensure the textarea is focused and the text is fully selected
+            textArea.focus();
             textArea.select();
+            
             try {
-                document.execCommand('copy');
-                showToast("Share link copied to clipboard!", "success");
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("Share link copied to clipboard!", "success");
+                } else {
+                    showToast("Failed to copy link. Browser blocked action.", "error");
+                }
             } catch (err) {
+                console.error("Copy error:", err);
                 showToast("Failed to copy link.", "error");
             }
+            
+            // Clean up the temporary element
             document.body.removeChild(textArea);
         };
 
