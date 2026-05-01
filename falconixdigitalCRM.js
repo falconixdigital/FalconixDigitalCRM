@@ -3,10 +3,10 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gst
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
+const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
 
 const SUPER_ADMINS = [
-    'pabitramondal2635@gmail.com',
+    'digitalfalconix@gmail.com',
     'subhadeep0897@gmail.com',
     'pabitramondal.ind@gmail.com',
     'ayanmondal21836@gmail.com'
@@ -27,7 +27,8 @@ const RESTRICTED_DASHBOARD_EMAILS = [
 
 const RESTRICTED_CLIENTS_EMAILS = [
     'ayanmondal21836@gmail.com',
-    'subhadeep0897@gmail.com'
+    'subhadeep0897@gmail.com',
+    'pabitramondal.ind@gmail.com'
 ];
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
