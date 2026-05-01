@@ -63,245 +63,260 @@
             border-radius: 0.75rem;
         }
         .dark .preview-container { background-color: #000000; }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideInRight 0.3s forwards;
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-darkBg text-gray-800 dark:text-gray-200 font-sans transition-colors duration-200 h-screen flex flex-col">
+<body class="bg-gray-100 dark:bg-darkBg text-gray-800 dark:text-gray-200 font-sans transition-colors duration-200 h-screen flex flex-col overflow-hidden">
 
-    <div class="h-1.5 w-full bg-gradient-to-r from-brandAccent via-brand to-brandDark shrink-0 z-50"></div>
-
-    <header class="bg-white dark:bg-darkCard border-b border-gray-200 dark:border-gray-800 py-2 px-6 flex justify-between items-center shrink-0">
-        <div class="flex items-center gap-3">
-            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Digital Logo" class="h-8 w-auto object-contain">
-            <div class="flex flex-col justify-center">
-                <h1 class="font-black text-lg leading-none tracking-tight text-gray-900 dark:text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
-                <p class="text-[9px] text-brandAccent font-bold tracking-widest uppercase mt-1 leading-none">Innovation In Flight</p>
-            </div>
-            <div class="hidden sm:block border-l border-gray-300 dark:border-gray-700 ml-4 pl-4">
-                <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Smart Letter Generator</h2>
-            </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <button id="auth-btn" class="text-xs font-bold bg-brand/10 text-brand px-3 py-1.5 rounded-lg hover:bg-brand/20 transition-colors flex items-center gap-1.5">
-                <i class="ph ph-google-logo text-base"></i> Admin Login
+    <div id="login-wrapper" class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-darkBg transition-opacity duration-500">
+        <div class="bg-white dark:bg-darkCard w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-gray-200 dark:border-gray-800">
+            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-brand/30 object-cover border border-gray-200 dark:border-gray-700">
+            <h1 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center mt-2">Smart Letter Generator - Restricted Access</p>
+            
+            <button id="google-login-btn" class="w-full bg-white dark:bg-gray-100 text-gray-800 hover:bg-gray-50 border border-gray-300 dark:border-transparent py-3 px-4 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Sign in with Google
             </button>
-            <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <i class="ph ph-moon text-xl dark:hidden"></i>
-                <i class="ph ph-sun text-xl hidden dark:block text-brandAccent"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- NEW: Cloud Archive Modal -->
-    <div id="cloud-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-cloud-check text-brand text-xl"></i> Cloud Letters Archive</h2>
-                <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-6" id="cloud-letters-container">
-                <!-- Lists will be injected here -->
-                <div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
-            </div>
+            <div id="login-error" class="mt-4 text-red-500 text-sm font-medium hidden text-center"></div>
         </div>
     </div>
 
-    <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
-        
-        <section class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-brand text-lg"></i> Editor Controls</h2>
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="app-wrapper" class="hidden h-screen w-full flex-col opacity-0 transition-opacity duration-500">
+        <div class="h-1.5 w-full bg-gradient-to-r from-brandAccent via-brand to-brandDark shrink-0 z-50"></div>
+
+        <header class="bg-white dark:bg-darkCard border-b border-gray-200 dark:border-gray-800 py-2 px-6 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Digital Logo" class="h-8 w-auto object-contain">
+                <div class="flex flex-col justify-center">
+                    <h1 class="font-black text-lg leading-none tracking-tight text-gray-900 dark:text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
+                    <p class="text-[9px] text-brandAccent font-bold tracking-widest uppercase mt-1 leading-none">Innovation In Flight</p>
+                </div>
+                <div class="hidden sm:block border-l border-gray-300 dark:border-gray-700 ml-4 pl-4">
+                    <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Smart Letter Generator</h2>
+                </div>
             </div>
-            
-            <div class="p-6 overflow-y-auto flex-1 space-y-6">
-                
-                <!-- NEW: Cloud Management & Draft History -->
-                <div class="space-y-3 bg-brand/5 p-4 rounded-xl border border-brand/20">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-bold text-brand uppercase tracking-wider"><i class="ph ph-cloud-arrow-up mr-1"></i> Cloud Manager</label>
-                        <button id="btn-view-cloud" class="text-[10px] bg-brand text-white font-semibold px-2.5 py-1.5 rounded-lg hover:bg-brandDark transition-colors shadow-sm hidden">View Archives</button>
-                    </div>
-                    <button id="btn-save-cloud" class="w-full bg-brandAccent hover:bg-brandAccent/80 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-md flex justify-center items-center gap-2 hidden">
-                        <i class="ph ph-cloud-check text-lg"></i> Save Letter to Cloud
-                    </button>
-                    
-                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-brand/20">
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Local Drafts</label>
-                        <button type="button" onclick="saveCurrentDraft()" class="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold px-2 py-1 rounded transition-colors">Save Local</button>
-                    </div>
-                    <select id="input-drafts" onchange="loadDraft(this.value)" class="w-full bg-white dark:bg-gray-900 border border-brand/30 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none cursor-pointer text-gray-900 dark:text-white font-medium">
-                        <option value="">-- Load a Local Draft --</option>
-                    </select>
-                </div>
-
-                <div class="space-y-3">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Company Details</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="text" id="input-agency-phone" value="+91 86370 28337" placeholder="Mobile No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                        <input type="text" id="input-agency-web" value="falconixdigital.netlify.app" placeholder="Website" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                    </div>
-                    <input type="text" id="input-agency-email" value="digitalfalconix@gmail.com" placeholder="Email" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                    <input type="text" id="input-agency-address" value="Motihari, Bihar, India" placeholder="Company Address" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                    
-                    <!-- NEW: Local Image Upload Support -->
-                    <div class="pt-2">
-                        <label class="block text-[10px] text-gray-500 mb-1">Company Logo (Image URL or Upload)</label>
-                        <div class="flex gap-2">
-                            <input type="url" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                            <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm" title="Upload Logo">
-                                <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
-                                <input type="file" id="file-logo" class="hidden" accept="image/*">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="border-gray-200 dark:border-gray-800">
-
-                <div class="space-y-3">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Document Settings</label>
-                    <select id="input-template" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all cursor-pointer text-gray-900 dark:text-white">
-                        <option value="blank">Blank Document</option>
-                        <option value="offer">Job Offer Letter</option>
-                        <option value="collab">Business Collaboration Proposal</option>
-                        <option value="nda">Non-Disclosure Agreement</option>
-                        <option value="warning">Formal Warning Letter</option>
-                        <option value="termination">Termination Letter</option>
-                        <option value="apology">Formal Apology</option>
-                        <option value="onboarding">Client Onboarding</option>
-                    </select>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
-                        <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                    </div>
-                </div>
-
-                <hr class="border-gray-200 dark:border-gray-800">
-
-                <div class="space-y-3">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipient Details</label>
-                    <input type="text" id="input-to-name" placeholder="Recipient Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    <input type="text" id="input-to-company" placeholder="Company Name (Optional)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    <textarea id="input-to-address" placeholder="Recipient Address" rows="2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white"></textarea>
-                </div>
-
-                <hr class="border-gray-200 dark:border-gray-800">
-
-                <div class="space-y-3">
-                    <div class="flex flex-col gap-2">
-                        <div class="flex justify-between items-end">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Letter Content</label>
-                            <span class="text-[10px] text-brandAccent font-medium bg-brandAccent/10 px-2 py-0.5 rounded-full">Smart Variables Active</span>
-                        </div>
-                        
-                        <!-- NEW: Enhanced Rich Text Toolbar -->
-                        <div class="flex flex-wrap gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg border border-gray-300 dark:border-gray-700 items-center">
-                            
-                            <!-- Undo/Redo -->
-                            <button type="button" onclick="undo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Undo"><i class="ph ph-arrow-u-up-left"></i></button>
-                            <button type="button" onclick="redo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Redo"><i class="ph ph-arrow-u-up-right"></i></button>
-                            
-                            <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                            
-                            <!-- Formatting -->
-                            <button type="button" onclick="insertFormat('**', '**')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bold Text"><i class="ph ph-text-b"></i></button>
-                            <button type="button" onclick="insertFormat('_', '_')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Italic Text"><i class="ph ph-text-italic"></i></button>
-                            <button type="button" onclick="insertFormat('==', '==')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Highlight Point"><i class="ph ph-highlighter"></i></button>
-                            
-                            <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                            
-                            <!-- Alignment & Structure -->
-                            <button type="button" onclick="insertFormat('[center]\n', '\n[/center]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Center"><i class="ph ph-text-align-center"></i></button>
-                            <button type="button" onclick="insertFormat('[right]\n', '\n[/right]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Right"><i class="ph ph-text-align-right"></i></button>
-                            <button type="button" onclick="insertFormat('- ', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bullet Point"><i class="ph ph-list-bullets"></i></button>
-                            <button type="button" onclick="insertFormat('\n| Header 1 | Header 2 |\n|---|---|\n| Data 1 | Data 2 |\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Insert Table"><i class="ph ph-table"></i></button>
-                            
-                            <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                            
-                            <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-brand transition-colors" title="Insert Page Break"><i class="ph ph-file-dashed"></i></button>
-                        </div>
-                    </div>
-                    
-                    <input type="text" id="input-subject" placeholder="Subject Line" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm font-medium focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    <textarea id="input-body" placeholder="Write content here... Tags like [Recipient Name] will auto-replace!" rows="12" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-3 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white leading-relaxed resize-none"></textarea>
-                    
-                    <div class="flex justify-end pt-1">
-                        <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="text-xs bg-brand/10 hover:bg-brand/20 text-brand font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5">
-                            <i class="ph ph-plus-circle text-base"></i> Add New Page
-                        </button>
-                    </div>
-                </div>
-
-                <hr class="border-gray-200 dark:border-gray-800">
-
-                <div class="space-y-3">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Signatory Authority</label>
-                    <input type="text" id="input-sign-name" value="Pabitra Mondal" placeholder="Your Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    <input type="text" id="input-sign-role" value="Founder & CEO, Falconix Digital" placeholder="Your Title" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    
-                    <div class="pt-2">
-                        <label class="block text-[10px] text-gray-500 mb-1">Digital Signature (Image URL or Upload)</label>
-                        <div class="flex gap-2">
-                            <input type="url" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                            <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
-                                <input type="file" id="file-sign" class="hidden" accept="image/*">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="border-gray-200 dark:border-gray-800">
-
-                <div class="space-y-3">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner Details (Optional)</label>
-                    <p class="text-[10px] text-gray-500 mb-2 leading-tight">Fill these to add a second logo and signature for collaboration documents.</p>
-                    
-                    <input type="text" id="input-partner-sign-name" placeholder="Partner Signatory Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    <input type="text" id="input-partner-sign-role" placeholder="Partner Title / Company" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                    
-                    <div class="pt-2">
-                        <label class="block text-[10px] text-gray-500 mb-1">Partner Logo (Image URL or Upload)</label>
-                        <div class="flex gap-2">
-                            <input type="url" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                            <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
-                                <input type="file" id="file-partner-logo" class="hidden" accept="image/*">
-                            </label>
-                        </div>
-                    </div>
-                    <div class="pt-2">
-                        <label class="block text-[10px] text-gray-500 mb-1">Partner Signature (Image URL or Upload)</label>
-                        <div class="flex gap-2">
-                            <input type="url" id="input-partner-sign-url" placeholder="https://example.com/partner-sig.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                            <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
-                                <input type="file" id="file-partner-sign" class="hidden" accept="image/*">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-darkCard shrink-0">
-                <button id="btn-download" class="w-full bg-brand hover:bg-brandDark text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
-                    <i class="ph ph-download-simple text-xl"></i> Export as PDF
+            <div class="flex items-center gap-3">
+                <button id="auth-logout-btn" class="text-xs font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1.5">
+                    <i class="ph ph-sign-out text-base"></i> Logout
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="ph ph-moon text-xl dark:hidden"></i>
+                    <i class="ph ph-sun text-xl hidden dark:block text-brandAccent"></i>
                 </button>
             </div>
-        </section>
+        </header>
 
-        <section class="flex-1 preview-container relative">
-            <div id="document-wrapper" class="flex flex-col gap-8 pb-8">
+        <div id="cloud-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+            <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-cloud-check text-brand text-xl"></i> Cloud Letters Archive</h2>
+                    <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6" id="cloud-letters-container">
+                    <div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
+                </div>
             </div>
-        </section>
-    </main>
+        </div>
+
+        <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+            
+            <section class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-brand text-lg"></i> Editor Controls</h2>
+                </div>
+                
+                <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                    
+                    <div class="space-y-3 bg-brand/5 p-4 rounded-xl border border-brand/20">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-brand uppercase tracking-wider"><i class="ph ph-cloud-arrow-up mr-1"></i> Cloud Manager</label>
+                            <button id="btn-view-cloud" class="text-[10px] bg-brand text-white font-semibold px-2.5 py-1.5 rounded-lg hover:bg-brandDark transition-colors shadow-sm">View Archives</button>
+                        </div>
+                        <button id="btn-save-cloud" class="w-full bg-brandAccent hover:bg-brandAccent/80 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-md flex justify-center items-center gap-2">
+                            <i class="ph ph-cloud-check text-lg"></i> Save Letter to Cloud
+                        </button>
+                        
+                        <div class="flex justify-between items-center mt-3 pt-3 border-t border-brand/20">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Local Drafts</label>
+                            <button type="button" onclick="saveCurrentDraft()" class="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold px-2 py-1 rounded transition-colors">Save Local</button>
+                        </div>
+                        <select id="input-drafts" onchange="loadDraft(this.value)" class="w-full bg-white dark:bg-gray-900 border border-brand/30 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none cursor-pointer text-gray-900 dark:text-white font-medium">
+                            <option value="">-- Load a Local Draft --</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Company Details</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" id="input-agency-phone" value="+91 86370 28337" placeholder="Mobile No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                            <input type="text" id="input-agency-web" value="falconixdigital.netlify.app" placeholder="Website" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                        </div>
+                        <input type="text" id="input-agency-email" value="digitalfalconix@gmail.com" placeholder="Email" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                        <input type="text" id="input-agency-address" value="Motihari, Bihar, India" placeholder="Company Address" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                        
+                        <div class="pt-2">
+                            <label class="block text-[10px] text-gray-500 mb-1">Company Logo (Image URL or Upload)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm" title="Upload Logo">
+                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                    <input type="file" id="file-logo" class="hidden" accept="image/*">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Document Settings</label>
+                        <select id="input-template" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all cursor-pointer text-gray-900 dark:text-white">
+                            <option value="blank">Blank Document</option>
+                            <option value="offer">Job Offer Letter</option>
+                            <option value="telecaller_offer">Telecaller Offer Letter</option>
+                            <option value="telecaller_selection">Telecaller Selection</option>
+                            <option value="telecaller_tnc">Telecaller T&C Agreement</option>
+                            <option value="collab">Business Collaboration Proposal</option>
+                            <option value="nda">Non-Disclosure Agreement</option>
+                            <option value="warning">Formal Warning Letter</option>
+                            <option value="termination">Termination Letter</option>
+                            <option value="apology">Formal Apology</option>
+                            <option value="onboarding">Client Onboarding</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
+                            <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipient Details</label>
+                        <input type="text" id="input-to-name" placeholder="Recipient Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-to-company" placeholder="Company Name (Optional)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <textarea id="input-to-address" placeholder="Recipient Address" rows="2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white"></textarea>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-end">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Letter Content</label>
+                                <span class="text-[10px] text-brandAccent font-medium bg-brandAccent/10 px-2 py-0.5 rounded-full">Smart Variables Active</span>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg border border-gray-300 dark:border-gray-700 items-center">
+                                <button type="button" onclick="undo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Undo"><i class="ph ph-arrow-u-up-left"></i></button>
+                                <button type="button" onclick="redo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Redo"><i class="ph ph-arrow-u-up-right"></i></button>
+                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                                <button type="button" onclick="insertFormat('**', '**')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bold Text"><i class="ph ph-text-b"></i></button>
+                                <button type="button" onclick="insertFormat('_', '_')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Italic Text"><i class="ph ph-text-italic"></i></button>
+                                <button type="button" onclick="insertFormat('==', '==')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Highlight Point"><i class="ph ph-highlighter"></i></button>
+                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                                <button type="button" onclick="insertFormat('[center]\n', '\n[/center]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Center"><i class="ph ph-text-align-center"></i></button>
+                                <button type="button" onclick="insertFormat('[right]\n', '\n[/right]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Right"><i class="ph ph-text-align-right"></i></button>
+                                <button type="button" onclick="insertFormat('- ', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bullet Point"><i class="ph ph-list-bullets"></i></button>
+                                <button type="button" onclick="insertFormat('\n| Header 1 | Header 2 |\n|---|---|\n| Data 1 | Data 2 |\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Insert Table"><i class="ph ph-table"></i></button>
+                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                                <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-brand transition-colors" title="Insert Page Break"><i class="ph ph-file-dashed"></i></button>
+                            </div>
+                        </div>
+                        
+                        <input type="text" id="input-subject" placeholder="Subject Line" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm font-medium focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <textarea id="input-body" placeholder="Write content here... Tags like [Recipient Name] will auto-replace!" rows="12" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-3 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white leading-relaxed resize-none"></textarea>
+                        
+                        <div class="flex justify-end pt-1">
+                            <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="text-xs bg-brand/10 hover:bg-brand/20 text-brand font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5">
+                                <i class="ph ph-plus-circle text-base"></i> Add New Page
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Signatory Authority</label>
+                        <input type="text" id="input-sign-name" value="Pabitra Mondal" placeholder="Your Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-sign-role" value="Founder & CEO, Falconix Digital" placeholder="Your Title" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        
+                        <div class="pt-2">
+                            <label class="block text-[10px] text-gray-500 mb-1">Digital Signature (Image URL or Upload)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                    <input type="file" id="file-sign" class="hidden" accept="image/*">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner Details (Optional)</label>
+                        <p class="text-[10px] text-gray-500 mb-2 leading-tight">Fill these to add a second logo and signature for collaboration documents.</p>
+                        
+                        <input type="text" id="input-partner-sign-name" placeholder="Partner Signatory Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-partner-sign-role" placeholder="Partner Title / Company" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        
+                        <div class="pt-2">
+                            <label class="block text-[10px] text-gray-500 mb-1">Partner Logo (Image URL or Upload)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                    <input type="file" id="file-partner-logo" class="hidden" accept="image/*">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <label class="block text-[10px] text-gray-500 mb-1">Partner Signature (Image URL or Upload)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="input-partner-sign-url" placeholder="https://example.com/partner-sig.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                    <input type="file" id="file-partner-sign" class="hidden" accept="image/*">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-darkCard shrink-0">
+                    <button id="btn-download" class="w-full bg-brand hover:bg-brandDark text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
+                        <i class="ph ph-download-simple text-xl"></i> Export as PDF
+                    </button>
+                </div>
+            </section>
+
+            <section class="flex-1 preview-container relative">
+                <div id="document-wrapper" class="flex flex-col gap-8 pb-8">
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyClR_nY11CdpWKLmMy7TgTCKtS26s_h24g",
             authDomain: "fd-employee-data.firebaseapp.com",
             projectId: "fd-employee-data",
@@ -312,9 +327,17 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const fbAppId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-letters';
+
+        const appCheck = initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'), 
+            isTokenAutoRefreshEnabled: true
+        });
+
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         const ALLOWED_EMAIL = "digitalfalconix@gmail.com";
 
         const htmlEl = document.documentElement;
@@ -330,6 +353,30 @@
             htmlEl.classList.toggle('dark');
             localStorage.theme = htmlEl.classList.contains('dark') ? 'dark' : 'light';
         });
+
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
+            let icon = 'ph-info';
+            if (type === 'success') {
+                bgClass = 'bg-green-500 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500 text-white';
+                icon = 'ph-warning-circle';
+            }
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} pointer-events-auto`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
 
         const inputs = {
             template: document.getElementById('input-template'),
@@ -356,12 +403,23 @@
             signUrl: document.getElementById('input-sign-url')
         };
 
-        // NEW: Smart Variable Template Definitions
         const templates = {
             blank: { subject: "", body: "" },
             offer: {
                 subject: "Employment Offer Letter",
                 body: "Dear **[Recipient Name]**,\n\nWe are delighted to officially offer you the position of **[Role]** at [Company Name]. Your skills and experience perfectly align with our company's vision.\n\nYour starting compensation will be ==[Salary] per annum==, and your expected date of joining is **[Date]**.\n\nKey Benefits Include:\n- Comprehensive Health Coverage\n- Flexible Working Hours\n- Annual Performance Bonus\n\nPlease review this offer and confirm your acceptance by signing and returning a copy of this letter.\n\nWelcome aboard!"
+            },
+            telecaller_offer: {
+                subject: "Offer for the Position of Telecaller",
+                body: "Dear **[Recipient Name]**,\n\nWe are pleased to offer you the position of Telecaller at [Company Name].\n\nYour responsibilities will include contacting potential clients, explaining services, generating leads, and coordinating with the team for project discussions while maintaining professional communication.\n\n**Compensation & Benefits:**\nSalary, incentives, and performance-based earnings will be discussed and finalized as per company policy.\n\n**Joining Details:**\nJoining date: **[Date]**. Please confirm your acceptance of this offer.\n\nWe look forward to working with you and expect professionalism and consistency in your role."
+            },
+            telecaller_selection: {
+                subject: "TELECALLER SELECTION CONFIRMATION LETTER",
+                body: "This is to confirm that **[Recipient Name]** has been selected as a Telecaller at [Company Name].\n\nTheir role will include contacting potential clients, explaining services, generating leads, and coordinating with the team for further project discussions. They are expected to maintain professional communication, represent the company effectively, and contribute to business growth.\n\nThe compensation structure, incentives, and other terms will be discussed and finalized separately.\n\nWe look forward to working together and expect dedication, consistency, and professionalism in all assigned responsibilities."
+            },
+            telecaller_tnc: {
+                subject: "Telecaller Terms & Conditions Agreement",
+                body: "Effective Date: **[Date]**\n\nThis document outlines the terms and conditions for telecallers working with [Company Name]. By continuing work with us, you agree to the following:\n\n**1. Role & Responsibilities**\n- You are required to contact potential clients and explain our services clearly and professionally.\n- You must follow the provided script, training, and communication guidelines.\n- You are responsible for maintaining a polite and respectful tone with all clients.\n\n**2. Work Commitment**\n- Your work officially starts from **[Date]**.\n- You are expected to work regularly and seriously.\n- There is no formal attendance system, but your performance and activity will be monitored.\n\n**3. Performance Evaluation**\n- Your performance will be reviewed over a period of 2-3 weeks.\n- If your work is found to be unsatisfactory, inactive, or unprofessional, your role may be terminated without prior notice.\n\n**4. Payment & Commission**\n- You will be compensated based on agreed terms (salary/commission).\n- Commission will be provided only for verified clients generated through your efforts.\n- If a client contacts the company through your shared reference (e.g., visiting card, call), you will be eligible for commission.\n\n---\n\n**5. Professional Conduct**\n- You must not provide false information to clients.\n- Misbehavior, negligence, or misuse of company resources will lead to immediate action.\n- You must represent [Company Name] in a professional manner at all times.\n\n**6. Confidentiality**\n- All company data, client details, and internal processes must remain confidential.\n- Sharing sensitive information with outsiders is strictly prohibited.\n\n**7. Termination Policy**\n- [Company Name] reserves the right to terminate your role at any time based on poor performance or misconduct.\n- You may also leave the role voluntarily, but prior notice is expected.\n\n**8. Acceptance**\nBy working with [Company Name], you acknowledge that you have read, understood, and agreed to these terms and conditions."
             },
             collab: {
                 subject: "Proposal for Strategic Business Collaboration",
@@ -393,7 +451,6 @@
         inputs.date.value = today;
         inputs.ref.value = `FD-${new Date().getFullYear()}/001`;
 
-        // --- NEW: History System (Undo/Redo) ---
         let historyStack = [];
         let historyIndex = -1;
         let isUndoRedoAction = false;
@@ -429,7 +486,6 @@
             }
         };
 
-        // --- NEW: Draft & LocalStorage System ---
         function getDrafts() {
             return JSON.parse(localStorage.getItem('letter_drafts') || '{"list":[]}');
         }
@@ -445,7 +501,7 @@
             draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: state });
             localStorage.setItem('letter_drafts', JSON.stringify(draftsData));
             updateDraftsDropdown();
-            alert("Draft saved successfully!");
+            showToast("Local draft saved successfully!", "success");
         };
 
         window.loadDraft = function(id) {
@@ -458,8 +514,9 @@
                 });
                 updatePreview();
                 saveStateToHistory();
+                showToast("Draft loaded successfully.", "success");
             }
-            document.getElementById('input-drafts').value = ""; // Reset dropdown
+            document.getElementById('input-drafts').value = ""; 
         };
 
         function updateDraftsDropdown() {
@@ -491,7 +548,6 @@
             } catch(e) {}
         }
 
-        // --- NEW: Local Image Uploads & Canvas Resizer ---
         function setupImageUpload(fileInputId, urlInputId) {
             document.getElementById(fileInputId).addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -502,7 +558,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; // Compress to avoid LocalStorage limits
+                        const MAX_WIDTH = 600; 
                         let width = img.width;
                         let height = img.height;
                         
@@ -530,8 +586,6 @@
         setupImageUpload('file-partner-logo', 'input-partner-logo-url');
         setupImageUpload('file-partner-sign', 'input-partner-sign-url');
 
-
-        // --- Enhanced Parsing Logic ---
         function parseFormatting(text) {
             if (!text) return '<span class="text-gray-400 italic">[Your letter content will appear here.]</span>';
             
@@ -539,9 +593,8 @@
             
             html = html.replace(/==([^=]+)==/g, '<mark class="bg-brandAccent/40 px-1.5 py-0.5 rounded font-semibold text-gray-900">$1</mark>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/_([^_]+)_/g, '<em>$1</em>'); // Added Italics
+            html = html.replace(/_([^_]+)_/g, '<em>$1</em>'); 
             
-            // Added Alignments
             html = html.replace(/\[center\]([\s\S]*?)\[\/center\]/g, '<div class="text-center">$1</div>');
             html = html.replace(/\[right\]([\s\S]*?)\[\/right\]/g, '<div class="text-right">$1</div>');
             
@@ -553,7 +606,6 @@
             lines.forEach(line => {
                 let tLine = line.trim();
                 
-                // Markdown List Parsing
                 if (tLine.startsWith('- ')) {
                     if (inTable) { finalHtml += '</tbody></table>'; inTable = false; }
                     if (!inList) {
@@ -562,7 +614,6 @@
                     }
                     finalHtml += `<li>${line.substring(2)}</li>`;
                 
-                // NEW: Markdown Table Parsing
                 } else if (tLine.startsWith('|') && tLine.endsWith('|')) {
                     if (inList) { finalHtml += '</ul>'; inList = false; }
                     
@@ -572,7 +623,7 @@
                     }
                     
                     if (tLine.includes('---')) {
-                        finalHtml += '</thead><tbody>'; // Switch to body 
+                        finalHtml += '</thead><tbody>'; 
                     } else {
                         const cells = tLine.substring(1, tLine.length - 1).split('|');
                         finalHtml += '<tr>';
@@ -626,7 +677,7 @@
             }
             
             updatePreview();
-            saveStateToHistory(); // Save new format to history
+            saveStateToHistory(); 
         };
 
         window.updatePreview = function() {
@@ -655,9 +706,8 @@
                 logoUrl: inputs.logoUrl.value.trim()
             };
 
-            autoSave(); // Automatically save to local storage on every update
+            autoSave(); 
 
-            // --- NEW: Smart Variable Replacement Logic ---
             let processedBodyText = state.body;
             const variableMap = {
                 '[Recipient Name]': inputs.toName.value.trim() || '__________',
@@ -667,7 +717,6 @@
             };
 
             for (const [tag, actualValue] of Object.entries(variableMap)) {
-                // Creates a regex to replace the tag globally (case-insensitive)
                 const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
                 processedBodyText = processedBodyText.replace(regex, `<span class="bg-brandAccent/10 text-brandDark dark:text-brandAccent rounded px-1 font-semibold">${actualValue}</span>`);
             }
@@ -783,7 +832,6 @@
             document.getElementById('document-wrapper').innerHTML = html;
         }
 
-        // Add event listeners including tracking changes for history
         Object.values(inputs).forEach(input => {
             input.addEventListener('input', () => {
                 updatePreview();
@@ -869,58 +917,114 @@
                         page.style.boxShadow = '';
                         page.style.margin = '0 auto';
                     });
-                    alert("Failed to generate PDF. Check console for details.");
+                    showToast("Failed to generate PDF.", "error");
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 });
             }, 100);
         });
 
-        // Initialize App
-        loadAutoSave();
-        updateDraftsDropdown();
-        saveStateToHistory(); // Init history
-        updatePreview();
+        let currentUser = null;
+        let lettersList = [];
+        let unsubscribeLetters = null;
 
-        // --- NEW: FIREBASE AUTH & CLOUD LOGIC ---
-        const authBtn = document.getElementById('auth-btn');
+        const loginWrapper = document.getElementById('login-wrapper');
+        const appWrapper = document.getElementById('app-wrapper');
+        const loginBtn = document.getElementById('google-login-btn');
+        const loginError = document.getElementById('login-error');
+        const authLogoutBtn = document.getElementById('auth-logout-btn');
+
         const btnSaveCloud = document.getElementById('btn-save-cloud');
         const btnViewCloud = document.getElementById('btn-view-cloud');
         const cloudModal = document.getElementById('cloud-modal');
         const cloudContainer = document.getElementById('cloud-letters-container');
-        let currentUser = null;
+        const formatDate = (ms) => new Date(ms).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 
-        // 1. Listen for Authentication Status
+        function setupDatabaseListener() {
+            if (!currentUser) return;
+            const lettersRef = collection(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters');
+            
+            unsubscribeLetters = onSnapshot(lettersRef, (snapshot) => {
+                lettersList = [];
+                snapshot.forEach(doc => {
+                    lettersList.push({ id: doc.id, ...doc.data() });
+                });
+                
+                lettersList.sort((a, b) => b.createdAt - a.createdAt);
+                
+                if (!cloudModal.classList.contains('hidden')) {
+                    renderCloudLetters();
+                }
+            }, (error) => {
+                console.error("Database sync error:", error);
+                showToast("Real-time database sync failed.", "error");
+            });
+        }
+
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === ALLOWED_EMAIL) {
                 currentUser = user;
-                authBtn.innerHTML = '<i class="ph ph-sign-out text-base"></i> Logout Admin';
-                btnSaveCloud.classList.remove('hidden');
-                btnViewCloud.classList.remove('hidden');
+                
+                loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    loginWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('hidden');
+                    appWrapper.classList.add('flex');
+                    setTimeout(() => appWrapper.classList.remove('opacity-0'), 50);
+                    
+                    loadAutoSave();
+                    updateDraftsDropdown();
+                    saveStateToHistory(); 
+                    updatePreview();
+                    setupDatabaseListener();
+                }, 500);
+
             } else {
                 currentUser = null;
-                authBtn.innerHTML = '<i class="ph ph-google-logo text-base"></i> Admin Login';
-                btnSaveCloud.classList.add('hidden');
-                btnViewCloud.classList.add('hidden');
+                if (unsubscribeLetters) unsubscribeLetters();
+                lettersList = [];
+                
+                appWrapper.classList.add('opacity-0');
+                setTimeout(() => {
+                    appWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('flex');
+                    loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                }, 500);
+                
                 if (user) {
-                    alert("Unauthorized account. Only digitalfalconix@gmail.com is permitted to access cloud archives.");
+                    loginError.innerText = "Unauthorized account. Access restricted.";
+                    loginError.classList.remove('hidden');
                     signOut(auth);
                 }
             }
         });
 
-        // 2. Trigger Login/Logout
-        authBtn.addEventListener('click', () => {
-            if (currentUser) {
-                signOut(auth);
-            } else {
-                signInWithPopup(auth, provider).catch(err => console.error("Login failed", err));
+        loginBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            const defaultHtml = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                console.error("Login failed", err);
+                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.classList.remove('hidden');
+            } finally {
+                if(!currentUser) loginBtn.innerHTML = defaultHtml;
             }
         });
 
-        // 3. Save Currently Displayed Letter to Firebase
+        authLogoutBtn.addEventListener('click', () => {
+            if (currentUser) {
+                signOut(auth);
+            }
+        });
+
         btnSaveCloud.addEventListener('click', async () => {
-            if (!currentUser) return;
+            if (!currentUser) {
+                showToast("You must be logged in.", "error");
+                return;
+            }
             const originalHtml = btnSaveCloud.innerHTML;
             btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Saving...';
             btnSaveCloud.disabled = true;
@@ -930,7 +1034,10 @@
                 Object.keys(inputs).forEach(key => state[key] = inputs[key].value);
                 const letterType = inputs.template.value || 'blank';
                 
-                await addDoc(collection(db, 'saved_letters'), {
+                const docId = crypto.randomUUID();
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', docId);
+
+                await setDoc(docRef, {
                     data: state,
                     type: letterType,
                     subject: inputs.subject.value.trim() || 'Untitled Document',
@@ -940,89 +1047,80 @@
                 });
 
                 btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Saved to Cloud!';
+                showToast("Letter saved securely to the cloud.", "success");
                 setTimeout(() => { btnSaveCloud.innerHTML = originalHtml; btnSaveCloud.disabled = false; }, 2000);
             } catch (error) {
                 console.error("Error saving document: ", error);
-                alert("Failed to save to cloud.");
+                showToast("Failed to save to cloud.", "error");
                 btnSaveCloud.innerHTML = originalHtml;
                 btnSaveCloud.disabled = false;
             }
         });
 
-        const formatDate = (ms) => new Date(ms).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        function renderCloudLetters() {
+            cloudContainer.innerHTML = '';
+            
+            if (lettersList.length === 0) {
+                cloudContainer.innerHTML = '<div class="text-center text-gray-500 mt-10">No cloud letters saved yet.</div>';
+                return;
+            }
 
-        // 4. Fetch & Categorize Letters into Different Lists
-        btnViewCloud.addEventListener('click', async () => {
+            const grouped = lettersList.reduce((acc, curr) => {
+                if (!acc[curr.type]) acc[curr.type] = [];
+                acc[curr.type].push(curr);
+                return acc;
+            }, {});
+
+            let html = '<div class="space-y-8">';
+            const typeLabels = {
+                blank: 'Blank Documents', offer: 'Job Offer Letters', collab: 'Collaboration Proposals',
+                nda: 'Non-Disclosure Agreements', warning: 'Warning Letters', termination: 'Termination Letters',
+                apology: 'Formal Apologies', onboarding: 'Client Onboarding'
+            };
+
+            Object.keys(grouped).forEach(type => {
+                const groupLetters = grouped[type];
+                html += `
+                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                        <div class="bg-brand/10 dark:bg-brand/20 px-4 py-3 border-b border-brand/20">
+                            <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${typeLabels[type] || type} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
+                        </div>
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                `;
+                
+                groupLetters.forEach(letter => {
+                    const dataStr = encodeURIComponent(JSON.stringify(letter.data));
+                    html += `
+                        <div class="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <div>
+                                <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
+                                <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
+                                <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="loadCloudLetter('${dataStr}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
+                                <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            });
+            html += '</div>';
+            cloudContainer.innerHTML = html;
+        }
+
+        btnViewCloud.addEventListener('click', () => {
             if (!currentUser) return;
             cloudModal.classList.remove('hidden');
-            cloudContainer.innerHTML = '<div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
-            
-            try {
-                const snapshot = await getDocs(collection(db, 'saved_letters'));
-                const letters = [];
-                snapshot.forEach(doc => {
-                    letters.push({ id: doc.id, ...doc.data() });
-                });
-
-                if (letters.length === 0) {
-                    cloudContainer.innerHTML = '<div class="text-center text-gray-500 mt-10">No cloud letters saved yet.</div>';
-                    return;
-                }
-
-                // Group the data by type to create different lists
-                const grouped = letters.reduce((acc, curr) => {
-                    if (!acc[curr.type]) acc[curr.type] = [];
-                    acc[curr.type].push(curr);
-                    return acc;
-                }, {});
-
-                let html = '<div class="space-y-8">';
-                const typeLabels = {
-                    blank: 'Blank Documents', offer: 'Job Offer Letters', collab: 'Collaboration Proposals',
-                    nda: 'Non-Disclosure Agreements', warning: 'Warning Letters', termination: 'Termination Letters',
-                    apology: 'Formal Apologies', onboarding: 'Client Onboarding'
-                };
-
-                // Generate UI blocks for each different list
-                Object.keys(grouped).forEach(type => {
-                    const groupLetters = grouped[type].sort((a, b) => b.createdAt - a.createdAt);
-                    html += `
-                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-                            <div class="bg-brand/10 dark:bg-brand/20 px-4 py-3 border-b border-brand/20">
-                                <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${typeLabels[type] || type} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
-                            </div>
-                            <div class="divide-y divide-gray-100 dark:divide-gray-800">
-                    `;
-                    
-                    groupLetters.forEach(letter => {
-                        const dataStr = encodeURIComponent(JSON.stringify(letter.data));
-                        html += `
-                            <div class="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                <div>
-                                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
-                                    <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
-                                    <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="loadCloudLetter('${dataStr}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
-                                    <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `</div></div>`;
-                });
-                html += '</div>';
-                cloudContainer.innerHTML = html;
-
-            } catch (error) {
-                console.error("Error fetching letters: ", error);
-                cloudContainer.innerHTML = '<div class="text-center text-red-500 mt-10">Failed to load archives. Ensure Firestore is deployed.</div>';
+            if (lettersList.length > 0) {
+                renderCloudLetters();
+            } else {
+                cloudContainer.innerHTML = '<div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
             }
         });
 
-        // 5. Action Handlers for Loading & Deleting Cloud Archives
         window.loadCloudLetter = function(encodedData) {
             try {
                 const data = JSON.parse(decodeURIComponent(encodedData));
@@ -1032,18 +1130,20 @@
                 updatePreview();
                 saveStateToHistory();
                 cloudModal.classList.add('hidden');
+                showToast("Cloud letter loaded successfully.", "success");
             } catch (e) {
-                alert("Failed to load letter data.");
+                showToast("Failed to load letter data.", "error");
             }
         };
 
         window.deleteCloudLetter = async function(id) {
+            if (!currentUser) return;
             if (!confirm("Are you sure you want to permanently delete this archived letter?")) return;
             try {
-                await deleteDoc(doc(db, 'saved_letters', id));
-                btnViewCloud.click(); // Refresh the active list
+                await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', id));
+                showToast("Letter deleted securely.", "success");
             } catch (e) {
-                alert("Failed to delete letter.");
+                showToast("Failed to delete letter.", "error");
             }
         };
 
