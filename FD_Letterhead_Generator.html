@@ -13,6 +13,9 @@
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -128,11 +131,61 @@
             </div>
         </div>
 
+        <div id="manage-templates-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+            <div class="bg-white dark:bg-darkCard w-full max-w-2xl h-[70vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-files text-brand text-xl"></i> Manage Cloud Templates</h2>
+                    <button onclick="document.getElementById('manage-templates-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6" id="custom-templates-container">
+                    <div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bulk-csv-modal" class="fixed inset-0 bg-black/60 z-[250] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-files text-brand"></i> Bulk Generation (CSV)</h2>
+                    <button onclick="document.getElementById('bulk-csv-modal').classList.add('hidden')" class="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded-lg transition-colors"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
+                    <p>Upload a CSV file to automatically generate or email multiple letters.</p>
+                    <p class="text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-500 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
+                        <strong>Important:</strong> CSV headers must exactly match your variable names (e.g., <code class="font-mono bg-white dark:bg-black px-1 rounded">Recipient Name</code>, <code class="font-mono bg-white dark:bg-black px-1 rounded">Recipient Email</code>, <code class="font-mono bg-white dark:bg-black px-1 rounded">Salary</code>). The <code>Recipient Email</code> column is mandatory for sending bulk emails.
+                    </p>
+                    <input type="file" id="bulk-csv-file" accept=".csv" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-200">
+                    
+                    <div id="bulk-progress-container" class="hidden">
+                        <p class="text-xs font-semibold text-brand mb-1" id="bulk-progress-text">Processing 0 / 0</p>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div class="bg-brand h-2 rounded-full transition-all duration-300" id="bulk-progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                        <button onclick="processBulk('zip')" id="btn-bulk-download" class="flex-1 bg-brand hover:bg-brandDark text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="ph ph-file-zip text-lg"></i> Download ZIP
+                        </button>
+                        <button onclick="processBulk('email')" id="btn-bulk-email" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="ph ph-paper-plane-right text-lg"></i> Email All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
             
             <section class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
                     <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-brand text-lg"></i> Editor Controls</h2>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="undo()" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="Undo (Whole Letter)"><i class="ph ph-arrow-u-up-left text-lg"></i></button>
+                        <button type="button" onclick="redo()" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="Redo (Whole Letter)"><i class="ph ph-arrow-u-up-right text-lg"></i></button>
+                        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+                        <button type="button" onclick="resetLetter()" class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors" title="Reset Letter"><i class="ph ph-arrow-counter-clockwise text-lg"></i></button>
+                    </div>
                 </div>
                 
                 <div class="p-6 overflow-y-auto flex-1 space-y-6">
@@ -179,19 +232,14 @@
                     <hr class="border-gray-200 dark:border-gray-800">
 
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Document Settings</label>
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Document Settings</label>
+                            <div class="flex gap-1">
+                                <button type="button" onclick="saveAsCustomTemplate()" class="text-[10px] bg-brand/10 text-brand px-2 py-1.5 font-semibold rounded hover:bg-brand/20 transition-colors" title="Save Current as Template"><i class="ph ph-floppy-disk"></i> Save Tpl</button>
+                                <button type="button" onclick="document.getElementById('manage-templates-modal').classList.remove('hidden')" class="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 font-semibold rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Manage Templates"><i class="ph ph-gear"></i></button>
+                            </div>
+                        </div>
                         <select id="input-template" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all cursor-pointer text-gray-900 dark:text-white">
-                            <option value="blank">Blank Document</option>
-                            <option value="offer">Job Offer Letter</option>
-                            <option value="telecaller_offer">Telecaller Offer Letter</option>
-                            <option value="telecaller_selection">Telecaller Selection</option>
-                            <option value="telecaller_tnc">Telecaller T&C Agreement</option>
-                            <option value="collab">Business Collaboration Proposal</option>
-                            <option value="nda">Non-Disclosure Agreement</option>
-                            <option value="warning">Formal Warning Letter</option>
-                            <option value="termination">Termination Letter</option>
-                            <option value="apology">Formal Apology</option>
-                            <option value="onboarding">Client Onboarding</option>
                         </select>
                         <div class="grid grid-cols-2 gap-3">
                             <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
@@ -204,8 +252,21 @@
                     <div class="space-y-3">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipient Details</label>
                         <input type="text" id="input-to-name" placeholder="Recipient Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="text" id="input-to-company" placeholder="Company Name (Optional)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="email" id="input-to-email" placeholder="Recipient Email (For direct sending)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-to-company" placeholder="Company Name or Phone (Optional)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
                         <textarea id="input-to-address" placeholder="Recipient Address" rows="2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white"></textarea>
+                    </div>
+
+                    <hr class="border-gray-200 dark:border-gray-800">
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Custom Variables</label>
+                            <button type="button" onclick="addCustomVariable()" class="text-[10px] bg-brand/10 text-brand px-2 py-1.5 font-semibold rounded hover:bg-brand/20 transition-colors">+ Add Variable</button>
+                        </div>
+                        <div id="custom-variables-container" class="space-y-2">
+                            <p class="text-xs text-gray-500 italic">No custom variables added yet.</p>
+                        </div>
                     </div>
 
                     <hr class="border-gray-200 dark:border-gray-800">
@@ -218,9 +279,6 @@
                             </div>
                             
                             <div class="flex flex-wrap gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg border border-gray-300 dark:border-gray-700 items-center">
-                                <button type="button" onclick="undo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Undo"><i class="ph ph-arrow-u-up-left"></i></button>
-                                <button type="button" onclick="redo()" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Redo"><i class="ph ph-arrow-u-up-right"></i></button>
-                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
                                 <button type="button" onclick="insertFormat('**', '**')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bold Text"><i class="ph ph-text-b"></i></button>
                                 <button type="button" onclick="insertFormat('_', '_')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Italic Text"><i class="ph ph-text-italic"></i></button>
                                 <button type="button" onclick="insertFormat('==', '==')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Highlight Point"><i class="ph ph-highlighter"></i></button>
@@ -297,14 +355,28 @@
                 </div>
 
                 <div class="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-darkCard shrink-0">
-                    <button id="btn-download" class="w-full bg-brand hover:bg-brandDark text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
-                        <i class="ph ph-download-simple text-xl"></i> Export as PDF
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 mb-3">
+                        <button id="btn-download" class="w-full bg-brand hover:bg-brandDark text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
+                            <i class="ph ph-download-simple text-xl"></i> Export PDF
+                        </button>
+                        <button id="btn-email" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                            <i class="ph ph-paper-plane-right text-xl"></i> Email Client
+                        </button>
+                    </div>
+                    <button onclick="document.getElementById('bulk-csv-modal').classList.remove('hidden')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
+                        <i class="ph ph-files text-xl"></i> Bulk CSV Merge
                     </button>
                 </div>
             </section>
 
             <section class="flex-1 preview-container relative">
                 <div id="document-wrapper" class="flex flex-col gap-8 pb-8">
+                </div>
+                
+                <div id="read-only-controls" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[150] hidden">
+                    <button id="btn-ro-download" class="bg-brand hover:bg-brandDark text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20">
+                        <i class="ph ph-download-simple text-xl"></i> Download PDF
+                    </button>
                 </div>
             </section>
         </main>
@@ -314,7 +386,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyClR_nY11CdpWKLmMy7TgTCKtS26s_h24g",
@@ -383,6 +455,7 @@
             date: document.getElementById('input-date'),
             ref: document.getElementById('input-ref'),
             toName: document.getElementById('input-to-name'),
+            toEmail: document.getElementById('input-to-email'),
             toCompany: document.getElementById('input-to-company'),
             toAddress: document.getElementById('input-to-address'),
             subject: document.getElementById('input-subject'),
@@ -449,29 +522,176 @@
 
         const today = new Date().toISOString().split('T')[0];
         inputs.date.value = today;
-        inputs.ref.value = `FD-${new Date().getFullYear()}/001`;
+        let currentYear = new Date().getFullYear();
+        inputs.ref.value = `FD-${currentYear}/001`;
+
+        let expectedNextCount = 1;
+        
+        let currentLetterId = crypto.randomUUID();
+
+        let customVars = {};
+
+        window.addCustomVariable = function() {
+            let name = prompt("Enter variable name (e.g., Salary, Joining Date):");
+            if (!name) return;
+            name = name.trim();
+            const tag = name.startsWith('[') && name.endsWith(']') ? name : `[${name}]`;
+            
+            if (customVars[tag] !== undefined) {
+                showToast("Variable already exists!", "error");
+                return;
+            }
+            
+            customVars[tag] = "";
+            renderCustomVariables();
+            updatePreview();
+            saveStateToHistory(true);
+        };
+
+        window.removeCustomVariable = function(tag) {
+            delete customVars[tag];
+            renderCustomVariables();
+            updatePreview();
+            saveStateToHistory(true);
+        };
+
+        function renderCustomVariables() {
+            const container = document.getElementById('custom-variables-container');
+            container.innerHTML = '';
+            const keys = Object.keys(customVars);
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-500 italic">No custom variables added yet.</p>';
+                return;
+            }
+            
+            keys.forEach(tag => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm';
+                wrapper.innerHTML = `
+                    <label class="text-xs font-semibold text-brandAccent w-1/3 truncate" title="${tag}">${tag}</label>
+                    <input type="text" class="custom-var-input flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white" data-tag="${tag}" value="${customVars[tag]}" placeholder="Value...">
+                    <button type="button" class="text-red-400 hover:text-red-600 transition-colors p-1" onclick="removeCustomVariable('${tag}')"><i class="ph ph-trash text-base"></i></button>
+                `;
+                container.appendChild(wrapper);
+            });
+
+            document.querySelectorAll('.custom-var-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    customVars[e.target.dataset.tag] = e.target.value;
+                    updatePreview();
+                    saveStateToHistory(); 
+                });
+            });
+        }
+
+        function getCurrentState() {
+            const state = {};
+            Object.keys(inputs).forEach(key => state[key] = inputs[key].value);
+            state._customVars = { ...customVars };
+            state.letterId = currentLetterId;
+            return state;
+        }
+
+        function applyState(stateData) {
+            if (!stateData) return;
+            Object.keys(inputs).forEach(key => {
+                if (inputs[key] && stateData[key] !== undefined) inputs[key].value = stateData[key];
+            });
+            customVars = stateData._customVars || {};
+            currentLetterId = stateData.letterId || letterIdParam || crypto.randomUUID();
+            renderCustomVariables();
+            updatePreview();
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const letterIdParam = urlParams.get('letterId');
+        const isReadOnlyMode = !!letterIdParam;
+
+        if (isReadOnlyMode) {
+            document.getElementById('login-wrapper').style.display = 'none';
+            const appWrap = document.getElementById('app-wrapper');
+            appWrap.classList.remove('hidden', 'opacity-0');
+            appWrap.classList.add('flex');
+            
+            document.querySelector('header').classList.add('hidden');
+            document.querySelector('section.lg\\:w-\\[450px\\]').classList.add('hidden'); 
+            
+            const main = document.querySelector('main');
+            main.classList.remove('lg:flex-row');
+            main.classList.add('bg-gray-100', 'dark:bg-darkBg', 'justify-center');
+            
+            const preview = document.querySelector('.preview-container');
+            preview.classList.add('w-full', 'max-w-4xl', 'mx-auto');
+            
+            document.getElementById('read-only-controls').classList.remove('hidden');
+
+            getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', letterIdParam))
+            .then(snap => {
+                if(snap.exists()) {
+                    applyState(snap.data().data);
+                } else {
+                    document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-gray-500 font-bold text-xl mt-20">Letter not found or has been removed.</div>';
+                    document.getElementById('read-only-controls').classList.add('hidden');
+                }
+            }).catch(err => {
+                console.error(err);
+                document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-red-500 font-bold text-xl mt-20">Access Denied. Check Firestore Rules.</div>';
+                document.getElementById('read-only-controls').classList.add('hidden');
+            });
+        }
+
+        async function fetchNextRefNumber() {
+            if (!currentUser) return;
+            try {
+                const counterRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'counters', `ref_${currentYear}`);
+                const counterSnap = await getDoc(counterRef);
+                if (counterSnap.exists()) {
+                    expectedNextCount = (counterSnap.data().current || 0) + 1;
+                } else {
+                    expectedNextCount = 1;
+                }
+                const formattedCount = String(expectedNextCount).padStart(3, '0');
+                inputs.ref.value = `FD-${currentYear}/${formattedCount}`;
+                updatePreview();
+            } catch (err) {
+                console.error("Failed to fetch next ref number:", err);
+            }
+        }
 
         let historyStack = [];
         let historyIndex = -1;
         let isUndoRedoAction = false;
+        let historyTimeout;
 
-        function saveStateToHistory() {
+        function saveStateToHistory(force = false) {
             if (isUndoRedoAction) return;
-            const stateStr = inputs.body.value;
-            if (historyIndex >= 0 && historyStack[historyIndex] === stateStr) return;
             
-            historyStack = historyStack.slice(0, historyIndex + 1);
-            historyStack.push(stateStr);
-            if (historyStack.length > 50) historyStack.shift();
-            else historyIndex++;
+            const executeSave = () => {
+                const stateStr = JSON.stringify(getCurrentState());
+
+                if (historyIndex >= 0 && historyStack[historyIndex] === stateStr) return;
+                
+                historyStack = historyStack.slice(0, historyIndex + 1);
+                historyStack.push(stateStr);
+                if (historyStack.length > 50) historyStack.shift();
+                else historyIndex++;
+            };
+
+            if (force) {
+                clearTimeout(historyTimeout);
+                executeSave();
+            } else {
+                clearTimeout(historyTimeout);
+                historyTimeout = setTimeout(executeSave, 500);
+            }
         }
 
         window.undo = function() {
             if (historyIndex > 0) {
                 isUndoRedoAction = true;
                 historyIndex--;
-                inputs.body.value = historyStack[historyIndex];
-                updatePreview();
+                applyState(JSON.parse(historyStack[historyIndex]));
                 isUndoRedoAction = false;
             }
         };
@@ -480,10 +700,37 @@
             if (historyIndex < historyStack.length - 1) {
                 isUndoRedoAction = true;
                 historyIndex++;
-                inputs.body.value = historyStack[historyIndex];
-                updatePreview();
+                applyState(JSON.parse(historyStack[historyIndex]));
                 isUndoRedoAction = false;
             }
+        };
+
+        window.resetLetter = async function(force = false) {
+            if(!force && !confirm("Are you sure you want to reset the letter? This will clear all your current content.")) return;
+            inputs.template.value = "blank";
+            inputs.toName.value = "";
+            inputs.toEmail.value = "";
+            inputs.toCompany.value = "";
+            inputs.toAddress.value = "";
+            inputs.subject.value = "";
+            inputs.body.value = "";
+            inputs.partnerSignName.value = "";
+            inputs.partnerSignRole.value = "";
+            inputs.partnerLogoUrl.value = "";
+            inputs.partnerSignUrl.value = "";
+            
+            customVars = {};
+            currentLetterId = crypto.randomUUID();
+            renderCustomVariables();
+
+            if (currentUser) {
+                await fetchNextRefNumber();
+            } else {
+                inputs.ref.value = `FD-${currentYear}/001`;
+            }
+            updatePreview();
+            saveStateToHistory(true);
+            if (!force) showToast("Letter reset to blank.", "success");
         };
 
         function getDrafts() {
@@ -494,11 +741,8 @@
             const name = prompt("Enter a name for this draft checkpoint (e.g., 'Offer Letter V1'):");
             if (!name) return;
             
-            const state = {};
-            Object.keys(inputs).forEach(key => state[key] = inputs[key].value);
-
             const draftsData = getDrafts();
-            draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: state });
+            draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: getCurrentState() });
             localStorage.setItem('letter_drafts', JSON.stringify(draftsData));
             updateDraftsDropdown();
             showToast("Local draft saved successfully!", "success");
@@ -509,11 +753,8 @@
             const draftsData = getDrafts();
             const draft = draftsData.list.find(d => d.id === id);
             if (draft) {
-                Object.keys(inputs).forEach(key => {
-                    if (inputs[key] && draft.data[key] !== undefined) inputs[key].value = draft.data[key];
-                });
-                updatePreview();
-                saveStateToHistory();
+                applyState(draft.data);
+                saveStateToHistory(true);
                 showToast("Draft loaded successfully.", "success");
             }
             document.getElementById('input-drafts').value = ""; 
@@ -522,7 +763,7 @@
         function updateDraftsDropdown() {
             const draftsData = getDrafts();
             const select = document.getElementById('input-drafts');
-            select.innerHTML = '<option value="">-- Load a Saved Draft --</option>';
+            select.innerHTML = '<option value="">-- Load a Local Draft --</option>';
             draftsData.list.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = d.id;
@@ -532,18 +773,14 @@
         }
 
         function autoSave() {
-            const state = {};
-            Object.keys(inputs).forEach(key => state[key] = inputs[key].value);
-            localStorage.setItem('letter_autosave', JSON.stringify(state));
+            localStorage.setItem('letter_autosave', JSON.stringify(getCurrentState()));
         }
 
         function loadAutoSave() {
             try {
                 const saved = JSON.parse(localStorage.getItem('letter_autosave'));
                 if (saved) {
-                    Object.keys(inputs).forEach(key => {
-                        if (inputs[key] && saved[key] !== undefined) inputs[key].value = saved[key];
-                    });
+                    applyState(saved);
                 }
             } catch(e) {}
         }
@@ -593,7 +830,7 @@
             
             html = html.replace(/==([^=]+)==/g, '<mark class="bg-brandAccent/40 px-1.5 py-0.5 rounded font-semibold text-gray-900">$1</mark>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/_([^_]+)_/g, '<em>$1</em>'); 
+            html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
             
             html = html.replace(/\[center\]([\s\S]*?)\[\/center\]/g, '<div class="text-center">$1</div>');
             html = html.replace(/\[right\]([\s\S]*?)\[\/right\]/g, '<div class="text-right">$1</div>');
@@ -677,7 +914,7 @@
             }
             
             updatePreview();
-            saveStateToHistory(); 
+            saveStateToHistory(true); 
         };
 
         window.updatePreview = function() {
@@ -711,10 +948,14 @@
             let processedBodyText = state.body;
             const variableMap = {
                 '[Recipient Name]': inputs.toName.value.trim() || '__________',
-                '[Company Name]': inputs.toCompany.value.trim() || '__________',
+                '[Company Name]': 'Falconix Digital',
                 '[Partner Name]': inputs.partnerSignName.value.trim() || '__________',
                 '[Date]': inputs.date.value ? new Date(inputs.date.value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '__________'
             };
+
+            for (let key in customVars) {
+                variableMap[key] = customVars[key].trim() || '__________';
+            }
 
             for (const [tag, actualValue] of Object.entries(variableMap)) {
                 const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
@@ -723,6 +964,14 @@
 
             const pages = (processedBodyText || '').split(/(?:\r?\n)?---(?:\r?\n)?/);
             
+            const staticQrCodeUrl = "https://i.ibb.co/4RpHrqMH/FD.jpg";
+            
+            const shareUrl = window.location.origin + window.location.pathname + '?letterId=' + currentLetterId;
+            const qr = qrcode(0, 'M');
+            qr.addData(shareUrl);
+            qr.make();
+            const dynamicQrCodeUrl = qr.createDataURL(4, 0);
+
             let html = '';
 
             pages.forEach((pageContent, index) => {
@@ -818,10 +1067,25 @@
                         ` : ''}
                     </div>
 
-                    <div class="px-12 py-6 bg-darkBg flex justify-between items-center text-[10px] text-gray-400 relative z-10">
+                    <div class="px-12 py-5 bg-darkBg flex justify-between items-center text-[10px] text-gray-400 relative z-10">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandDark via-brand to-brandAccent"></div>
-                        <p>Address: ${state.agencyAddress}</p>
-                        <p class="font-medium text-brandAccent tracking-widest uppercase">
+                        <div class="flex items-center gap-3">
+                            <div class="flex gap-2">
+                                <div class="flex flex-col items-center justify-center">
+                                    <img src="${staticQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Website QR" crossorigin="anonymous">
+                                    <span class="text-[6px] font-bold mt-1 text-gray-400 uppercase tracking-widest">Website</span>
+                                </div>
+                                <div class="flex flex-col items-center justify-center">
+                                    <img src="${dynamicQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Verify QR">
+                                    <span class="text-[6px] font-bold mt-1 text-brandAccent uppercase tracking-widest">Verify</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center border-l border-gray-700 pl-3 h-10">
+                                <span class="font-bold text-gray-300 mb-0.5 text-[11px]">Falconix Digital</span>
+                                <span>Address: ${state.agencyAddress}</span>
+                            </div>
+                        </div>
+                        <p class="font-medium text-brandAccent tracking-widest uppercase text-right">
                             ${isLast ? 'CONFIDENTIAL' : `PAGE ${index + 1} OF ${pages.length}`}
                         </p>
                     </div>
@@ -835,26 +1099,101 @@
         Object.values(inputs).forEach(input => {
             input.addEventListener('input', () => {
                 updatePreview();
-                if(input.id === 'input-body') saveStateToHistory();
+                saveStateToHistory();
             });
         });
 
+        let customTemplatesList = [];
+        let unsubscribeCustomTemplates = null;
+
+        function renderTemplateDropdown() {
+            const select = inputs.template;
+            let html = `
+                <optgroup label="Standard Templates">
+                    <option value="blank">Blank Document</option>
+                    <option value="offer">Job Offer Letter</option>
+                    <option value="telecaller_offer">Telecaller Offer Letter</option>
+                    <option value="telecaller_selection">Telecaller Selection</option>
+                    <option value="telecaller_tnc">Telecaller T&C Agreement</option>
+                    <option value="collab">Business Collaboration Proposal</option>
+                    <option value="nda">Non-Disclosure Agreement</option>
+                    <option value="warning">Formal Warning Letter</option>
+                    <option value="termination">Termination Letter</option>
+                    <option value="apology">Formal Apology</option>
+                    <option value="onboarding">Client Onboarding</option>
+                </optgroup>
+            `;
+            if (customTemplatesList.length > 0) {
+                html += `<optgroup label="Custom Cloud Templates">`;
+                customTemplatesList.forEach(t => {
+                    html += `<option value="custom_${t.id}">${t.name}</option>`;
+                });
+                html += `</optgroup>`;
+            }
+            
+            const currentVal = select.value;
+            select.innerHTML = html;
+            if (select.querySelector(`option[value="${currentVal}"]`)) {
+                select.value = currentVal;
+            } else {
+                select.value = 'blank';
+            }
+        }
+
+        window.saveAsCustomTemplate = async function() {
+            if (!currentUser) return showToast("You must be logged in to save templates.", "error");
+            const name = prompt("Enter a name for this Custom Template:");
+            if (!name) return;
+
+            const docId = crypto.randomUUID();
+            const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', docId);
+
+            await setDoc(docRef, {
+                name: name.trim(),
+                subject: inputs.subject.value.trim(),
+                body: inputs.body.value,
+                createdAt: Date.now(),
+                createdBy: currentUser.email
+            });
+
+            showToast("Custom template saved to cloud!", "success");
+        };
+
+        window.deleteCustomTemplate = async function(id) {
+            if (!confirm("Are you sure you want to delete this custom template?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', id));
+                showToast("Template deleted.", "success");
+            } catch(e) {
+                showToast("Failed to delete template.", "error");
+            }
+        };
+
         inputs.template.addEventListener('change', (e) => {
             const val = e.target.value;
-            if (templates[val]) {
+            if (val.startsWith('custom_')) {
+                const tplId = val.replace('custom_', '');
+                const tpl = customTemplatesList.find(t => t.id === tplId);
+                if (tpl) {
+                    inputs.subject.value = tpl.subject;
+                    inputs.body.value = tpl.body;
+                    updatePreview();
+                    saveStateToHistory(true);
+                }
+            } else if (templates[val]) {
                 inputs.subject.value = templates[val].subject;
                 inputs.body.value = templates[val].body;
                 updatePreview();
-                saveStateToHistory();
+                saveStateToHistory(true);
             }
         });
 
-        document.getElementById('btn-download').addEventListener('click', () => {
+        window.executePDFDownload = function(btnId) {
             const wrapper = document.getElementById('document-wrapper');
             const previewContainer = document.querySelector('.preview-container');
             const mainContent = document.querySelector('main');
             const body = document.body;
-            const btn = document.getElementById('btn-download');
+            const btn = document.getElementById(btnId);
             const originalHtml = btn.innerHTML;
             
             btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating PDF...`;
@@ -906,7 +1245,7 @@
                     btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Downloaded!`;
                     setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
                 }).catch(err => {
-                    console.error("PDF Generation Error: ", err);
+                    console.error(err);
                     previewContainer.style.overflow = origPreviewOverflow;
                     mainContent.style.overflow = origMainOverflow;
                     body.classList.add('h-screen');
@@ -922,7 +1261,275 @@
                     btn.disabled = false;
                 });
             }, 100);
+        };
+
+        document.getElementById('btn-download').addEventListener('click', () => executePDFDownload('btn-download'));
+        document.getElementById('btn-ro-download').addEventListener('click', () => executePDFDownload('btn-ro-download'));
+
+        document.getElementById('btn-email').addEventListener('click', () => {
+            const recipientEmail = inputs.toEmail.value.trim();
+            if (!recipientEmail) {
+                showToast("Please enter a Recipient Email address.", "error");
+                inputs.toEmail.focus();
+                return;
+            }
+
+            const wrapper = document.getElementById('document-wrapper');
+            const previewContainer = document.querySelector('.preview-container');
+            const mainContent = document.querySelector('main');
+            const body = document.body;
+            
+            const btn = document.getElementById('btn-email');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Preparing...`;
+            btn.disabled = true;
+
+            const origPreviewOverflow = previewContainer.style.overflow;
+            const origMainOverflow = mainContent.style.overflow;
+            
+            previewContainer.style.overflow = 'visible';
+            mainContent.style.overflow = 'visible';
+            body.classList.remove('h-screen');
+            body.style.height = 'auto';
+            
+            wrapper.classList.remove('gap-8', 'pb-8');
+            
+            const pages = wrapper.querySelectorAll('.a4-page');
+            pages.forEach(page => {
+                page.classList.remove('shadow-2xl');
+                page.style.boxShadow = 'none';
+                page.style.margin = '0';
+            });
+            const refText = inputs.ref.value.trim() || 'No-Ref';
+            const subjectText = inputs.subject.value.trim() || 'Document';
+
+            const combinedName = `${refText}_${subjectText}`;
+            const safeName = combinedName.replace(/[^a-zA-Z0-9\-]/g, '_');
+
+            const opt = {
+                margin:       0,
+                filename:     `${safeName}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'css', before: '.page-break-before' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(wrapper).outputPdf('datauristring').then((pdfBase64) => {
+                    previewContainer.style.overflow = origPreviewOverflow;
+                    mainContent.style.overflow = origMainOverflow;
+                    body.classList.add('h-screen');
+                    body.style.height = '';
+                    wrapper.classList.add('gap-8', 'pb-8');
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
+
+                    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Sending...`;
+
+                    emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+
+                    const templateParams = {
+                        to_name: inputs.toName.value.trim() || 'Client',
+                        to_email: recipientEmail,
+                        subject: subjectText,
+                        message: "Please find the attached document from Falconix Digital.",
+                        my_attachment: pdfBase64 
+                    };
+
+                    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+                        .then(function(response) {
+                           showToast("Email sent successfully!", "success");
+                           btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Sent!`;
+                           setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
+                        }, function(error) {
+                           console.error(error);
+                           showToast("EmailJS error. Ensure your API keys are set in the code.", "error");
+                           btn.innerHTML = originalHtml; btn.disabled = false;
+                        });
+                        
+                }).catch(err => {
+                    console.error(err);
+                    previewContainer.style.overflow = origPreviewOverflow;
+                    mainContent.style.overflow = origMainOverflow;
+                    body.classList.add('h-screen');
+                    body.style.height = '';
+                    wrapper.classList.add('gap-8', 'pb-8');
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
+                    showToast("Failed to generate PDF for email.", "error");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+            }, 100);
         });
+
+        function splitCSV(line) {
+            const result = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i+1] === '"') {
+                        cur += '"'; i++; 
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(cur);
+                    cur = '';
+                } else {
+                    cur += char;
+                }
+            }
+            result.push(cur);
+            return result;
+        }
+
+        window.processBulk = async function(actionType) { 
+            const fileInput = document.getElementById('bulk-csv-file');
+            if(!fileInput.files.length) return showToast("Please select a CSV file.", "error");
+            
+            const file = fileInput.files[0];
+            const text = await file.text();
+            
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+            if(lines.length < 2) return showToast("CSV must have a header row and at least one data row.", "error");
+            
+            const headers = splitCSV(lines[0]).map(h => h.trim().replace(/^"|"$/g, ''));
+            const dataRows = [];
+            for(let i=1; i<lines.length; i++) {
+                const row = splitCSV(lines[i]);
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h] = row[idx] ? row[idx].replace(/^"|"$/g, '').trim() : '';
+                });
+                dataRows.push(obj);
+            }
+            
+            document.getElementById('bulk-progress-container').classList.remove('hidden');
+            const progressText = document.getElementById('bulk-progress-text');
+            const progressBar = document.getElementById('bulk-progress-bar');
+            
+            const btnDL = document.getElementById('btn-bulk-download');
+            const btnEM = document.getElementById('btn-bulk-email');
+            btnDL.disabled = true; btnEM.disabled = true;
+
+            let zip;
+            if(actionType === 'zip') {
+                zip = new JSZip();
+            }
+
+            const originalState = getCurrentState();
+
+            for(let i=0; i<dataRows.length; i++) {
+                const row = dataRows[i];
+                progressText.innerText = `Processing ${i+1} of ${dataRows.length} (${row['Recipient Name'] || 'Letter '+ (i+1)})...`;
+                progressBar.style.width = `${((i+1)/dataRows.length)*100}%`;
+                
+                currentLetterId = crypto.randomUUID();
+                
+                if(row['Recipient Name']) inputs.toName.value = row['Recipient Name'];
+                if(row['Recipient Email']) inputs.toEmail.value = row['Recipient Email'];
+                if(row['Date']) inputs.date.value = row['Date'];
+                
+                headers.forEach(h => {
+                    if(!['Recipient Name', 'Recipient Email', 'Date'].includes(h)) {
+                        const tag = h.startsWith('[') ? h : `[${h}]`;
+                        customVars[tag] = row[h];
+                    }
+                });
+                
+                renderCustomVariables();
+                updatePreview();
+                
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
+                await setDoc(docRef, {
+                    data: getCurrentState(),
+                    type: inputs.template.value || 'blank',
+                    subject: inputs.subject.value.trim() || 'Bulk Document',
+                    recipient: inputs.toName.value.trim() || 'Unknown Recipient',
+                    ref: inputs.ref.value.trim(),
+                    createdAt: Date.now()
+                });
+                
+                await new Promise(r => setTimeout(r, 200)); 
+                
+                const wrapper = document.getElementById('document-wrapper');
+                const pages = wrapper.querySelectorAll('.a4-page');
+                pages.forEach(page => {
+                    page.classList.remove('shadow-2xl');
+                    page.style.boxShadow = 'none';
+                    page.style.margin = '0';
+                });
+
+                const safeName = (row['Recipient Name'] || `Letter_${i+1}`).replace(/[^a-zA-Z0-9\-]/g, '_');
+                const opt = {
+                    margin:       0,
+                    filename:     `${safeName}.pdf`,
+                    image:        { type: 'jpeg', quality: 1 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: 'css', before: '.page-break-before' }
+                };
+
+                if(actionType === 'zip') {
+                    const pdfBuffer = await html2pdf().set(opt).from(wrapper).outputPdf('arraybuffer');
+                    zip.file(`${safeName}.pdf`, pdfBuffer);
+                } else if(actionType === 'email') {
+                    if(row['Recipient Email']) {
+                        const pdfBase64 = await html2pdf().set(opt).from(wrapper).outputPdf('datauristring');
+                        
+                        emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+                        const templateParams = {
+                            to_name: row['Recipient Name'] || 'Client',
+                            to_email: row['Recipient Email'],
+                            subject: inputs.subject.value,
+                            message: "Please find the attached document from Falconix Digital.",
+                            my_attachment: pdfBase64 
+                        };
+                        
+                        try {
+                            await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+                        } catch(err) {
+                            console.error(err);
+                        }
+                    }
+                }
+                
+                pages.forEach(page => {
+                    page.classList.add('shadow-2xl');
+                    page.style.boxShadow = '';
+                    page.style.margin = '0 auto';
+                });
+            }
+            
+            if(actionType === 'zip') {
+                progressText.innerText = "Zipping files...";
+                const content = await zip.generateAsync({type:"blob"});
+                
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "Bulk_Letters.zip";
+                link.click();
+            }
+            
+            progressText.innerText = "Done!";
+            showToast("Bulk processing complete!", "success");
+            setTimeout(() => {
+                document.getElementById('bulk-csv-modal').classList.add('hidden');
+                document.getElementById('bulk-progress-container').classList.add('hidden');
+                btnDL.disabled = false; btnEM.disabled = false;
+                applyState(originalState); 
+            }, 1500);
+        };
 
         let currentUser = null;
         let lettersList = [];
@@ -956,12 +1563,55 @@
                     renderCloudLetters();
                 }
             }, (error) => {
-                console.error("Database sync error:", error);
+                console.error(error);
                 showToast("Real-time database sync failed.", "error");
+            });
+
+            const tplRef = collection(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates');
+            unsubscribeCustomTemplates = onSnapshot(tplRef, (snapshot) => {
+                customTemplatesList = [];
+                snapshot.forEach(doc => {
+                    customTemplatesList.push({ id: doc.id, ...doc.data() });
+                });
+                renderTemplateDropdown();
+                
+                if (!document.getElementById('manage-templates-modal').classList.contains('hidden')) {
+                    renderManageTemplates();
+                }
             });
         }
 
+        function renderManageTemplates() {
+            const container = document.getElementById('custom-templates-container');
+            if (customTemplatesList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10">No custom templates saved yet.</div>';
+                return;
+            }
+            
+            let html = '<div class="space-y-3">';
+            customTemplatesList.forEach(t => {
+                html += `
+                    <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-gray-900 dark:text-white">${t.name}</h4>
+                            <p class="text-xs text-gray-500 mt-1">Saved on ${formatDate(t.createdAt)}</p>
+                        </div>
+                        <button onclick="deleteCustomTemplate('${t.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        document.querySelector('[title="Manage Templates"]').addEventListener('click', () => {
+            document.getElementById('manage-templates-modal').classList.remove('hidden');
+            renderManageTemplates();
+        });
+
         onAuthStateChanged(auth, (user) => {
+            if (isReadOnlyMode) return; 
+
             if (user && user.email === ALLOWED_EMAIL) {
                 currentUser = user;
                 
@@ -974,15 +1624,18 @@
                     
                     loadAutoSave();
                     updateDraftsDropdown();
-                    saveStateToHistory(); 
+                    saveStateToHistory(true); 
                     updatePreview();
                     setupDatabaseListener();
+                    fetchNextRefNumber();
                 }, 500);
 
             } else {
                 currentUser = null;
                 if (unsubscribeLetters) unsubscribeLetters();
+                if (unsubscribeCustomTemplates) unsubscribeCustomTemplates();
                 lettersList = [];
+                customTemplatesList = [];
                 
                 appWrapper.classList.add('opacity-0');
                 setTimeout(() => {
@@ -1006,7 +1659,7 @@
             try {
                 await signInWithPopup(auth, provider);
             } catch (err) {
-                console.error("Login failed", err);
+                console.error(err);
                 loginError.innerText = "Login process was cancelled or failed.";
                 loginError.classList.remove('hidden');
             } finally {
@@ -1030,12 +1683,10 @@
             btnSaveCloud.disabled = true;
 
             try {
-                const state = {};
-                Object.keys(inputs).forEach(key => state[key] = inputs[key].value);
+                const state = getCurrentState();
                 const letterType = inputs.template.value || 'blank';
                 
-                const docId = crypto.randomUUID();
-                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', docId);
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
 
                 await setDoc(docRef, {
                     data: state,
@@ -1046,16 +1697,42 @@
                     createdAt: Date.now()
                 });
 
+                const formattedCount = String(expectedNextCount).padStart(3, '0');
+                const expectedRef = `FD-${currentYear}/${formattedCount}`;
+                if (inputs.ref.value.trim() === expectedRef) {
+                    const counterRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'counters', `ref_${currentYear}`);
+                    await setDoc(counterRef, { current: expectedNextCount }, { merge: true });
+                    expectedNextCount++;
+                }
+
                 btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Saved to Cloud!';
                 showToast("Letter saved securely to the cloud.", "success");
+                
+                await window.resetLetter(true);
+                
                 setTimeout(() => { btnSaveCloud.innerHTML = originalHtml; btnSaveCloud.disabled = false; }, 2000);
             } catch (error) {
-                console.error("Error saving document: ", error);
+                console.error(error);
                 showToast("Failed to save to cloud.", "error");
                 btnSaveCloud.innerHTML = originalHtml;
                 btnSaveCloud.disabled = false;
             }
         });
+
+        window.copyShareLink = function(id) {
+            const link = window.location.origin + window.location.pathname + '?letterId=' + id;
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Share link copied to clipboard!", "success");
+            } catch (err) {
+                showToast("Failed to copy link.", "error");
+            }
+            document.body.removeChild(textArea);
+        };
 
         function renderCloudLetters() {
             cloudContainer.innerHTML = '';
@@ -1080,10 +1757,17 @@
 
             Object.keys(grouped).forEach(type => {
                 const groupLetters = grouped[type];
+                let label = typeLabels[type] || type;
+                if (type.startsWith('custom_')) {
+                    const tplId = type.replace('custom_', '');
+                    const tpl = customTemplatesList.find(t => t.id === tplId);
+                    label = tpl ? tpl.name : 'Custom Template';
+                }
+                
                 html += `
                     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
                         <div class="bg-brand/10 dark:bg-brand/20 px-4 py-3 border-b border-brand/20">
-                            <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${typeLabels[type] || type} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
+                            <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${label} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
                         </div>
                         <div class="divide-y divide-gray-100 dark:divide-gray-800">
                 `;
@@ -1091,13 +1775,14 @@
                 groupLetters.forEach(letter => {
                     const dataStr = encodeURIComponent(JSON.stringify(letter.data));
                     html += `
-                        <div class="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <div>
                                 <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
                                 <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
                                 <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="copyShareLink('${letter.id}')" class="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"><i class="ph ph-link"></i> Copy Link</button>
                                 <button onclick="loadCloudLetter('${dataStr}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
                                 <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
                             </div>
@@ -1124,11 +1809,8 @@
         window.loadCloudLetter = function(encodedData) {
             try {
                 const data = JSON.parse(decodeURIComponent(encodedData));
-                Object.keys(inputs).forEach(key => {
-                    if (inputs[key] && data[key] !== undefined) inputs[key].value = data[key];
-                });
-                updatePreview();
-                saveStateToHistory();
+                applyState(data);
+                saveStateToHistory(true);
                 cloudModal.classList.add('hidden');
                 showToast("Cloud letter loaded successfully.", "success");
             } catch (e) {
