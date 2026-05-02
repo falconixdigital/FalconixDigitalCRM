@@ -175,6 +175,29 @@
             </div>
         </div>
 
+        <!-- NEW: Signature Pad Modal -->
+        <div id="signature-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 flex flex-col items-center relative border border-gray-200 dark:border-gray-800">
+                <button onclick="closeSignatureModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"><i class="ph ph-x text-xl"></i></button>
+                <h3 class="font-bold text-xl mb-1 text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-signature text-brand"></i> Client E-Signature</h3>
+                <p class="text-sm text-gray-500 mb-6 text-center">Please draw your signature below to legally acknowledge this document.</p>
+                
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 w-full aspect-[2/1] touch-none relative">
+                    <canvas id="signature-pad" class="w-full h-full cursor-crosshair touch-none"></canvas>
+                    <div class="absolute bottom-2 right-4 pointer-events-none opacity-20">
+                        <i class="ph-fill ph-pen-nib text-4xl text-gray-500"></i>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6 w-full">
+                    <button onclick="clearSignature()" class="flex-1 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl font-semibold transition-colors">Clear</button>
+                    <button id="btn-save-signature" class="flex-[2] py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors flex justify-center items-center gap-2 shadow-lg shadow-green-500/20">
+                        <i class="ph ph-check-circle text-lg"></i> Submit Signature
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
             
             <section class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full">
@@ -324,11 +347,11 @@
                     <hr class="border-gray-200 dark:border-gray-800">
 
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Partner Details (Optional)</label>
-                        <p class="text-[10px] text-gray-500 mb-2 leading-tight">Fill these to add a second logo and signature for collaboration documents.</p>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Client / Partner E-Signature</label>
+                        <p class="text-[10px] text-gray-500 mb-2 leading-tight">These fields are updated automatically when a client signs via their secure link, or you can fill them manually.</p>
                         
-                        <input type="text" id="input-partner-sign-name" placeholder="Partner Signatory Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="text" id="input-partner-sign-role" placeholder="Partner Title / Company" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-partner-sign-name" placeholder="Client Signatory Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-partner-sign-role" placeholder="Client Title / Company" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
                         
                         <div class="pt-2">
                             <label class="block text-[10px] text-gray-500 mb-1">Partner Logo (Image URL or Upload)</label>
@@ -341,9 +364,9 @@
                             </div>
                         </div>
                         <div class="pt-2">
-                            <label class="block text-[10px] text-gray-500 mb-1">Partner Signature (Image URL or Upload)</label>
+                            <label class="block text-[10px] text-gray-500 mb-1">E-Signature Image Data</label>
                             <div class="flex gap-2">
-                                <input type="url" id="input-partner-sign-url" placeholder="https://example.com/partner-sig.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <input type="url" id="input-partner-sign-url" placeholder="Waiting for client to sign..." class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-500 dark:text-gray-400 font-mono text-[10px]">
                                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
                                     <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
                                     <input type="file" id="file-partner-sign" class="hidden" accept="image/*">
@@ -373,8 +396,11 @@
                 <div id="document-wrapper" class="flex flex-col gap-8 pb-8">
                 </div>
                 
-                <div id="read-only-controls" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[150] hidden">
-                    <button id="btn-ro-download" class="bg-brand hover:bg-brandDark text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20">
+                <div id="read-only-controls" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[150] hidden flex gap-3">
+                    <button id="btn-ro-sign" onclick="openSignatureModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
+                        <i class="ph ph-signature text-xl"></i> Sign Document
+                    </button>
+                    <button id="btn-ro-download" class="bg-brand hover:bg-brandDark text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
                         <i class="ph ph-download-simple text-xl"></i> Download PDF
                     </button>
                 </div>
@@ -386,7 +412,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyClR_nY11CdpWKLmMy7TgTCKtS26s_h24g",
@@ -604,6 +630,165 @@
             updatePreview();
         }
 
+        // --- NEW: E-Signature Pad Logic ---
+        const sigCanvas = document.getElementById('signature-pad');
+        const sigCtx = sigCanvas.getContext('2d');
+        let isDrawing = false;
+
+        window.openSignatureModal = async function() {
+            const recipientEmail = inputs.toEmail.value.trim().toLowerCase();
+            
+            if (!recipientEmail) {
+                showToast("Security Error: No recipient email specified for this document.", "error");
+                return;
+            }
+
+            const isAuthorized = (email) => {
+                return email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase();
+            };
+
+            // Trigger Google Login if not logged in, or if logged in with the wrong account
+            if (!currentUser || !isAuthorized(currentUser.email)) {
+                if (currentUser) {
+                    await signOut(auth);
+                    currentUser = null;
+                }
+                
+                const btn = document.getElementById('btn-ro-sign');
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Verifying...`;
+                btn.disabled = true;
+                
+                try {
+                    const result = await signInWithPopup(auth, provider);
+                    currentUser = result.user;
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    
+                    if (!isAuthorized(currentUser.email)) {
+                        await signOut(auth);
+                        currentUser = null;
+                        showToast(`Access Denied! You must log in as: ${recipientEmail}`, "error");
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Login failed", err);
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    showToast("Identity verification cancelled or failed.", "error");
+                    return;
+                }
+            }
+
+            // Identity Verified! Proceed to open modal
+            const modal = document.getElementById('signature-modal');
+            modal.classList.remove('hidden');
+            
+            // Resize canvas to properly map pixels for drawing
+            const rect = sigCanvas.parentElement.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            sigCanvas.height = rect.height;
+            
+            sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080'; // Dark blue signature ink
+            sigCtx.lineWidth = 3;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+            
+            clearSignature();
+        };
+
+        window.closeSignatureModal = function() {
+            document.getElementById('signature-modal').classList.add('hidden');
+        };
+
+        window.clearSignature = function() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        };
+
+        function getMousePos(evt) {
+            const rect = sigCanvas.getBoundingClientRect();
+            const clientX = evt.clientX || (evt.touches && evt.touches[0].clientX);
+            const clientY = evt.clientY || (evt.touches && evt.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        const startDraw = (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getMousePos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(pos.x, pos.y);
+        };
+
+        const draw = (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+        };
+
+        const stopDraw = (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                sigCtx.stroke();
+                sigCtx.closePath();
+                isDrawing = false;
+            }
+        };
+
+        sigCanvas.addEventListener('mousedown', startDraw);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', stopDraw);
+        sigCanvas.addEventListener('mouseout', stopDraw);
+        sigCanvas.addEventListener('touchstart', startDraw, {passive: false});
+        sigCanvas.addEventListener('touchmove', draw, {passive: false});
+        sigCanvas.addEventListener('touchend', stopDraw, {passive: false});
+
+        document.getElementById('btn-save-signature').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-save-signature');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Saving...`;
+            btn.disabled = true;
+
+            const sigDataUrl = sigCanvas.toDataURL('image/png');
+            
+            // Automatically grab the recipient's name to use as the signature name
+            const signerName = inputs.toName.value.trim() || 'Client Signature';
+            
+            inputs.partnerSignUrl.value = sigDataUrl;
+            if(!inputs.partnerSignName.value.trim()) {
+                inputs.partnerSignName.value = signerName;
+            }
+
+            try {
+                // Instantly update Firebase with the new signature
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
+                await updateDoc(docRef, {
+                    "data.partnerSignUrl": sigDataUrl,
+                    "data.partnerSignName": inputs.partnerSignName.value
+                });
+
+                updatePreview();
+                closeSignatureModal();
+                showToast("Signature attached successfully!", "success");
+                
+                // Hide the sign button since it is now signed
+                document.getElementById('btn-ro-sign').classList.add('hidden');
+                
+            } catch (err) {
+                console.error("Signature Save Error: ", err);
+                showToast("Failed to save signature. Check Firestore Rules.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+
         const urlParams = new URLSearchParams(window.location.search);
         const letterIdParam = urlParams.get('letterId');
         const isReadOnlyMode = !!letterIdParam;
@@ -629,7 +814,13 @@
             getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', letterIdParam))
             .then(snap => {
                 if(snap.exists()) {
-                    applyState(snap.data().data);
+                    const snapData = snap.data().data;
+                    applyState(snapData);
+                    
+                    // Hide the "Sign" button if the document already has a signature
+                    if (snapData.partnerSignUrl && snapData.partnerSignUrl.trim() !== '') {
+                        document.getElementById('btn-ro-sign').classList.add('hidden');
+                    }
                 } else {
                     document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-gray-500 font-bold text-xl mt-20">Letter not found or has been removed.</div>';
                     document.getElementById('read-only-controls').classList.add('hidden');
@@ -975,12 +1166,10 @@
                 const isFirst = index === 0;
                 const isLast = index === pages.length - 1;
 
-                // Fix: Parse layout formatting FIRST before injecting the HTML span tags
                 let parsedContent = parseFormatting(pageContent);
                 
                 for (const [tag, actualValue] of Object.entries(variableMap)) {
                     const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
-                    // Safely escape the actual user input to prevent layout breaks
                     const safeValue = actualValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                     parsedContent = parsedContent.replace(regex, `<span class="bg-brandAccent/10 text-brandDark dark:text-brandAccent rounded px-1 font-semibold">${safeValue}</span>`);
                 }
@@ -1059,7 +1248,7 @@
                                     <div class="mb-2 relative w-max h-20 flex items-end">
                                         ${state.partnerSignUrl 
                                             ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature" crossorigin="anonymous">` 
-                                            : `<p class="font-signature text-4xl text-blue-900 transform -rotate-3 opacity-90 pb-2 pr-4">${state.partnerSignName || 'Partner Name'}</p>`}
+                                            : `<div class="h-20 w-40"></div>`}
                                         ${state.partnerLogoUrl ? `
                                         <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
                                             <img src="${state.partnerLogoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Partner Seal" crossorigin="anonymous">
@@ -1645,7 +1834,10 @@
         });
 
         onAuthStateChanged(auth, (user) => {
-            if (isReadOnlyMode) return; 
+            if (isReadOnlyMode) {
+                currentUser = user; // Track the logged-in client in read-only mode
+                return; 
+            }
 
             if (user && user.email === ALLOWED_EMAIL) {
                 currentUser = user;
@@ -1741,14 +1933,6 @@
                     createdAt: Date.now()
                 });
 
-                const formattedCount = String(expectedNextCount).padStart(3, '0');
-                const expectedRef = `FD-${currentYear}/${formattedCount}`;
-                if (inputs.ref.value.trim() === expectedRef) {
-                    const counterRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'counters', `ref_${currentYear}`);
-                    await setDoc(counterRef, { current: expectedNextCount }, { merge: true });
-                    expectedNextCount++;
-                }
-
                 btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Saved to Cloud!';
                 showToast("Letter saved securely to the cloud.", "success");
                 
@@ -1766,11 +1950,9 @@
         window.copyShareLink = function(id) {
             const link = window.location.origin + window.location.pathname + '?letterId=' + id;
             
-            // Create a robust, invisible textarea
             const textArea = document.createElement("textarea");
             textArea.value = link;
             
-            // Prevent scrolling to bottom of page in certain browsers and ensure it's invisible
             textArea.style.position = "fixed";
             textArea.style.top = "0";
             textArea.style.left = "0";
@@ -1784,7 +1966,6 @@
             
             document.body.appendChild(textArea);
             
-            // Ensure the textarea is focused and the text is fully selected
             textArea.focus();
             textArea.select();
             
@@ -1800,7 +1981,6 @@
                 showToast("Failed to copy link.", "error");
             }
             
-            // Clean up the temporary element
             document.body.removeChild(textArea);
         };
 
@@ -1844,10 +2024,15 @@
                 
                 groupLetters.forEach(letter => {
                     const dataStr = encodeURIComponent(JSON.stringify(letter.data));
+                    const isSigned = letter.data && letter.data.partnerSignUrl && letter.data.partnerSignUrl.length > 50;
+                    
                     html += `
                         <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <div>
-                                <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
+                                    ${isSigned ? `<span class="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Signed</span>` : ''}
+                                </div>
                                 <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
                                 <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
                             </div>
