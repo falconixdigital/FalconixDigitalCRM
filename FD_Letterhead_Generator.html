@@ -948,7 +948,6 @@
 
             autoSave(); 
 
-            let processedBodyText = state.body;
             const variableMap = {
                 '[Recipient Name]': inputs.toName.value.trim() || '__________',
                 '[Company Name]': 'Falconix Digital',
@@ -960,12 +959,7 @@
                 variableMap[key] = customVars[key].trim() || '__________';
             }
 
-            for (const [tag, actualValue] of Object.entries(variableMap)) {
-                const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
-                processedBodyText = processedBodyText.replace(regex, `<span class="bg-brandAccent/10 text-brandDark dark:text-brandAccent rounded px-1 font-semibold">${actualValue}</span>`);
-            }
-
-            const pages = (processedBodyText || '').split(/(?:\r?\n)?---(?:\r?\n)?/);
+            const pages = (state.body || '').split(/(?:\r?\n)?---(?:\r?\n)?/);
             
             const staticQrCodeUrl = "https://i.ibb.co/4RpHrqMH/FD.jpg";
             
@@ -980,6 +974,16 @@
             pages.forEach((pageContent, index) => {
                 const isFirst = index === 0;
                 const isLast = index === pages.length - 1;
+
+                // Fix: Parse layout formatting FIRST before injecting the HTML span tags
+                let parsedContent = parseFormatting(pageContent);
+                
+                for (const [tag, actualValue] of Object.entries(variableMap)) {
+                    const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
+                    // Safely escape the actual user input to prevent layout breaks
+                    const safeValue = actualValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    parsedContent = parsedContent.replace(regex, `<span class="bg-brandAccent/10 text-brandDark dark:text-brandAccent rounded px-1 font-semibold">${safeValue}</span>`);
+                }
 
                 html += `
                 <div class="a4-page flex flex-col relative overflow-hidden bg-white ${isFirst ? '' : 'page-break-before shadow-2xl'}">
@@ -1027,7 +1031,7 @@
 
                         <div class="text-sm text-gray-800 leading-[1.8] flex-1">
                             <div class="text-justify text-gray-800 space-y-2">
-                                ${parseFormatting(pageContent)}
+                                ${parsedContent}
                             </div>
                         </div>
 
