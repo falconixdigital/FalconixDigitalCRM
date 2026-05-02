@@ -554,6 +554,7 @@
         let expectedNextCount = 1;
         
         let currentLetterId = crypto.randomUUID();
+        let secureRecipientEmail = ""; // NEW: Secures against HTML DOM manipulation
 
         let customVars = {};
 
@@ -636,7 +637,8 @@
         let isDrawing = false;
 
         window.openSignatureModal = async function() {
-            const recipientEmail = inputs.toEmail.value.trim().toLowerCase();
+            // SECURITY FIX: Read from the secure database variable, NOT the HTML input box
+            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
             
             if (!recipientEmail) {
                 showToast("Security Error: No recipient email specified for this document.", "error");
@@ -749,6 +751,15 @@
         sigCanvas.addEventListener('touchend', stopDraw, {passive: false});
 
         document.getElementById('btn-save-signature').addEventListener('click', async () => {
+            // DOUBLE SECURITY CHECK: Prevent console and Javascript hacking
+            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
+            const isAuthorized = currentUser && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
+            
+            if (!isAuthorized) {
+                showToast("Security Block: Unauthorized identity detected.", "error");
+                return;
+            }
+
             const btn = document.getElementById('btn-save-signature');
             const originalHtml = btn.innerHTML;
             btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Saving...`;
@@ -815,6 +826,7 @@
             .then(snap => {
                 if(snap.exists()) {
                     const snapData = snap.data().data;
+                    secureRecipientEmail = (snapData.toEmail || "").trim().toLowerCase(); // Lock email from the database
                     applyState(snapData);
                     
                     // Hide the "Sign" button if the document already has a signature
