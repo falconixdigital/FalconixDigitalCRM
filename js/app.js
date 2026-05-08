@@ -31,14 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupThemeToggle();
     signature.initSignaturePad();
 
-    document.getElementById('google-login-btn').addEventListener('click', auth.loginUser);
-    document.getElementById('auth-logout-btn').addEventListener('click', auth.logoutUser);
-    document.getElementById('btn-save-cloud').addEventListener('click', database.saveLetterToCloud);
-    document.getElementById('btn-save-signature').addEventListener('click', () => signature.saveSignature(isReadOnlyMode));
+    document.getElementById('google-login-btn')?.addEventListener('click', auth.loginUser);
+    document.getElementById('auth-logout-btn')?.addEventListener('click', auth.logoutUser);
+    document.getElementById('btn-save-cloud')?.addEventListener('click', database.saveLetterToCloud);
+    document.getElementById('btn-save-signature')?.addEventListener('click', () => signature.saveSignature(isReadOnlyMode));
     
-    // Updated to support Checkbox input type for 'isExpired' correctly
+    // Safely attach event listeners
     Object.values(state.inputs).forEach(input => {
-        if (!input) return;
+        if (!input) return; // Prevent freeze if HTML element is missing
         const eventType = input.type === 'checkbox' ? 'change' : 'input';
         input.addEventListener(eventType, () => { state.updatePreview(); history.saveStateToHistory(); });
     });
@@ -48,27 +48,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (user && user.email === auth.ALLOWED_EMAIL) {
             auth.setCurrentUser(user);
-            document.getElementById('login-wrapper').classList.add('hidden');
-            document.getElementById('app-wrapper').classList.remove('hidden', 'opacity-0');
+            document.getElementById('login-wrapper')?.classList.add('hidden');
+            document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
             
-            history.loadAutoSave();
-            history.updateDraftsDropdown();
-            state.updatePreview();
-            database.setupDatabaseListener(isReadOnlyMode, () => {}, () => {}, () => {});
+            try {
+                history.loadAutoSave();
+                history.updateDraftsDropdown();
+                state.updatePreview();
+                database.setupDatabaseListener(isReadOnlyMode, () => {}, () => {}, () => {});
+            } catch(e) {
+                console.error("Initialization Error:", e);
+                showToast("Error loading saved data.", "error");
+            }
         } else {
             auth.setCurrentUser(null);
-            document.getElementById('app-wrapper').classList.add('hidden');
-            document.getElementById('login-wrapper').classList.remove('hidden');
-            if (user) { auth.logoutUser(); document.getElementById('login-error').classList.remove('hidden'); }
+            document.getElementById('app-wrapper')?.classList.add('hidden');
+            document.getElementById('login-wrapper')?.classList.remove('hidden');
+            if (user) { auth.logoutUser(); document.getElementById('login-error')?.classList.remove('hidden'); }
         }
     });
 
     if (isReadOnlyMode) {
-        document.getElementById('login-wrapper').style.display = 'none';
-        document.getElementById('app-wrapper').classList.remove('hidden', 'opacity-0');
-        document.querySelector('header').classList.add('hidden');
-        document.querySelector('section.lg\\:w-\\[450px\\]').classList.add('hidden'); 
-        document.getElementById('read-only-controls').classList.remove('hidden');
+        const loginWrap = document.getElementById('login-wrapper');
+        if(loginWrap) loginWrap.style.display = 'none';
+        
+        document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
+        document.querySelector('header')?.classList.add('hidden');
+        document.querySelector('section.lg\\:w-\\[450px\\]')?.classList.add('hidden'); 
+        document.getElementById('read-only-controls')?.classList.remove('hidden');
         
         getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', new URLSearchParams(window.location.search).get('letterId')))
         .then(snap => {
@@ -77,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.setSecureRecipientEmail((snapData.toEmail || "").trim().toLowerCase());
                 state.applyState(snapData);
                 
-                // Expiry Logic verification
                 const isManualExpired = snapData.isExpired === true || snapData.isExpired === "true";
                 let isPastDeadline = false;
                 if (snapData.deadline) {
@@ -90,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isExpired = isManualExpired || isPastDeadline;
 
                 if (isSigned || isExpired) {
-                    document.getElementById('btn-ro-sign').classList.add('hidden');
+                    document.getElementById('btn-ro-sign')?.classList.add('hidden');
                     if(isExpired && !isSigned) {
                         showToast("This document has expired and can no longer be signed.", "error");
                     }
