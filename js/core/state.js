@@ -89,6 +89,7 @@ export function removeCustomVariable(tag) {
 
 export function renderCustomVariables() {
     const container = document.getElementById('custom-variables-container');
+    if(!container) return;
     container.innerHTML = '';
     const keys = Object.keys(customVars);
     if (keys.length === 0) { container.innerHTML = '<p class="text-xs text-gray-500 italic">No custom variables added yet.</p>'; return; }
@@ -110,6 +111,7 @@ export function renderCustomVariables() {
 
 export function insertFormat(prefix, suffix) {
     const textarea = inputs.body;
+    if(!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = textarea.value.substring(start, end);
@@ -172,31 +174,40 @@ function parseFormatting(text) {
 export function updatePreview() {
     const today = new Date().toISOString().split('T')[0];
     const state = {
-        date: inputs.date.value || today, ref: inputs.ref.value.trim() || '-',
-        toName: inputs.toName.value.trim() || '[Recipient Name]', toCompany: inputs.toCompany.value.trim(),
-        toAddress: inputs.toAddress.value.trim(), subject: inputs.subject.value.trim() || '[Letter Subject]',
-        body: inputs.body.value, signName: inputs.signName.value.trim() || 'Signatory Name',
-        signRole: inputs.signRole.value.trim() || 'Designation', signUrl: inputs.signUrl.value.trim(),
-        partnerSignName: inputs.partnerSignName.value.trim(), partnerSignRole: inputs.partnerSignRole.value.trim(),
-        partnerLogoUrl: inputs.partnerLogoUrl.value.trim(), partnerSignUrl: inputs.partnerSignUrl.value.trim(),
-        agencyPhone: inputs.agencyPhone.value.trim() || '+91 86370 28337', agencyEmail: inputs.agencyEmail.value.trim() || 'digitalfalconix@gmail.com',
-        agencyWeb: inputs.agencyWeb.value.trim() || 'falconixdigital.netlify.app', agencyAddress: inputs.agencyAddress.value.trim() || 'Motihari, Bihar, India',
-        logoUrl: inputs.logoUrl.value.trim()
+        date: inputs.date?.value || today, 
+        ref: inputs.ref?.value.trim() || '-',
+        toName: inputs.toName?.value.trim() || '[Recipient Name]', 
+        toCompany: inputs.toCompany?.value.trim() || '',
+        toAddress: inputs.toAddress?.value.trim() || '', 
+        subject: inputs.subject?.value.trim() || '[Letter Subject]',
+        body: inputs.body?.value || '', 
+        signName: inputs.signName?.value.trim() || 'Signatory Name',
+        signRole: inputs.signRole?.value.trim() || 'Designation', 
+        signUrl: inputs.signUrl?.value.trim() || '',
+        partnerSignName: inputs.partnerSignName?.value.trim() || '', 
+        partnerSignRole: inputs.partnerSignRole?.value.trim() || '',
+        partnerLogoUrl: inputs.partnerLogoUrl?.value.trim() || '', 
+        partnerSignUrl: inputs.partnerSignUrl?.value.trim() || '',
+        agencyPhone: inputs.agencyPhone?.value.trim() || '+91 86370 28337', 
+        agencyEmail: inputs.agencyEmail?.value.trim() || 'digitalfalconix@gmail.com',
+        agencyWeb: inputs.agencyWeb?.value.trim() || 'falconixdigital.netlify.app', 
+        agencyAddress: inputs.agencyAddress?.value.trim() || 'Motihari, Bihar, India',
+        logoUrl: inputs.logoUrl?.value.trim() || ''
     };
 
     localStorage.setItem('letter_autosave', JSON.stringify(getCurrentState()));
 
     const variableMap = {
-        '[Recipient Name]': inputs.toName.value.trim() || '__________',
+        '[Recipient Name]': state.toName !== '[Recipient Name]' ? state.toName : '__________',
         '[Company Name]': 'Falconix Digital',
-        '[Partner Name]': inputs.partnerSignName.value.trim() || '__________',
-        '[Date]': inputs.date.value ? new Date(inputs.date.value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '__________'
+        '[Partner Name]': state.partnerSignName || '__________',
+        '[Date]': state.date ? new Date(state.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '__________'
     };
     for (let key in customVars) variableMap[key] = customVars[key].trim() || '__________';
 
-    // Expiration checks for Watermark
-    const isManualExpired = inputs.isExpired.checked;
-    const deadlineVal = inputs.deadline.value;
+    // Safely check expiry conditions
+    const isManualExpired = inputs.isExpired ? inputs.isExpired.checked : false;
+    const deadlineVal = inputs.deadline ? inputs.deadline.value : null;
     let isPastDeadline = false;
     if (deadlineVal) {
         const deadlineDate = new Date(deadlineVal);
@@ -335,5 +346,7 @@ export function updatePreview() {
         </div>
         `;
     });
-    document.getElementById('document-wrapper').innerHTML = html;
+    
+    const wrapper = document.getElementById('document-wrapper');
+    if(wrapper) wrapper.innerHTML = html;
 }
