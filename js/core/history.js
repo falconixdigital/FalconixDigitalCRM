@@ -8,6 +8,17 @@ let historyIndex = -1;
 let isUndoRedoAction = false;
 let historyTimeout;
 
+export function loadAutoSave() {
+    try {
+        const saved = localStorage.getItem('letter_autosave');
+        if (saved) {
+            applyState(JSON.parse(saved));
+        }
+    } catch (e) {
+        console.error("Failed to load autosave data", e);
+    }
+}
+
 export function saveStateToHistory(force = false) {
     if (isUndoRedoAction) return;
     const executeSave = () => {
@@ -42,18 +53,25 @@ export function redo() {
 
 export async function resetLetter(force = false) {
     if(!force && !confirm("Are you sure you want to reset the letter? This will clear all content.")) return;
-    inputs.template.value = "blank";
-    inputs.toName.value = ""; inputs.toEmail.value = ""; inputs.toCompany.value = "";
-    inputs.toAddress.value = ""; inputs.subject.value = ""; inputs.body.value = "";
-    inputs.partnerSignName.value = ""; inputs.partnerSignRole.value = "";
-    inputs.partnerLogoUrl.value = ""; inputs.partnerSignUrl.value = "";
-    inputs.deadline.value = ""; inputs.isExpired.checked = false; // Reset Expiry Data
+    if(inputs.template) inputs.template.value = "blank";
+    if(inputs.toName) inputs.toName.value = ""; 
+    if(inputs.toEmail) inputs.toEmail.value = ""; 
+    if(inputs.toCompany) inputs.toCompany.value = "";
+    if(inputs.toAddress) inputs.toAddress.value = ""; 
+    if(inputs.subject) inputs.subject.value = ""; 
+    if(inputs.body) inputs.body.value = "";
+    if(inputs.partnerSignName) inputs.partnerSignName.value = ""; 
+    if(inputs.partnerSignRole) inputs.partnerSignRole.value = "";
+    if(inputs.partnerLogoUrl) inputs.partnerLogoUrl.value = ""; 
+    if(inputs.partnerSignUrl) inputs.partnerSignUrl.value = "";
+    if(inputs.deadline) inputs.deadline.value = ""; 
+    if(inputs.isExpired) inputs.isExpired.checked = false;
     
     for (const key in customVars) delete customVars[key];
     setCurrentLetterId(crypto.randomUUID());
 
     if (currentUser) await fetchNextRefNumber();
-    else inputs.ref.value = `FD-${currentYear}/001`;
+    else if(inputs.ref) inputs.ref.value = `FD-${currentYear}/001`;
     
     updatePreview();
     saveStateToHistory(true);
@@ -80,11 +98,13 @@ export function loadDraft(id) {
         saveStateToHistory(true);
         showToast("Draft loaded successfully.", "success");
     }
-    document.getElementById('input-drafts').value = ""; 
+    const draftsSelect = document.getElementById('input-drafts');
+    if(draftsSelect) draftsSelect.value = ""; 
 }
 
 export function updateDraftsDropdown() {
     const select = document.getElementById('input-drafts');
+    if(!select) return;
     select.innerHTML = '<option value="">-- Load a Local Draft --</option>';
     getDrafts().list.forEach(d => {
         const opt = document.createElement('option');
