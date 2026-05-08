@@ -34,20 +34,22 @@ export function initSignaturePad() {
 
 export async function openSignatureModal(isReadOnlyMode) {
 
-    // First check if the document has been expired by the admin or deadline
-    const isManualExpired = inputs.isExpired.checked;
-    const deadlineVal = inputs.deadline.value;
+    // Safely check if the document has been expired by the admin or deadline
+    const isManualExpired = inputs.isExpired ? inputs.isExpired.checked : false;
+    const deadlineVal = inputs.deadline ? inputs.deadline.value : null;
     let isPastDeadline = false;
+    
     if (deadlineVal) {
         const deadlineDate = new Date(deadlineVal);
         deadlineDate.setHours(23, 59, 59, 999);
         if (new Date() > deadlineDate) isPastDeadline = true;
     }
+    
     if (isManualExpired || isPastDeadline) {
         return showToast("This letter has expired. Signing is disabled.", "error");
     }
 
-    const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
+    const recipientEmail = isReadOnlyMode ? secureRecipientEmail : (inputs.toEmail ? inputs.toEmail.value.trim().toLowerCase() : '');
     if (!recipientEmail) return showToast("Security Error: No recipient email specified.", "error");
 
     const isAuthorized = (email) => email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase();
@@ -66,6 +68,8 @@ export async function openSignatureModal(isReadOnlyMode) {
     }
 
     const modal = document.getElementById('signature-modal');
+    if(!modal) return;
+    
     modal.classList.remove('hidden');
     const rect = sigCanvas.parentElement.getBoundingClientRect();
     sigCanvas.width = rect.width; sigCanvas.height = rect.height;
@@ -74,11 +78,17 @@ export async function openSignatureModal(isReadOnlyMode) {
     clearSignature();
 }
 
-export function closeSignatureModal() { document.getElementById('signature-modal').classList.add('hidden'); }
-export function clearSignature() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+export function closeSignatureModal() { 
+    const modal = document.getElementById('signature-modal');
+    if(modal) modal.classList.add('hidden'); 
+}
+
+export function clearSignature() { 
+    if(sigCtx && sigCanvas) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); 
+}
 
 export async function saveSignature(isReadOnlyMode) {
-    const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
+    const recipientEmail = isReadOnlyMode ? secureRecipientEmail : (inputs.toEmail ? inputs.toEmail.value.trim().toLowerCase() : '');
     const isAuthorized = currentUser && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
     
     if (!isAuthorized) return showToast("Security Block: Unauthorized identity detected.", "error");
@@ -89,16 +99,20 @@ export async function saveSignature(isReadOnlyMode) {
     btn.disabled = true;
 
     const sigDataUrl = sigCanvas.toDataURL('image/png');
-    inputs.partnerSignUrl.value = sigDataUrl;
-    if(!inputs.partnerSignName.value.trim()) inputs.partnerSignName.value = inputs.toName.value.trim() || 'Client Signature';
+    if(inputs.partnerSignUrl) inputs.partnerSignUrl.value = sigDataUrl;
+    
+    if(inputs.partnerSignName && !inputs.partnerSignName.value.trim()) {
+        inputs.partnerSignName.value = (inputs.toName ? inputs.toName.value.trim() : '') || 'Client Signature';
+    }
 
     try {
         const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
-        await updateDoc(docRef, { "data.partnerSignUrl": sigDataUrl, "data.partnerSignName": inputs.partnerSignName.value });
+        await updateDoc(docRef, { "data.partnerSignUrl": sigDataUrl, "data.partnerSignName": inputs.partnerSignName ? inputs.partnerSignName.value : '' });
         updatePreview();
         closeSignatureModal();
         showToast("Signature attached successfully!", "success");
-        document.getElementById('btn-ro-sign').classList.add('hidden');
+        const roSignBtn = document.getElementById('btn-ro-sign');
+        if(roSignBtn) roSignBtn.classList.add('hidden');
     } catch (err) {
         showToast("Failed to save signature. Check Firestore Rules.", "error");
     } finally {
