@@ -175,7 +175,6 @@
             </div>
         </div>
 
-        <!-- NEW: Signature Pad Modal -->
         <div id="signature-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity">
             <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 flex flex-col items-center relative border border-gray-200 dark:border-gray-800">
                 <button onclick="closeSignatureModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"><i class="ph ph-x text-xl"></i></button>
@@ -264,9 +263,28 @@
                         </div>
                         <select id="input-template" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all cursor-pointer text-gray-900 dark:text-white">
                         </select>
+                        
                         <div class="grid grid-cols-2 gap-3">
-                            <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
-                            <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Creation Date</label>
+                                <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Ref No.</label>
+                                <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Deadline Date (Optional)</label>
+                                <input type="date" id="input-deadline" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
+                            </div>
+                            <div class="flex items-end pb-2">
+                                <label class="flex items-center gap-2 cursor-pointer mt-1">
+                                    <input type="checkbox" id="input-is-expired" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2 cursor-pointer dark:bg-gray-700 dark:border-gray-600">
+                                    <span class="text-xs font-bold text-red-500 uppercase tracking-wider">Force Expire</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
