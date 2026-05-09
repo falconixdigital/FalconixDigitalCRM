@@ -1273,6 +1273,7 @@
                     setCurrentUser(user);
                     document.getElementById('login-wrapper')?.classList.add('hidden');
                     document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
+                    document.getElementById('app-wrapper')?.classList.add('flex');
                     
                     try {
                         loadAutoSave();
@@ -1301,6 +1302,7 @@
                 if(loginWrap) loginWrap.style.display = 'none';
                 
                 document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
+                document.getElementById('app-wrapper')?.classList.add('flex');
                 document.querySelector('header')?.classList.add('hidden');
                 document.querySelector('section.lg\\:w-\\[450px\\]')?.classList.add('hidden'); 
                 document.getElementById('read-only-controls')?.classList.remove('hidden');
