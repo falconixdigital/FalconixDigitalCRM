@@ -95,7 +95,6 @@
 
     <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- Layout Fix: Added flex-1 and min-h-0 to constrain height perfectly -->
     <div id="app-wrapper" class="hidden flex-1 min-h-0 w-full flex-col opacity-0 transition-opacity duration-500">
         <div class="h-1.5 w-full bg-gradient-to-r from-brandAccent via-brand to-brandDark shrink-0 z-50"></div>
 
@@ -203,10 +202,8 @@
             </div>
         </div>
 
-        <!-- Layout Fix: Added min-h-0 to the main wrapper to stop infinite expanding -->
         <main class="flex-1 min-h-0 overflow-hidden flex flex-col lg:flex-row">
             
-            <!-- Layout Fix: Added min-h-0 to the sidebar section -->
             <section class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full min-h-0">
                 <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
                     <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-brand text-lg"></i> Editor Controls</h2>
@@ -218,7 +215,6 @@
                     </div>
                 </div>
                 
-                <!-- Layout Fix: Added min-h-0 to the scrolling content container -->
                 <div class="p-6 overflow-y-auto flex-1 min-h-0 space-y-6">
                     
                     <div class="space-y-3 bg-brand/5 p-4 rounded-xl border border-brand/20">
@@ -425,7 +421,7 @@
                 
                 <div id="read-only-controls" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[150] hidden flex gap-3">
                     <button id="btn-ro-sign" onclick="openSignatureModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
-                        <i class="ph ph-signature text-xl"></i> Sign Document
+                        <i class="ph ph-shield-check text-xl"></i> Verify & Sign
                     </button>
                     <button id="btn-ro-download" onclick="executePDFDownload('btn-ro-download')" class="bg-brand hover:bg-brandDark text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
                         <i class="ph ph-download-simple text-xl"></i> Download PDF
@@ -736,6 +732,10 @@
             };
 
             if (!currentUser || !isAuthorized(currentUser.email)) {
+                
+                // NEW UX EXPLANATION: Clearly explain the security requirement.
+                alert(`Security Verification:\n\nOnly the verified recipient can sign this document.\n\nPlease log in with your Google account: ${recipientEmail}`);
+
                 if (currentUser) {
                     await signOut(auth);
                     currentUser = null;
@@ -1008,7 +1008,7 @@
 
         function setupImageUpload(fileInputId, urlInputId) {
             const fileInput = document.getElementById(fileInputId);
-            if (!fileInput) return; // FIX: Prevents crash if element is missing
+            if (!fileInput) return;
             
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -1044,86 +1044,8 @@
 
         setupImageUpload('file-logo', 'input-logo-url');
         setupImageUpload('file-sign', 'input-sign-url');
-            let inTable = false;
-            let finalHtml = '';
-
-            lines.forEach(line => {
-                let tLine = line.trim();
-                
-                if (tLine.startsWith('- ')) {
-                    if (inTable) { finalHtml += '</tbody></table>'; inTable = false; }
-                    if (!inList) {
-                        finalHtml += '<ul class="list-disc pl-5 my-2 space-y-1">';
-                        inList = true;
-                    }
-                    finalHtml += `<li>${line.substring(2)}</li>`;
-                
-                } else if (tLine.startsWith('|') && tLine.endsWith('|')) {
-                    if (inList) { finalHtml += '</ul>'; inList = false; }
-                    
-                    if (!inTable) {
-                        finalHtml += '<table class="w-full text-left border-collapse my-4 border border-gray-300 dark:border-gray-700"><thead>';
-                        inTable = true;
-                    }
-                    
-                    if (tLine.includes('---')) {
-                        finalHtml += '</thead><tbody>'; 
-                    } else {
-                        const cells = tLine.substring(1, tLine.length - 1).split('|');
-                        finalHtml += '<tr>';
-                        cells.forEach(cell => {
-                            const tag = finalHtml.includes('<tbody>') ? 'td' : 'th';
-                            finalHtml += `<${tag} class="border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm">${cell.trim()}</${tag}>`;
-                        });
-                        finalHtml += '</tr>';
-                    }
-                } else {
-                    if (inList) { finalHtml += '</ul>'; inList = false; }
-                    if (inTable) { finalHtml += '</tbody></table>'; inTable = false; }
-                    
-                    if (tLine.match(/^<div class="text-(center|right)">$/) || tLine === '</div>') {
-                        finalHtml += tLine;
-                    } else {
-                        finalHtml += line + (tLine === '' ? '<br>' : '<br>'); 
-                    }
-                }
-            });
-            if (inList) finalHtml += '</ul>';
-            if (inTable) {
-                if(!finalHtml.includes('<tbody>')) finalHtml += '</thead>'; 
-                finalHtml += '</tbody></table>'; 
-            }
-            
-            return finalHtml.replace(/<br><ul/g, '<ul').replace(/<\/ul><br>/g, '</ul>');
-        }
-
-        window.insertFormat = function(prefix, suffix) {
-            const textarea = inputs.body;
-            if(!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = textarea.value.substring(start, end);
-            
-            let finalPrefix = prefix;
-            if ((prefix.includes('- ') || prefix.includes('---') || prefix.includes('|')) && start > 0 && textarea.value.charAt(start - 1) !== '\n') {
-                finalPrefix = '\n' + prefix;
-            }
-
-            const insertion = finalPrefix + selectedText + suffix;
-            textarea.value = textarea.value.substring(0, start) + insertion + textarea.value.substring(end);
-            
-            textarea.focus();
-            if (selectedText.length === 0) {
-                textarea.selectionStart = start + finalPrefix.length;
-                textarea.selectionEnd = start + finalPrefix.length;
-            } else {
-                textarea.selectionStart = start + insertion.length;
-                textarea.selectionEnd = start + insertion.length;
-            }
-            
-            updatePreview();
-            saveStateToHistory(true); 
-        };
+        setupImageUpload('file-partner-logo', 'input-partner-logo-url');
+        setupImageUpload('file-partner-sign', 'input-partner-sign-url');
 
         window.updatePreview = function() {
             const state = {
@@ -1911,21 +1833,15 @@
                 if (user) {
                     loginError.innerText = "Unauthorized account. Access restricted.";
                     loginError.classList.remove('hidden');
-                    
-                    // FIX: Revert the button to default state safely
-                    if (loginBtn) {
-                        loginBtn.innerHTML = `<svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Sign in with Google`;
-                    }
                     signOut(auth);
                 }
             }
         });
 
         if(loginBtn) {
-            // FIX: Removed dangerous global reference check that caused crashes
-            const defaultLoginHtml = loginBtn.innerHTML;
             loginBtn.addEventListener('click', async () => {
                 loginError.classList.add('hidden');
+                const defaultHtml = loginBtn.innerHTML;
                 loginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
                 try {
                     await signInWithPopup(auth, provider);
@@ -1933,7 +1849,7 @@
                     console.error(err);
                     loginError.innerText = "Login process was cancelled or failed.";
                     loginError.classList.remove('hidden');
-                    loginBtn.innerHTML = defaultLoginHtml; // Safely revert on error
+                    loginBtn.innerHTML = defaultHtml; 
                 }
             });
         }
