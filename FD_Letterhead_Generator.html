@@ -95,7 +95,8 @@
 
     <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
 
-    <div id="app-wrapper" class="hidden h-screen w-full flex-col opacity-0 transition-opacity duration-500">
+    <!-- Added flex here to fix the infinite scroll/freeze issue -->
+    <div id="app-wrapper" class="hidden flex h-screen w-full flex-col opacity-0 transition-opacity duration-500">
         <div class="h-1.5 w-full bg-gradient-to-r from-brandAccent via-brand to-brandDark shrink-0 z-50"></div>
 
         <header class="bg-white dark:bg-darkCard border-b border-gray-200 dark:border-gray-800 py-2 px-6 flex justify-between items-center shrink-0">
@@ -280,7 +281,7 @@
                                 <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-3 mt-1">
                             <div>
                                 <label class="block text-[10px] text-gray-500 mb-1">Deadline Date (Optional)</label>
                                 <input type="date" id="input-deadline" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
@@ -438,10 +439,7 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        // 1. CONFIGURATION (Firebase Setup)
-        // ==========================================
-        const firebaseConfig = {
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyClR_nY11CdpWKLmMy7TgTCKtS26s_h24g",
             authDomain: "fd-employee-data.firebaseapp.com",
             projectId: "fd-employee-data",
@@ -450,54 +448,48 @@
             appId: "1:151106809716:web:7f540e0ce6b77bd70f4621",
             measurementId: "G-Z4K2GGQTX6"
         };
+
         const app = initializeApp(firebaseConfig);
-        const fbAppId = 'falconix-letters';
+        const fbAppId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-letters';
+
         const appCheck = initializeAppCheck(app, {
             provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'), 
             isTokenAutoRefreshEnabled: true
         });
+
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-
-        const isReadOnlyMode = !!new URLSearchParams(window.location.search).get('letterId');
-
-        // ==========================================
-        // 2. AUTHENTICATION
-        // ==========================================
         const ALLOWED_EMAIL = "digitalfalconix@gmail.com";
-        let currentUser = null;
 
-        function setCurrentUser(user) { currentUser = user; }
-
-        async function loginUser() {
-            try {
-                const result = await signInWithPopup(auth, provider);
-                currentUser = result.user;
-                return currentUser;
-            } catch (error) {
-                console.error("Login failed", error);
-                throw error;
-            }
+        const htmlEl = document.documentElement;
+        const themeBtn = document.getElementById('theme-toggle');
+        
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlEl.classList.add('dark');
+        } else {
+            htmlEl.classList.remove('dark');
         }
 
-        function logoutUser() {
-            return signOut(auth);
-        }
+        themeBtn.addEventListener('click', () => {
+            htmlEl.classList.toggle('dark');
+            localStorage.theme = htmlEl.classList.contains('dark') ? 'dark' : 'light';
+        });
 
-        // ==========================================
-        // 3. UI UTILITIES
-        // ==========================================
-        function showToast(message, type = 'info') {
+        window.showToast = function(message, type = 'info') {
             const container = document.getElementById('toast-container');
             if(!container) return;
             const toast = document.createElement('div');
             let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
             let icon = 'ph-info';
-            if (type === 'success') { bgClass = 'bg-green-500 text-white'; icon = 'ph-check-circle'; } 
-            else if (type === 'error') { bgClass = 'bg-red-500 text-white'; icon = 'ph-warning-circle'; }
-            
+            if (type === 'success') {
+                bgClass = 'bg-green-500 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500 text-white';
+                icon = 'ph-warning-circle';
+            }
             toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} pointer-events-auto`;
             toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
             container.appendChild(toast);
@@ -507,25 +499,8 @@
                 toast.style.transition = 'all 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
-        }
+        };
 
-        function setupThemeToggle() {
-            const htmlEl = document.documentElement;
-            const themeBtn = document.getElementById('theme-toggle');
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                htmlEl.classList.add('dark');
-            } else {
-                htmlEl.classList.remove('dark');
-            }
-            themeBtn.addEventListener('click', () => {
-                htmlEl.classList.toggle('dark');
-                localStorage.theme = htmlEl.classList.contains('dark') ? 'dark' : 'light';
-            });
-        }
-
-        // ==========================================
-        // 4. STATE MANAGEMENT
-        // ==========================================
         const inputs = {
             template: document.getElementById('input-template'),
             date: document.getElementById('input-date'),
@@ -540,10 +515,12 @@
             body: document.getElementById('input-body'),
             signName: document.getElementById('input-sign-name'),
             signRole: document.getElementById('input-sign-role'),
+            
             partnerSignName: document.getElementById('input-partner-sign-name'),
             partnerSignRole: document.getElementById('input-partner-sign-role'),
             partnerLogoUrl: document.getElementById('input-partner-logo-url'),
             partnerSignUrl: document.getElementById('input-partner-sign-url'),
+
             agencyPhone: document.getElementById('input-agency-phone'),
             agencyEmail: document.getElementById('input-agency-email'),
             agencyWeb: document.getElementById('input-agency-web'),
@@ -552,20 +529,120 @@
             signUrl: document.getElementById('input-sign-url')
         };
 
-        let currentYear = new Date().getFullYear();
-        let currentLetterId = crypto.randomUUID();
-        let secureRecipientEmail = "";
-        let customVars = {};
-        let expectedNextCount = 1;
+        const templates = {
+            blank: { subject: "", body: "" },
+            offer: {
+                subject: "Employment Offer Letter",
+                body: "Dear **[Recipient Name]**,\n\nWe are delighted to officially offer you the position of **[Role]** at [Company Name]. Your skills and experience perfectly align with our company's vision.\n\nYour starting compensation will be ==[Salary] per annum==, and your expected date of joining is **[Date]**.\n\nKey Benefits Include:\n- Comprehensive Health Coverage\n- Flexible Working Hours\n- Annual Performance Bonus\n\nPlease review this offer and confirm your acceptance by signing and returning a copy of this letter.\n\nWelcome aboard!"
+            },
+            telecaller_offer: {
+                subject: "Offer for the Position of Telecaller",
+                body: "Dear **[Recipient Name]**,\n\nWe are pleased to offer you the position of Telecaller at [Company Name].\n\nYour responsibilities will include contacting potential clients, explaining services, generating leads, and coordinating with the team for project discussions while maintaining professional communication.\n\n**Compensation & Benefits:**\nSalary, incentives, and performance-based earnings will be discussed and finalized as per company policy.\n\n**Joining Details:**\nJoining date: **[Date]**. Please confirm your acceptance of this offer.\n\nWe look forward to working with you and expect professionalism and consistency in your role."
+            },
+            telecaller_selection: {
+                subject: "TELECALLER SELECTION CONFIRMATION LETTER",
+                body: "This is to confirm that **[Recipient Name]** has been selected as a Telecaller at [Company Name].\n\nTheir role will include contacting potential clients, explaining services, generating leads, and coordinating with the team for further project discussions. They are expected to maintain professional communication, represent the company effectively, and contribute to business growth.\n\nThe compensation structure, incentives, and other terms will be discussed and finalized separately.\n\nWe look forward to working together and expect dedication, consistency, and professionalism in all assigned responsibilities."
+            },
+            telecaller_tnc: {
+                subject: "Telecaller Terms & Conditions Agreement",
+                body: "Effective Date: **[Date]**\n\nThis document outlines the terms and conditions for telecallers working with [Company Name]. By continuing work with us, you agree to the following:\n\n**1. Role & Responsibilities**\n- You are required to contact potential clients and explain our services clearly and professionally.\n- You must follow the provided script, training, and communication guidelines.\n- You are responsible for maintaining a polite and respectful tone with all clients.\n\n**2. Work Commitment**\n- Your work officially starts from **[Date]**.\n- You are expected to work regularly and seriously.\n- There is no formal attendance system, but your performance and activity will be monitored.\n\n**3. Performance Evaluation**\n- Your performance will be reviewed over a period of 2-3 weeks.\n- If your work is found to be unsatisfactory, inactive, or unprofessional, your role may be terminated without prior notice.\n\n**4. Payment & Commission**\n- You will be compensated based on agreed terms (salary/commission).\n- Commission will be provided only for verified clients generated through your efforts.\n- If a client contacts the company through your shared reference (e.g., visiting card, call), you will be eligible for commission.\n\n---\n\n**5. Professional Conduct**\n- You must not provide false information to clients.\n- Misbehavior, negligence, or misuse of company resources will lead to immediate action.\n- You must represent [Company Name] in a professional manner at all times.\n\n**6. Confidentiality**\n- All company data, client details, and internal processes must remain confidential.\n- Sharing sensitive information with outsiders is strictly prohibited.\n\n**7. Termination Policy**\n- [Company Name] reserves the right to terminate your role at any time based on poor performance or misconduct.\n- You may also leave the role voluntarily, but prior notice is expected.\n\n**8. Acceptance**\nBy working with [Company Name], you acknowledge that you have read, understood, and agreed to these terms and conditions."
+            },
+            collab: {
+                subject: "Proposal for Strategic Business Collaboration",
+                body: "Dear **[Partner Name]**,\n\nI hope this letter finds you well.\n\nWe have been closely following the innovative work your team is doing. As a leading digital growth agency, we believe there is a strong synergy between our services and your goals.\n\nWe are proposing a strategic collaboration where we can provide:\n- Dedicated web infrastructure\n- Advanced marketing support\n- Mutual resource sharing\n\n==By combining our technical expertise with your industry footprint, we can create mutually beneficial value.==\n\nI would love to schedule a brief call next week to discuss this further. Please let me know your availability."
+            },
+            nda: {
+                subject: "Mutual Non-Disclosure Agreement",
+                body: "Dear **[Recipient Name]**,\n\nIn preparation for our upcoming discussions regarding a potential partnership, please find attached our standard Mutual Non-Disclosure Agreement (NDA).\n\nAs we will be sharing proprietary business strategies, client systems, and technical architectures, ==this agreement ensures that both parties maintain absolute confidentiality.==\n\nPlease review the attached document, sign it, and return a scanned copy to our office prior to our meeting scheduled for [Date].\n\nThank you for your cooperation."
+            },
+            warning: {
+                subject: "First Formal Warning Notice",
+                body: "Dear **[Recipient Name]**,\n\nThis letter serves as a formal warning regarding your recent performance and conduct at [Company Name]. \n\n==Despite previous informal discussions, we have not seen the required improvement.== \n\nSpecifically, we have noted the following issues:\n- [Insert Issue 1]\n- [Insert Issue 2]\n\nPlease consider this a formal notice that further infractions or failure to improve may result in more severe disciplinary action, up to and including termination.\n\nWe will schedule a review meeting on **[Date]** to discuss your progress."
+            },
+            termination: {
+                subject: "Notice of Employment Termination",
+                body: "Dear **[Recipient Name]**,\n\nThis letter is to formally notify you that your employment with [Company Name] is terminated, effective **[Date]**.\n\n==This decision was made after careful consideration and is final.==\n\nYou will receive your final compensation, including any accrued benefits, by the end of the current billing cycle. Please coordinate with HR to return all company property, including keys, laptops, and access badges, immediately.\n\nWe wish you the best in your future endeavors."
+            },
+            apology: {
+                subject: "Formal Apology Regarding [Insert Issue]",
+                body: "Dear **[Recipient Name]**,\n\nOn behalf of the entire team at [Company Name], I am writing to sincerely apologize for the recent issues you experienced with our services.\n\n==We hold ourselves to the highest standards of client satisfaction, and in this instance, we clearly fell short.==\n\nWe have conducted an internal review and are taking immediate steps to ensure this does not happen again. As a gesture of our commitment to your business, we would like to offer [Insert Compensation/Discount/Action].\n\nThank you for your continued patience, understanding, and partnership."
+            },
+            onboarding: {
+                subject: "Welcome to [Company Name]!",
+                body: "Dear **[Recipient Name]**,\n\nWelcome aboard! We are thrilled to partner with you and look forward to a highly successful collaboration.\n\nThis letter outlines our initial steps for your onboarding process. Over the next few days, our dedicated team will:\n- Set up your secure client portal\n- Schedule a formal kickoff meeting\n- Share the initial project roadmap\n\n==Please review the attached onboarding documents and let us know if you have any questions prior to our meeting on **[Date]**.==\n\nWe are excited to get started and drive results for your business!"
+            }
+        };
 
-        function setCurrentLetterId(id) { currentLetterId = id; }
-        function setSecureRecipientEmail(email) { secureRecipientEmail = email; }
-        function setExpectedNextCount(count) { expectedNextCount = count; }
+        const today = new Date().toISOString().split('T')[0];
+        inputs.date.value = today;
+        let currentYear = new Date().getFullYear();
+        inputs.ref.value = `FD-${currentYear}/001`;
+
+        let expectedNextCount = 1;
+        
+        let currentLetterId = crypto.randomUUID();
+        let secureRecipientEmail = ""; // NEW: Secures against HTML DOM manipulation
+
+        let customVars = {};
+
+        window.addCustomVariable = function() {
+            let name = prompt("Enter variable name (e.g., Salary, Joining Date):");
+            if (!name) return;
+            name = name.trim();
+            const tag = name.startsWith('[') && name.endsWith(']') ? name : `[${name}]`;
+            
+            if (customVars[tag] !== undefined) {
+                showToast("Variable already exists!", "error");
+                return;
+            }
+            
+            customVars[tag] = "";
+            renderCustomVariables();
+            updatePreview();
+            saveStateToHistory(true);
+        };
+
+        window.removeCustomVariable = function(tag) {
+            delete customVars[tag];
+            renderCustomVariables();
+            updatePreview();
+            saveStateToHistory(true);
+        };
+
+        function renderCustomVariables() {
+            const container = document.getElementById('custom-variables-container');
+            container.innerHTML = '';
+            const keys = Object.keys(customVars);
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-500 italic">No custom variables added yet.</p>';
+                return;
+            }
+            
+            keys.forEach(tag => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm';
+                wrapper.innerHTML = `
+                    <label class="text-xs font-semibold text-brandAccent w-1/3 truncate" title="${tag}">${tag}</label>
+                    <input type="text" class="custom-var-input flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white" data-tag="${tag}" value="${customVars[tag]}" placeholder="Value...">
+                    <button type="button" class="text-red-400 hover:text-red-600 transition-colors p-1" onclick="removeCustomVariable('${tag}')"><i class="ph ph-trash text-base"></i></button>
+                `;
+                container.appendChild(wrapper);
+            });
+
+            document.querySelectorAll('.custom-var-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    customVars[e.target.dataset.tag] = e.target.value;
+                    updatePreview();
+                    saveStateToHistory(); 
+                });
+            });
+        }
 
         function getCurrentState() {
             const state = {};
             Object.keys(inputs).forEach(key => {
-                if (inputs[key]) {
+                if(inputs[key]) {
                     state[key] = inputs[key].type === 'checkbox' ? inputs[key].checked : inputs[key].value;
                 }
             });
@@ -585,152 +662,483 @@
                     }
                 }
             });
-            for (const key in customVars) delete customVars[key];
-            Object.assign(customVars, stateData._customVars || {});
-            
+            customVars = stateData._customVars || {};
             const urlParams = new URLSearchParams(window.location.search);
             currentLetterId = stateData.letterId || urlParams.get('letterId') || crypto.randomUUID();
             renderCustomVariables();
             updatePreview();
         }
 
-        function addCustomVariable() {
-            let name = prompt("Enter variable name (e.g., Salary, Joining Date):");
-            if (!name) return;
-            const tag = name.trim().startsWith('[') && name.trim().endsWith(']') ? name.trim() : `[${name.trim()}]`;
-            if (customVars[tag] !== undefined) return showToast("Variable already exists!", "error");
-            customVars[tag] = "";
-            renderCustomVariables();
-            updatePreview();
-            saveStateToHistory(true);
-        }
+        // --- NEW: E-Signature Pad Logic ---
+        const sigCanvas = document.getElementById('signature-pad');
+        const sigCtx = sigCanvas.getContext('2d');
+        let isDrawing = false;
 
-        function removeCustomVariable(tag) {
-            delete customVars[tag];
-            renderCustomVariables();
-            updatePreview();
-            saveStateToHistory(true);
-        }
+        window.openSignatureModal = async function() {
 
-        function renderCustomVariables() {
-            const container = document.getElementById('custom-variables-container');
-            if(!container) return;
-            container.innerHTML = '';
-            const keys = Object.keys(customVars);
-            if (keys.length === 0) { container.innerHTML = '<p class="text-xs text-gray-500 italic">No custom variables added yet.</p>'; return; }
-            
-            keys.forEach(tag => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm';
-                wrapper.innerHTML = `
-                    <label class="text-xs font-semibold text-brandAccent w-1/3 truncate" title="${tag}">${tag}</label>
-                    <input type="text" class="custom-var-input flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5 text-sm outline-none text-gray-900 dark:text-white" data-tag="${tag}" value="${customVars[tag]}" placeholder="Value...">
-                    <button type="button" class="text-red-400 hover:text-red-600 transition-colors p-1" onclick="removeCustomVariable('${tag}')"><i class="ph ph-trash text-base"></i></button>
-                `;
-                container.appendChild(wrapper);
-            });
-            document.querySelectorAll('.custom-var-input').forEach(input => {
-                input.addEventListener('input', (e) => { customVars[e.target.dataset.tag] = e.target.value; updatePreview(); saveStateToHistory(); });
-            });
-        }
+            const isManualExpired = inputs.isExpired ? inputs.isExpired.checked : false;
+            const deadlineVal = inputs.deadline ? inputs.deadline.value : null;
+            let isPastDeadline = false;
 
-        function insertFormat(prefix, suffix) {
-            const textarea = inputs.body;
-            if(!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selectedText = textarea.value.substring(start, end);
-            let finalPrefix = prefix;
-            if ((prefix.includes('- ') || prefix.includes('---') || prefix.includes('|')) && start > 0 && textarea.value.charAt(start - 1) !== '\n') {
-                finalPrefix = '\n' + prefix;
+            if (deadlineVal) {
+                const deadlineDate = new Date(deadlineVal);
+                deadlineDate.setHours(23, 59, 59, 999);
+                if (new Date() > deadlineDate) isPastDeadline = true;
             }
-            const insertion = finalPrefix + selectedText + suffix;
-            textarea.value = textarea.value.substring(0, start) + insertion + textarea.value.substring(end);
-            textarea.focus();
-            textarea.selectionStart = start + (selectedText.length === 0 ? finalPrefix.length : insertion.length);
-            textarea.selectionEnd = textarea.selectionStart;
-            updatePreview();
-            saveStateToHistory(true); 
+
+            if (isManualExpired || isPastDeadline) {
+                showToast("This letter has expired. Signing is disabled.", "error");
+                return;
+            }
+
+            // SECURITY FIX: Read from the secure database variable, NOT the HTML input box
+            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
+            
+            if (!recipientEmail) {
+                showToast("Security Error: No recipient email specified for this document.", "error");
+                return;
+            }
+
+            const isAuthorized = (email) => {
+                return email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase();
+            };
+
+            // Trigger Google Login if not logged in, or if logged in with the wrong account
+            if (!currentUser || !isAuthorized(currentUser.email)) {
+                if (currentUser) {
+                    await signOut(auth);
+                    currentUser = null;
+                }
+                
+                const btn = document.getElementById('btn-ro-sign');
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Verifying...`;
+                btn.disabled = true;
+                
+                try {
+                    const result = await signInWithPopup(auth, provider);
+                    currentUser = result.user;
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    
+                    if (!isAuthorized(currentUser.email)) {
+                        await signOut(auth);
+                        currentUser = null;
+                        showToast(`Access Denied! You must log in as: ${recipientEmail}`, "error");
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Login failed", err);
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    showToast("Identity verification cancelled or failed.", "error");
+                    return;
+                }
+            }
+
+            // Identity Verified! Proceed to open modal
+            const modal = document.getElementById('signature-modal');
+            modal.classList.remove('hidden');
+            
+            // Resize canvas to properly map pixels for drawing
+            const rect = sigCanvas.parentElement.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            sigCanvas.height = rect.height;
+            
+            sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080'; // Dark blue signature ink
+            sigCtx.lineWidth = 3;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+            
+            clearSignature();
+        };
+
+        window.closeSignatureModal = function() {
+            document.getElementById('signature-modal').classList.add('hidden');
+        };
+
+        window.clearSignature = function() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+        };
+
+        function getMousePos(evt) {
+            const rect = sigCanvas.getBoundingClientRect();
+            const clientX = evt.clientX || (evt.touches && evt.touches[0].clientX);
+            const clientY = evt.clientY || (evt.touches && evt.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
         }
 
-        function parseFormatting(text) {
-            if (!text) return '<span class="text-gray-400 italic">[Your letter content will appear here.]</span>';
-            let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            html = html.replace(/==([^=]+)==/g, '<mark class="bg-brandAccent/40 px-1.5 py-0.5 rounded font-semibold text-gray-900">$1</mark>');
-            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
-            html = html.replace(/\[center\]([\s\S]*?)\[\/center\]/g, '<div class="text-center">$1</div>');
-            html = html.replace(/\[right\]([\s\S]*?)\[\/right\]/g, '<div class="text-right">$1</div>');
-            
-            const lines = html.split('\n');
-            let inList = false; let inTable = false; let finalHtml = '';
+        const startDraw = (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getMousePos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(pos.x, pos.y);
+        };
 
-            lines.forEach(line => {
-                let tLine = line.trim();
-                if (tLine.startsWith('- ')) {
-                    if (inTable) { finalHtml += '</tbody></table>'; inTable = false; }
-                    if (!inList) { finalHtml += '<ul class="list-disc pl-5 my-2 space-y-1">'; inList = true; }
-                    finalHtml += `<li>${line.substring(2)}</li>`;
-                } else if (tLine.startsWith('|') && tLine.endsWith('|')) {
-                    if (inList) { finalHtml += '</ul>'; inList = false; }
-                    if (!inTable) { finalHtml += '<table class="w-full text-left border-collapse my-4 border border-gray-300 dark:border-gray-700"><thead>'; inTable = true; }
-                    if (tLine.includes('---')) { finalHtml += '</thead><tbody>'; } 
-                    else {
-                        const cells = tLine.substring(1, tLine.length - 1).split('|');
-                        finalHtml += '<tr>';
-                        cells.forEach(cell => {
-                            const tag = finalHtml.includes('<tbody>') ? 'td' : 'th';
-                            finalHtml += `<${tag} class="border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm">${cell.trim()}</${tag}>`;
-                        });
-                        finalHtml += '</tr>';
+        const draw = (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+        };
+
+        const stopDraw = (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                sigCtx.stroke();
+                sigCtx.closePath();
+                isDrawing = false;
+            }
+        };
+
+        sigCanvas.addEventListener('mousedown', startDraw);
+        sigCanvas.addEventListener('mousemove', draw);
+        sigCanvas.addEventListener('mouseup', stopDraw);
+        sigCanvas.addEventListener('mouseout', stopDraw);
+        sigCanvas.addEventListener('touchstart', startDraw, {passive: false});
+        sigCanvas.addEventListener('touchmove', draw, {passive: false});
+        sigCanvas.addEventListener('touchend', stopDraw, {passive: false});
+
+        document.getElementById('btn-save-signature').addEventListener('click', async () => {
+            // DOUBLE SECURITY CHECK: Prevent console and Javascript hacking
+            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
+            const isAuthorized = currentUser && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
+            
+            if (!isAuthorized) {
+                showToast("Security Block: Unauthorized identity detected.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-save-signature');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Saving...`;
+            btn.disabled = true;
+
+            const sigDataUrl = sigCanvas.toDataURL('image/png');
+            
+            // Automatically grab the recipient's name to use as the signature name
+            const signerName = inputs.toName.value.trim() || 'Client Signature';
+            
+            inputs.partnerSignUrl.value = sigDataUrl;
+            if(!inputs.partnerSignName.value.trim()) {
+                inputs.partnerSignName.value = signerName;
+            }
+
+            try {
+                // Instantly update Firebase with the new signature
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
+                await updateDoc(docRef, {
+                    "data.partnerSignUrl": sigDataUrl,
+                    "data.partnerSignName": inputs.partnerSignName.value
+                });
+
+                updatePreview();
+                closeSignatureModal();
+                showToast("Signature attached successfully!", "success");
+                
+                // Hide the sign button since it is now signed
+                document.getElementById('btn-ro-sign').classList.add('hidden');
+                
+            } catch (err) {
+                console.error("Signature Save Error: ", err);
+                showToast("Failed to save signature. Check Firestore Rules.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const letterIdParam = urlParams.get('letterId');
+        const isReadOnlyMode = !!letterIdParam;
+
+        if (isReadOnlyMode) {
+            document.getElementById('login-wrapper').style.display = 'none';
+            const appWrap = document.getElementById('app-wrapper');
+            appWrap.classList.remove('hidden', 'opacity-0');
+            appWrap.classList.add('flex');
+            
+            document.querySelector('header').classList.add('hidden');
+            document.querySelector('section.lg\\:w-\\[450px\\]').classList.add('hidden'); 
+            
+            const main = document.querySelector('main');
+            main.classList.remove('lg:flex-row');
+            main.classList.add('bg-gray-100', 'dark:bg-darkBg', 'justify-center');
+            
+            const preview = document.querySelector('.preview-container');
+            preview.classList.add('w-full', 'max-w-4xl', 'mx-auto');
+            
+            document.getElementById('read-only-controls').classList.remove('hidden');
+
+            getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', letterIdParam))
+            .then(snap => {
+                if(snap.exists()) {
+                    const snapData = snap.data().data;
+                    secureRecipientEmail = (snapData.toEmail || "").trim().toLowerCase(); // Lock email from the database
+                    applyState(snapData);
+                    
+                    const isManualExpired = snapData.isExpired === true || snapData.isExpired === "true";
+                    let isPastDeadline = false;
+                    if (snapData.deadline) {
+                        const deadlineDate = new Date(snapData.deadline);
+                        deadlineDate.setHours(23, 59, 59, 999);
+                        if (new Date() > deadlineDate) isPastDeadline = true;
                     }
+
+                    const isSigned = snapData.partnerSignUrl && snapData.partnerSignUrl.trim() !== '';
+                    const isExpired = isManualExpired || isPastDeadline;
+
+                    if (isSigned || isExpired) {
+                        const btnRoSign = document.getElementById('btn-ro-sign');
+                        if (btnRoSign) btnRoSign.classList.add('hidden');
+                        if(isExpired && !isSigned) {
+                            showToast("This document has expired and can no longer be signed.", "error");
+                        }
+                    }
+
                 } else {
-                    if (inList) { finalHtml += '</ul>'; inList = false; }
-                    if (inTable) { finalHtml += '</tbody></table>'; inTable = false; }
-                    if (tLine.match(/^<div class="text-(center|right)">$/) || tLine === '</div>') finalHtml += tLine;
-                    else finalHtml += line + (tLine === '' ? '<br>' : '<br>'); 
+                    document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-gray-500 font-bold text-xl mt-20">Letter not found or has been removed.</div>';
+                    document.getElementById('read-only-controls').classList.add('hidden');
+                }
+            }).catch(err => {
+                console.error(err);
+                document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-red-500 font-bold text-xl mt-20">Access Denied. Check Firestore Rules.</div>';
+                document.getElementById('read-only-controls').classList.add('hidden');
+            });
+        }
+
+        async function fetchNextRefNumber() {
+            if (!currentUser) return;
+            let maxCount = 0;
+            const prefix = `FD-${currentYear}/`;
+            
+            lettersList.forEach(letter => {
+                if (letter.ref && letter.ref.startsWith(prefix)) {
+                    const numPart = letter.ref.replace(prefix, '');
+                    const num = parseInt(numPart, 10);
+                    if (!isNaN(num) && num > maxCount) {
+                        maxCount = num;
+                    }
                 }
             });
-            if (inList) finalHtml += '</ul>';
-            if (inTable) { if(!finalHtml.includes('<tbody>')) finalHtml += '</thead>'; finalHtml += '</tbody></table>'; }
-            return finalHtml.replace(/<br><ul/g, '<ul').replace(/<\/ul><br>/g, '</ul>');
+            
+            expectedNextCount = maxCount + 1;
+            const formattedCount = String(expectedNextCount).padStart(3, '0');
+            inputs.ref.value = `${prefix}${formattedCount}`;
+            updatePreview();
         }
 
-        function updatePreview() {
-            const today = new Date().toISOString().split('T')[0];
-            const state = {
-                date: inputs.date?.value || today, 
-                ref: inputs.ref?.value.trim() || '-',
-                toName: inputs.toName?.value.trim() || '[Recipient Name]', 
-                toCompany: inputs.toCompany?.value.trim() || '',
-                toAddress: inputs.toAddress?.value.trim() || '', 
-                subject: inputs.subject?.value.trim() || '[Letter Subject]',
-                body: inputs.body?.value || '', 
-                signName: inputs.signName?.value.trim() || 'Signatory Name',
-                signRole: inputs.signRole?.value.trim() || 'Designation', 
-                signUrl: inputs.signUrl?.value.trim() || '',
-                partnerSignName: inputs.partnerSignName?.value.trim() || '', 
-                partnerSignRole: inputs.partnerSignRole?.value.trim() || '',
-                partnerLogoUrl: inputs.partnerLogoUrl?.value.trim() || '', 
-                partnerSignUrl: inputs.partnerSignUrl?.value.trim() || '',
-                agencyPhone: inputs.agencyPhone?.value.trim() || '+91 86370 28337', 
-                agencyEmail: inputs.agencyEmail?.value.trim() || 'digitalfalconix@gmail.com',
-                agencyWeb: inputs.agencyWeb?.value.trim() || 'falconixdigital.netlify.app', 
-                agencyAddress: inputs.agencyAddress?.value.trim() || 'Motihari, Bihar, India',
-                logoUrl: inputs.logoUrl?.value.trim() || ''
+        let historyStack = [];
+        let historyIndex = -1;
+        let isUndoRedoAction = false;
+        let historyTimeout;
+
+        function saveStateToHistory(force = false) {
+            if (isUndoRedoAction) return;
+            
+            const executeSave = () => {
+                const stateStr = JSON.stringify(getCurrentState());
+
+                if (historyIndex >= 0 && historyStack[historyIndex] === stateStr) return;
+                
+                historyStack = historyStack.slice(0, historyIndex + 1);
+                historyStack.push(stateStr);
+                if (historyStack.length > 50) historyStack.shift();
+                else historyIndex++;
             };
 
+            if (force) {
+                clearTimeout(historyTimeout);
+                executeSave();
+            } else {
+                clearTimeout(historyTimeout);
+                historyTimeout = setTimeout(executeSave, 500);
+            }
+        }
+
+        window.undo = function() {
+            if (historyIndex > 0) {
+                isUndoRedoAction = true;
+                historyIndex--;
+                applyState(JSON.parse(historyStack[historyIndex]));
+                isUndoRedoAction = false;
+            }
+        };
+
+        window.redo = function() {
+            if (historyIndex < historyStack.length - 1) {
+                isUndoRedoAction = true;
+                historyIndex++;
+                applyState(JSON.parse(historyStack[historyIndex]));
+                isUndoRedoAction = false;
+            }
+        };
+
+        window.resetLetter = async function(force = false) {
+            if(!force && !confirm("Are you sure you want to reset the letter? This will clear all your current content.")) return;
+            inputs.template.value = "blank";
+            inputs.toName.value = "";
+            inputs.toEmail.value = "";
+            inputs.toCompany.value = "";
+            inputs.toAddress.value = "";
+            inputs.subject.value = "";
+            inputs.body.value = "";
+            inputs.partnerSignName.value = "";
+            inputs.partnerSignRole.value = "";
+            inputs.partnerLogoUrl.value = "";
+            inputs.partnerSignUrl.value = "";
+            inputs.deadline.value = "";
+            inputs.isExpired.checked = false;
+            
+            customVars = {};
+            currentLetterId = crypto.randomUUID();
+            renderCustomVariables();
+
+            if (currentUser) {
+                await fetchNextRefNumber();
+            } else {
+                inputs.ref.value = `FD-${currentYear}/001`;
+            }
+            updatePreview();
+            saveStateToHistory(true);
+            if (!force) showToast("Letter reset to blank.", "success");
+        };
+
+        function getDrafts() {
+            return JSON.parse(localStorage.getItem('letter_drafts') || '{"list":[]}');
+        }
+
+        window.saveCurrentDraft = function() {
+            const name = prompt("Enter a name for this draft checkpoint (e.g., 'Offer Letter V1'):");
+            if (!name) return;
+            
+            const draftsData = getDrafts();
+            draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: getCurrentState() });
+            localStorage.setItem('letter_drafts', JSON.stringify(draftsData));
+            updateDraftsDropdown();
+            showToast("Local draft saved successfully!", "success");
+        };
+
+        window.loadDraft = function(id) {
+            if (!id) return;
+            const draftsData = getDrafts();
+            const draft = draftsData.list.find(d => d.id === id);
+            if (draft) {
+                applyState(draft.data);
+                saveStateToHistory(true);
+                showToast("Draft loaded successfully.", "success");
+            }
+            document.getElementById('input-drafts').value = ""; 
+        };
+
+        function updateDraftsDropdown() {
+            const draftsData = getDrafts();
+            const select = document.getElementById('input-drafts');
+            select.innerHTML = '<option value="">-- Load a Local Draft --</option>';
+            draftsData.list.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = `${d.name} (${new Date(d.timestamp).toLocaleDateString()})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function autoSave() {
             localStorage.setItem('letter_autosave', JSON.stringify(getCurrentState()));
+        }
+
+        function loadAutoSave() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('letter_autosave'));
+                if (saved) {
+                    applyState(saved);
+                }
+            } catch(e) {}
+        }
+
+        function setupImageUpload(fileInputId, urlInputId) {
+            document.getElementById(fileInputId).addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600; 
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > MAX_WIDTH) {
+                            height = Math.round((height * MAX_WIDTH) / width);
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        document.getElementById(urlInputId).value = canvas.toDataURL('image/png', 0.9);
+                        updatePreview();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        setupImageUpload('file-logo', 'input-logo-url');
+        setupImageUpload('file-sign', 'input-sign-url');
+        setupImageUpload('file-partner-logo', 'input-partner-logo-url');
+        setupImageUpload('file-partner-sign', 'input-partner-sign-url');
+
+        window.updatePreview = function() {
+            const state = {
+                date: inputs.date.value || today,
+                ref: inputs.ref.value.trim() || '-',
+                toName: inputs.toName.value.trim() || '[Recipient Name]',
+                toCompany: inputs.toCompany.value.trim(),
+                toAddress: inputs.toAddress.value.trim(),
+                subject: inputs.subject.value.trim() || '[Letter Subject]',
+                body: inputs.body.value,
+                
+                signName: inputs.signName.value.trim() || 'Signatory Name',
+                signRole: inputs.signRole.value.trim() || 'Designation',
+                signUrl: inputs.signUrl.value.trim(),
+                
+                partnerSignName: inputs.partnerSignName.value.trim(),
+                partnerSignRole: inputs.partnerSignRole.value.trim(),
+                partnerLogoUrl: inputs.partnerLogoUrl.value.trim(),
+                partnerSignUrl: inputs.partnerSignUrl.value.trim(),
+                
+                agencyPhone: inputs.agencyPhone.value.trim() || '+91 86370 28337',
+                agencyEmail: inputs.agencyEmail.value.trim() || 'digitalfalconix@gmail.com',
+                agencyWeb: inputs.agencyWeb.value.trim() || 'falconixdigital.netlify.app',
+                agencyAddress: inputs.agencyAddress.value.trim() || 'Motihari, Bihar, India',
+                logoUrl: inputs.logoUrl.value.trim()
+            };
+
+            autoSave(); 
 
             const variableMap = {
-                '[Recipient Name]': state.toName !== '[Recipient Name]' ? state.toName : '__________',
+                '[Recipient Name]': inputs.toName.value.trim() || '__________',
                 '[Company Name]': 'Falconix Digital',
-                '[Partner Name]': state.partnerSignName || '__________',
-                '[Date]': state.date ? new Date(state.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '__________'
+                '[Partner Name]': inputs.partnerSignName.value.trim() || '__________',
+                '[Date]': inputs.date.value ? new Date(inputs.date.value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '__________'
             };
-            for (let key in customVars) variableMap[key] = customVars[key].trim() || '__________';
 
-            // Safely check expiry conditions
+            for (let key in customVars) {
+                variableMap[key] = customVars[key].trim() || '__________';
+            }
+
             const isManualExpired = inputs.isExpired ? inputs.isExpired.checked : false;
             const deadlineVal = inputs.deadline ? inputs.deadline.value : null;
             let isPastDeadline = false;
@@ -742,20 +1150,21 @@
             const isExpired = isManualExpired || isPastDeadline;
 
             const pages = (state.body || '').split(/(?:\r?\n)?---(?:\r?\n)?/);
-            const staticQrCodeUrl = "https://i.ibb.co/4RpHrqMH/FD.jpg";
-            const shareUrl = window.location.origin + window.location.pathname + '?letterId=' + currentLetterId;
             
-            let dynamicQrCodeUrl = '';
-            if (typeof qrcode !== 'undefined') {
-                const qr = qrcode(0, 'M');
-                qr.addData(shareUrl);
-                qr.make();
-                dynamicQrCodeUrl = qr.createDataURL(4, 0);
-            }
+            const staticQrCodeUrl = "https://i.ibb.co/4RpHrqMH/FD.jpg";
+            
+            const shareUrl = window.location.origin + window.location.pathname + '?letterId=' + currentLetterId;
+            const qr = qrcode(0, 'M');
+            qr.addData(shareUrl);
+            qr.make();
+            const dynamicQrCodeUrl = qr.createDataURL(4, 0);
 
             let html = '';
+
             pages.forEach((pageContent, index) => {
-                const isFirst = index === 0; const isLast = index === pages.length - 1;
+                const isFirst = index === 0;
+                const isLast = index === pages.length - 1;
+
                 let parsedContent = parseFormatting(pageContent);
                 
                 for (const [tag, actualValue] of Object.entries(variableMap)) {
@@ -787,7 +1196,10 @@
                                 <h1 class="text-3xl font-black tracking-tight leading-none text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
                                 <p class="text-xs text-brandAccent font-bold tracking-widest uppercase mt-1.5 leading-none">Innovation In Flight</p>
                             </div>
-                            ${state.partnerLogoUrl ? `<i class="ph ph-x text-gray-500 text-xl ml-4"></i><img src="${state.partnerLogoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Partner Logo" crossorigin="anonymous">` : ''}
+                            ${state.partnerLogoUrl ? `
+                                <i class="ph ph-x text-gray-500 text-xl ml-4"></i>
+                                <img src="${state.partnerLogoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Partner Logo" crossorigin="anonymous">
+                            ` : ''}
                         </div>
                         <div class="text-right text-[11px] text-gray-300 leading-relaxed">
                             <p class="flex items-center justify-end gap-1.5"><i class="ph-fill ph-phone text-brandAccent"></i> <span>${state.agencyPhone}</span></p>
@@ -825,17 +1237,31 @@
                                 <div>
                                     <p class="text-sm text-gray-800 mb-4">Sincerely,</p>
                                     <div class="mb-2 relative w-max h-20 flex items-end">
-                                        ${state.signUrl ? `<img src="${state.signUrl}" class="h-20 object-contain mix-blend-multiply" alt="Signature" crossorigin="anonymous">` : `<p class="font-signature text-4xl text-blue-900 transform -rotate-3 opacity-90 pb-2 pr-4">${state.signName}</p>`}
-                                        ${state.logoUrl ? `<div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]"><img src="${state.logoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Company Seal" crossorigin="anonymous"></div>` : ''}
+                                        ${state.signUrl 
+                                            ? `<img src="${state.signUrl}" class="h-20 object-contain mix-blend-multiply" alt="Signature" crossorigin="anonymous">` 
+                                            : `<p class="font-signature text-4xl text-blue-900 transform -rotate-3 opacity-90 pb-2 pr-4">${state.signName}</p>`}
+                                        ${state.logoUrl ? `
+                                        <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
+                                            <img src="${state.logoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Company Seal" crossorigin="anonymous">
+                                        </div>
+                                        ` : ''}
                                     </div>
                                     <p class="text-sm font-bold text-black mt-2">${state.signName}</p>
                                     <p class="text-xs font-medium text-gray-700">${state.signRole}</p>
                                 </div>
+
                                 ${(state.partnerSignName || state.partnerSignRole || state.partnerSignUrl) ? `
                                 <div>
                                     <p class="text-sm text-gray-800 mb-4">Acknowledged & Agreed,</p>
                                     <div class="mb-2 relative w-max h-20 flex items-end">
-                                        ${state.partnerSignUrl ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature" crossorigin="anonymous">` : `<div class="h-20 w-40"></div>`}
+                                        ${state.partnerSignUrl 
+                                            ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature" crossorigin="anonymous">` 
+                                            : `<div class="h-20 w-40"></div>`}
+                                        ${state.partnerLogoUrl ? `
+                                        <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
+                                            <img src="${state.partnerLogoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Partner Seal" crossorigin="anonymous">
+                                        </div>
+                                        ` : ''}
                                     </div>
                                     <p class="text-sm font-bold text-black mt-2">${state.partnerSignName || 'Partner Name'}</p>
                                     <p class="text-xs font-medium text-gray-700">${state.partnerSignRole || 'Partner Title'}</p>
@@ -870,335 +1296,110 @@
                 </div>
                 `;
             });
-            
-            const wrapper = document.getElementById('document-wrapper');
-            if(wrapper) wrapper.innerHTML = html;
-        }
 
-        // ==========================================
-        // 5. DATABASE OPERATIONS
-        // ==========================================
-        let lettersList = [];
+            document.getElementById('document-wrapper').innerHTML = html;
+        };
+
+        Object.values(inputs).forEach(input => {
+            if(!input) return;
+            const eventType = input.type === 'checkbox' ? 'change' : 'input';
+            input.addEventListener(eventType, () => {
+                updatePreview();
+                saveStateToHistory();
+            });
+        });
+
         let customTemplatesList = [];
-        let unsubscribeLetters = null;
         let unsubscribeCustomTemplates = null;
 
-        async function fetchNextRefNumber() {
-            if (!currentUser) return;
-            let maxCount = 0;
-            const prefix = `FD-${currentYear}/`;
-            lettersList.forEach(letter => {
-                if (letter.ref && letter.ref.startsWith(prefix)) {
-                    const num = parseInt(letter.ref.replace(prefix, ''), 10);
-                    if (!isNaN(num) && num > maxCount) maxCount = num;
-                }
-            });
-            setExpectedNextCount(maxCount + 1);
-            if(inputs.ref) inputs.ref.value = `${prefix}${String(expectedNextCount).padStart(3, '0')}`;
-            updatePreview();
-        }
-
-        async function saveLetterToCloud() {
-            if (!currentUser) return showToast("You must be logged in.", "error");
-
-            const currentRef = inputs.ref.value.trim();
-            if (currentRef !== "" && lettersList.some(l => l.ref === currentRef && l.id !== currentLetterId)) {
-                return showToast("A letter with this Reference Number already exists!", "error");
-            }
-
-            const btnSaveCloud = document.getElementById('btn-save-cloud');
-            const originalHtml = btnSaveCloud.innerHTML;
-            btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Saving...';
-            btnSaveCloud.disabled = true;
-
-            try {
-                await setDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId), {
-                    data: getCurrentState(), type: inputs.template.value || 'blank',
-                    subject: inputs.subject.value.trim() || 'Untitled Document', recipient: inputs.toName.value.trim() || 'Unknown Recipient',
-                    ref: inputs.ref.value.trim(), createdAt: Date.now()
+        function renderTemplateDropdown() {
+            const select = inputs.template;
+            let html = `
+                <optgroup label="Standard Templates">
+                    <option value="blank">Blank Document</option>
+                    <option value="offer">Job Offer Letter</option>
+                    <option value="telecaller_offer">Telecaller Offer Letter</option>
+                    <option value="telecaller_selection">Telecaller Selection</option>
+                    <option value="telecaller_tnc">Telecaller T&C Agreement</option>
+                    <option value="collab">Business Collaboration Proposal</option>
+                    <option value="nda">Non-Disclosure Agreement</option>
+                    <option value="warning">Formal Warning Letter</option>
+                    <option value="termination">Termination Letter</option>
+                    <option value="apology">Formal Apology</option>
+                    <option value="onboarding">Client Onboarding</option>
+                </optgroup>
+            `;
+            if (customTemplatesList.length > 0) {
+                html += `<optgroup label="Custom Cloud Templates">`;
+                customTemplatesList.forEach(t => {
+                    html += `<option value="custom_${t.id}">${t.name}</option>`;
                 });
-                showToast("Letter saved securely to the cloud.", "success");
-                await resetLetter(true);
-            } catch (error) { showToast("Failed to save to cloud.", "error"); } 
-            finally { btnSaveCloud.innerHTML = originalHtml; btnSaveCloud.disabled = false; }
+                html += `</optgroup>`;
+            }
+            
+            const currentVal = select.value;
+            select.innerHTML = html;
+            if (select.querySelector(`option[value="${currentVal}"]`)) {
+                select.value = currentVal;
+            } else {
+                select.value = 'blank';
+            }
         }
 
-        async function saveAsCustomTemplate() {
+        window.saveAsCustomTemplate = async function() {
             if (!currentUser) return showToast("You must be logged in to save templates.", "error");
             const name = prompt("Enter a name for this Custom Template:");
             if (!name) return;
-            await setDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', crypto.randomUUID()), {
-                name: name.trim(), subject: inputs.subject.value.trim(), body: inputs.body.value,
-                createdAt: Date.now(), createdBy: currentUser.email
+
+            const docId = crypto.randomUUID();
+            const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', docId);
+
+            await setDoc(docRef, {
+                name: name.trim(),
+                subject: inputs.subject.value.trim(),
+                body: inputs.body.value,
+                createdAt: Date.now(),
+                createdBy: currentUser.email
             });
+
             showToast("Custom template saved to cloud!", "success");
-        }
+        };
 
-        async function deleteCustomTemplate(id) {
+        window.deleteCustomTemplate = async function(id) {
             if (!confirm("Are you sure you want to delete this custom template?")) return;
-            await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', id));
-            showToast("Template deleted.", "success");
-        }
-
-        function setupDatabaseListener(isReadOnlyMode, renderTemplateDropdown, renderCloudLetters, renderManageTemplates) {
-            if (!currentUser) return;
-            unsubscribeLetters = onSnapshot(collection(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters'), (snapshot) => {
-                lettersList = [];
-                snapshot.forEach(doc => lettersList.push({ id: doc.id, ...doc.data() }));
-                lettersList.sort((a, b) => b.createdAt - a.createdAt);
-                if (inputs.template && inputs.template.value === 'blank' && !isReadOnlyMode) fetchNextRefNumber();
-                renderCloudLetters();
-            });
-
-            unsubscribeCustomTemplates = onSnapshot(collection(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates'), (snapshot) => {
-                customTemplatesList = [];
-                snapshot.forEach(doc => customTemplatesList.push({ id: doc.id, ...doc.data() }));
-                renderTemplateDropdown();
-                renderManageTemplates();
-            });
-        }
-
-        // ==========================================
-        // 6. HISTORY & LOCAL DRAFTS
-        // ==========================================
-        let historyStack = [];
-        let historyIndex = -1;
-        let isUndoRedoAction = false;
-        let historyTimeout;
-
-        function loadAutoSave() {
             try {
-                const saved = localStorage.getItem('letter_autosave');
-                if (saved) {
-                    applyState(JSON.parse(saved));
+                await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', id));
+                showToast("Template deleted.", "success");
+            } catch(e) {
+                showToast("Failed to delete template.", "error");
+            }
+        };
+
+        inputs.template.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val.startsWith('custom_')) {
+                const tplId = val.replace('custom_', '');
+                const tpl = customTemplatesList.find(t => t.id === tplId);
+                if (tpl) {
+                    inputs.subject.value = tpl.subject;
+                    inputs.body.value = tpl.body;
+                    updatePreview();
+                    saveStateToHistory(true);
                 }
-            } catch (e) {
-                console.error("Failed to load autosave data", e);
-            }
-        }
-
-        function saveStateToHistory(force = false) {
-            if (isUndoRedoAction) return;
-            const executeSave = () => {
-                const stateStr = JSON.stringify(getCurrentState());
-                if (historyIndex >= 0 && historyStack[historyIndex] === stateStr) return;
-                historyStack = historyStack.slice(0, historyIndex + 1);
-                historyStack.push(stateStr);
-                if (historyStack.length > 50) historyStack.shift();
-                else historyIndex++;
-            };
-            if (force) { clearTimeout(historyTimeout); executeSave(); } 
-            else { clearTimeout(historyTimeout); historyTimeout = setTimeout(executeSave, 500); }
-        }
-
-        function undo() {
-            if (historyIndex > 0) {
-                isUndoRedoAction = true;
-                historyIndex--;
-                applyState(JSON.parse(historyStack[historyIndex]));
-                isUndoRedoAction = false;
-            }
-        }
-
-        function redo() {
-            if (historyIndex < historyStack.length - 1) {
-                isUndoRedoAction = true;
-                historyIndex++;
-                applyState(JSON.parse(historyStack[historyIndex]));
-                isUndoRedoAction = false;
-            }
-        }
-
-        async function resetLetter(force = false) {
-            if(!force && !confirm("Are you sure you want to reset the letter? This will clear all content.")) return;
-            if(inputs.template) inputs.template.value = "blank";
-            if(inputs.toName) inputs.toName.value = ""; 
-            if(inputs.toEmail) inputs.toEmail.value = ""; 
-            if(inputs.toCompany) inputs.toCompany.value = "";
-            if(inputs.toAddress) inputs.toAddress.value = ""; 
-            if(inputs.subject) inputs.subject.value = ""; 
-            if(inputs.body) inputs.body.value = "";
-            if(inputs.partnerSignName) inputs.partnerSignName.value = ""; 
-            if(inputs.partnerSignRole) inputs.partnerSignRole.value = "";
-            if(inputs.partnerLogoUrl) inputs.partnerLogoUrl.value = ""; 
-            if(inputs.partnerSignUrl) inputs.partnerSignUrl.value = "";
-            if(inputs.deadline) inputs.deadline.value = ""; 
-            if(inputs.isExpired) inputs.isExpired.checked = false;
-            
-            for (const key in customVars) delete customVars[key];
-            setCurrentLetterId(crypto.randomUUID());
-
-            if (currentUser) await fetchNextRefNumber();
-            else if(inputs.ref) inputs.ref.value = `FD-${currentYear}/001`;
-            
-            updatePreview();
-            saveStateToHistory(true);
-            if (!force) showToast("Letter reset to blank.", "success");
-        }
-
-        function getDrafts() { return JSON.parse(localStorage.getItem('letter_drafts') || '{"list":[]}'); }
-
-        function saveCurrentDraft() {
-            const name = prompt("Enter a name for this draft checkpoint:");
-            if (!name) return;
-            const draftsData = getDrafts();
-            draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: getCurrentState() });
-            localStorage.setItem('letter_drafts', JSON.stringify(draftsData));
-            updateDraftsDropdown();
-            showToast("Local draft saved successfully!", "success");
-        }
-
-        function loadDraft(id) {
-            if (!id) return;
-            const draft = getDrafts().list.find(d => d.id === id);
-            if (draft) {
-                applyState(draft.data);
-                saveStateToHistory(true);
-                showToast("Draft loaded successfully.", "success");
-            }
-            const draftsSelect = document.getElementById('input-drafts');
-            if(draftsSelect) draftsSelect.value = ""; 
-        }
-
-        function updateDraftsDropdown() {
-            const select = document.getElementById('input-drafts');
-            if(!select) return;
-            select.innerHTML = '<option value="">-- Load a Local Draft --</option>';
-            getDrafts().list.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.id; opt.textContent = `${d.name} (${new Date(d.timestamp).toLocaleDateString()})`;
-                select.appendChild(opt);
-            });
-        }
-
-        // ==========================================
-        // 7. SIGNATURE COMPONENT
-        // ==========================================
-        let isDrawing = false;
-        let sigCanvas, sigCtx;
-
-        function initSignaturePad() {
-            sigCanvas = document.getElementById('signature-pad');
-            if (!sigCanvas) return;
-            sigCtx = sigCanvas.getContext('2d');
-
-            const getMousePos = (evt) => {
-                const rect = sigCanvas.getBoundingClientRect();
-                const clientX = evt.clientX || (evt.touches && evt.touches[0].clientX);
-                const clientY = evt.clientY || (evt.touches && evt.touches[0].clientY);
-                return { x: clientX - rect.left, y: clientY - rect.top };
-            };
-
-            const startDraw = (e) => { e.preventDefault(); isDrawing = true; const pos = getMousePos(e); sigCtx.beginPath(); sigCtx.moveTo(pos.x, pos.y); };
-            const draw = (e) => { e.preventDefault(); if (!isDrawing) return; const pos = getMousePos(e); sigCtx.lineTo(pos.x, pos.y); sigCtx.stroke(); };
-            const stopDraw = (e) => { e.preventDefault(); if (isDrawing) { sigCtx.stroke(); sigCtx.closePath(); isDrawing = false; } };
-
-            sigCanvas.addEventListener('mousedown', startDraw);
-            sigCanvas.addEventListener('mousemove', draw);
-            sigCanvas.addEventListener('mouseup', stopDraw);
-            sigCanvas.addEventListener('mouseout', stopDraw);
-            sigCanvas.addEventListener('touchstart', startDraw, {passive: false});
-            sigCanvas.addEventListener('touchmove', draw, {passive: false});
-            sigCanvas.addEventListener('touchend', stopDraw, {passive: false});
-        }
-
-        async function openSignatureModal(isReadOnlyMode) {
-            const isManualExpired = inputs.isExpired ? inputs.isExpired.checked : false;
-            const deadlineVal = inputs.deadline ? inputs.deadline.value : null;
-            let isPastDeadline = false;
-            
-            if (deadlineVal) {
-                const deadlineDate = new Date(deadlineVal);
-                deadlineDate.setHours(23, 59, 59, 999);
-                if (new Date() > deadlineDate) isPastDeadline = true;
-            }
-            
-            if (isManualExpired || isPastDeadline) {
-                return showToast("This letter has expired. Signing is disabled.", "error");
-            }
-
-            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : (inputs.toEmail ? inputs.toEmail.value.trim().toLowerCase() : '');
-            if (!recipientEmail) return showToast("Security Error: No recipient email specified.", "error");
-
-            const isAuthorized = (email) => email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase();
-
-            if (!currentUser || !isAuthorized(currentUser.email)) {
-                if (currentUser) await logoutUser();
-                try {
-                    await loginUser();
-                    if (!isAuthorized(currentUser.email)) {
-                        await logoutUser();
-                        return showToast(`Access Denied! You must log in as: ${recipientEmail}`, "error");
-                    }
-                } catch (err) {
-                    return showToast("Identity verification cancelled.", "error");
-                }
-            }
-
-            const modal = document.getElementById('signature-modal');
-            if(!modal) return;
-            
-            modal.classList.remove('hidden');
-            const rect = sigCanvas.parentElement.getBoundingClientRect();
-            sigCanvas.width = rect.width; sigCanvas.height = rect.height;
-            sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080';
-            sigCtx.lineWidth = 3; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round';
-            clearSignature();
-        }
-
-        function closeSignatureModal() { 
-            const modal = document.getElementById('signature-modal');
-            if(modal) modal.classList.add('hidden'); 
-        }
-
-        function clearSignature() { 
-            if(sigCtx && sigCanvas) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); 
-        }
-
-        async function saveSignature(isReadOnlyMode) {
-            const recipientEmail = isReadOnlyMode ? secureRecipientEmail : (inputs.toEmail ? inputs.toEmail.value.trim().toLowerCase() : '');
-            const isAuthorized = currentUser && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
-            
-            if (!isAuthorized) return showToast("Security Block: Unauthorized identity detected.", "error");
-
-            const btn = document.getElementById('btn-save-signature');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Saving...`;
-            btn.disabled = true;
-
-            const sigDataUrl = sigCanvas.toDataURL('image/png');
-            if(inputs.partnerSignUrl) inputs.partnerSignUrl.value = sigDataUrl;
-            
-            if(inputs.partnerSignName && !inputs.partnerSignName.value.trim()) {
-                inputs.partnerSignName.value = (inputs.toName ? inputs.toName.value.trim() : '') || 'Client Signature';
-            }
-
-            try {
-                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
-                await updateDoc(docRef, { "data.partnerSignUrl": sigDataUrl, "data.partnerSignName": inputs.partnerSignName ? inputs.partnerSignName.value : '' });
+            } else if (templates[val]) {
+                inputs.subject.value = templates[val].subject;
+                inputs.body.value = templates[val].body;
                 updatePreview();
-                closeSignatureModal();
-                showToast("Signature attached successfully!", "success");
-                const roSignBtn = document.getElementById('btn-ro-sign');
-                if(roSignBtn) roSignBtn.classList.add('hidden');
-            } catch (err) {
-                showToast("Failed to save signature. Check Firestore Rules.", "error");
-            } finally {
-                btn.innerHTML = originalHtml; btn.disabled = false;
+                saveStateToHistory(true);
             }
-        }
+        });
 
-        // ==========================================
-        // 8. EXPORT OPERATIONS
-        // ==========================================
-        function executePDFDownload(btnId) {
+        window.executePDFDownload = function(btnId) {
             const wrapper = document.getElementById('document-wrapper');
             const previewContainer = document.querySelector('.preview-container');
             const mainContent = document.querySelector('main');
             const body = document.body;
             const btn = document.getElementById(btnId);
-            if (!wrapper || !previewContainer || !mainContent || !btn) return;
-
             const originalHtml = btn.innerHTML;
             
             btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating PDF...`;
@@ -1206,141 +1407,690 @@
 
             const origPreviewOverflow = previewContainer.style.overflow;
             const origMainOverflow = mainContent.style.overflow;
+            
             previewContainer.style.overflow = 'visible';
             mainContent.style.overflow = 'visible';
-            body.classList.remove('h-screen'); body.style.height = 'auto';
+            body.classList.remove('h-screen');
+            body.style.height = 'auto';
+            
             wrapper.classList.remove('gap-8', 'pb-8');
             
             const pages = wrapper.querySelectorAll('.a4-page');
-            pages.forEach(page => { page.classList.remove('shadow-2xl'); page.style.boxShadow = 'none'; page.style.margin = '0'; });
+            pages.forEach(page => {
+                page.classList.remove('shadow-2xl');
+                page.style.boxShadow = 'none';
+                page.style.margin = '0';
+            });
+            const refText = inputs.ref.value.trim() || 'No-Ref';
+            const subjectText = inputs.subject.value.trim() || 'Document';
 
-            const safeName = (inputs.subject.value.trim() || 'Document').replace(/[^a-zA-Z0-9\-]/g, '_');
-            const opt = { margin: 0, filename: `${safeName}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: 'css', before: '.page-break-before' } };
+            const combinedName = `${refText}_${subjectText}`;
+            const safeName = combinedName.replace(/[^a-zA-Z0-9\-]/g, '_');
+
+            const opt = {
+                margin:       0,
+                filename:     `${safeName}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'css', before: '.page-break-before' }
+            };
 
             setTimeout(() => {
                 html2pdf().set(opt).from(wrapper).save().then(() => {
                     previewContainer.style.overflow = origPreviewOverflow;
                     mainContent.style.overflow = origMainOverflow;
-                    body.classList.add('h-screen'); body.style.height = '';
+                    body.classList.add('h-screen');
+                    body.style.height = '';
                     wrapper.classList.add('gap-8', 'pb-8');
-                    pages.forEach(page => { page.classList.add('shadow-2xl'); page.style.boxShadow = ''; page.style.margin = '0 auto'; });
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
                     btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Downloaded!`;
                     setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
+                }).catch(err => {
+                    console.error("PDF Generation Error: ", err);
+                    previewContainer.style.overflow = origPreviewOverflow;
+                    mainContent.style.overflow = origMainOverflow;
+                    body.classList.add('h-screen');
+                    body.style.height = '';
+                    wrapper.classList.add('gap-8', 'pb-8');
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
+                    showToast("Failed to generate PDF.", "error");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
                 });
             }, 100);
+        };
+
+        document.getElementById('btn-email').addEventListener('click', () => {
+            const recipientEmail = inputs.toEmail.value.trim();
+            if (!recipientEmail) {
+                showToast("Please enter a Recipient Email address.", "error");
+                inputs.toEmail.focus();
+                return;
+            }
+
+            const wrapper = document.getElementById('document-wrapper');
+            const previewContainer = document.querySelector('.preview-container');
+            const mainContent = document.querySelector('main');
+            const body = document.body;
+            
+            const btn = document.getElementById('btn-email');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Preparing...`;
+            btn.disabled = true;
+
+            const origPreviewOverflow = previewContainer.style.overflow;
+            const origMainOverflow = mainContent.style.overflow;
+            
+            previewContainer.style.overflow = 'visible';
+            mainContent.style.overflow = 'visible';
+            body.classList.remove('h-screen');
+            body.style.height = 'auto';
+            
+            wrapper.classList.remove('gap-8', 'pb-8');
+            
+            const pages = wrapper.querySelectorAll('.a4-page');
+            pages.forEach(page => {
+                page.classList.remove('shadow-2xl');
+                page.style.boxShadow = 'none';
+                page.style.margin = '0';
+            });
+            const refText = inputs.ref.value.trim() || 'No-Ref';
+            const subjectText = inputs.subject.value.trim() || 'Document';
+
+            const combinedName = `${refText}_${subjectText}`;
+            const safeName = combinedName.replace(/[^a-zA-Z0-9\-]/g, '_');
+
+            const opt = {
+                margin:       0,
+                filename:     `${safeName}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'css', before: '.page-break-before' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(wrapper).outputPdf('datauristring').then((pdfBase64) => {
+                    previewContainer.style.overflow = origPreviewOverflow;
+                    mainContent.style.overflow = origMainOverflow;
+                    body.classList.add('h-screen');
+                    body.style.height = '';
+                    wrapper.classList.add('gap-8', 'pb-8');
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
+
+                    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Sending...`;
+
+                    emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+
+                    const templateParams = {
+                        to_name: inputs.toName.value.trim() || 'Client',
+                        to_email: recipientEmail,
+                        subject: subjectText,
+                        message: "Please find the attached document from Falconix Digital.",
+                        my_attachment: pdfBase64 
+                    };
+
+                    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+                        .then(function(response) {
+                           showToast("Email sent successfully!", "success");
+                           btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Sent!`;
+                           setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
+                        }, function(error) {
+                           console.error(error);
+                           showToast("EmailJS error. Ensure your API keys are set in the code.", "error");
+                           btn.innerHTML = originalHtml; btn.disabled = false;
+                        });
+                        
+                }).catch(err => {
+                    console.error("PDF Generation Error: ", err);
+                    previewContainer.style.overflow = origPreviewOverflow;
+                    mainContent.style.overflow = origMainOverflow;
+                    body.classList.add('h-screen');
+                    body.style.height = '';
+                    wrapper.classList.add('gap-8', 'pb-8');
+                    pages.forEach(page => {
+                        page.classList.add('shadow-2xl');
+                        page.style.boxShadow = '';
+                        page.style.margin = '0 auto';
+                    });
+                    showToast("Failed to generate PDF for email.", "error");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+            }, 100);
+        });
+
+        function splitCSV(line) {
+            const result = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i+1] === '"') {
+                        cur += '"'; i++; 
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(cur);
+                    cur = '';
+                } else {
+                    cur += char;
+                }
+            }
+            result.push(cur);
+            return result;
         }
 
-        // ==========================================
-        // 9. APP INITIALIZATION & BINDINGS
-        // ==========================================
-        
-        // Export global bindings for inline HTML onclick/onchange handlers
-        window.undo = undo;
-        window.redo = redo;
-        window.resetLetter = resetLetter;
-        window.saveCurrentDraft = saveCurrentDraft;
-        window.loadDraft = loadDraft;
-        window.addCustomVariable = addCustomVariable;
-        window.removeCustomVariable = removeCustomVariable;
-        window.insertFormat = insertFormat;
-        window.saveAsCustomTemplate = saveAsCustomTemplate;
-        window.deleteCustomTemplate = deleteCustomTemplate;
-        window.executePDFDownload = executePDFDownload;
-        window.openSignatureModal = () => openSignatureModal(isReadOnlyMode);
-        window.closeSignatureModal = closeSignatureModal;
-        window.clearSignature = clearSignature;
-        window.processBulk = (type) => showToast("Bulk Processing (" + type + ") coming soon!", "info"); // Placeholder for bulk
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setupThemeToggle();
-            initSignaturePad();
-
-            document.getElementById('google-login-btn')?.addEventListener('click', loginUser);
-            document.getElementById('auth-logout-btn')?.addEventListener('click', logoutUser);
-            document.getElementById('btn-save-cloud')?.addEventListener('click', saveLetterToCloud);
-            document.getElementById('btn-save-signature')?.addEventListener('click', () => saveSignature(isReadOnlyMode));
+        window.processBulk = async function(actionType) { 
+            const fileInput = document.getElementById('bulk-csv-file');
+            if(!fileInput.files.length) return showToast("Please select a CSV file.", "error");
             
-            Object.values(inputs).forEach(input => {
-                if (!input) return;
-                const eventType = input.type === 'checkbox' ? 'change' : 'input';
-                input.addEventListener(eventType, () => { updatePreview(); saveStateToHistory(); });
-            });
+            const file = fileInput.files[0];
+            const text = await file.text();
+            
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+            if(lines.length < 2) return showToast("CSV must have a header row and at least one data row.", "error");
+            
+            const headers = splitCSV(lines[0]).map(h => h.trim().replace(/^"|"$/g, ''));
+            const dataRows = [];
+            for(let i=1; i<lines.length; i++) {
+                const row = splitCSV(lines[i]);
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h] = row[idx] ? row[idx].replace(/^"|"$/g, '').trim() : '';
+                });
+                dataRows.push(obj);
+            }
+            
+            document.getElementById('bulk-progress-container').classList.remove('hidden');
+            const progressText = document.getElementById('bulk-progress-text');
+            const progressBar = document.getElementById('bulk-progress-bar');
+            
+            const btnDL = document.getElementById('btn-bulk-download');
+            const btnEM = document.getElementById('btn-bulk-email');
+            btnDL.disabled = true; btnEM.disabled = true;
 
-            onAuthStateChanged(auth, (user) => {
-                if (isReadOnlyMode) { setCurrentUser(user); return; }
+            let zip;
+            if(actionType === 'zip') {
+                zip = new JSZip();
+            }
 
-                if (user && user.email === ALLOWED_EMAIL) {
-                    setCurrentUser(user);
-                    document.getElementById('login-wrapper')?.classList.add('hidden');
-                    document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
-                    document.getElementById('app-wrapper')?.classList.add('flex');
-                    
-                    try {
-                        loadAutoSave();
-                        updateDraftsDropdown();
-                        updatePreview();
-                        // Render UI updates on DB change
-                        setupDatabaseListener(isReadOnlyMode, 
-                            () => console.log('Templates Loaded'), 
-                            () => console.log('Letters Loaded'), 
-                            () => console.log('Manage templates refreshed')
-                        );
-                    } catch(e) {
-                        console.error("Initialization Error:", e);
-                        showToast("Error loading saved data.", "error");
-                    }
+            const originalState = getCurrentState();
+
+            for(let i=0; i<dataRows.length; i++) {
+                const row = dataRows[i];
+                progressText.innerText = `Processing ${i+1} of ${dataRows.length} (${row['Recipient Name'] || 'Letter '+ (i+1)})...`;
+                progressBar.style.width = `${((i+1)/dataRows.length)*100}%`;
+                
+                currentLetterId = crypto.randomUUID();
+                
+                if (row['Ref']) {
+                    inputs.ref.value = row['Ref'];
                 } else {
-                    setCurrentUser(null);
-                    document.getElementById('app-wrapper')?.classList.add('hidden');
-                    document.getElementById('login-wrapper')?.classList.remove('hidden');
-                    if (user) { logoutUser(); document.getElementById('login-error')?.classList.remove('hidden'); }
-                }
-            });
-
-            if (isReadOnlyMode) {
-                const loginWrap = document.getElementById('login-wrapper');
-                if(loginWrap) loginWrap.style.display = 'none';
-                
-                document.getElementById('app-wrapper')?.classList.remove('hidden', 'opacity-0');
-                document.getElementById('app-wrapper')?.classList.add('flex');
-                document.querySelector('header')?.classList.add('hidden');
-                document.querySelector('section.lg\\:w-\\[450px\\]')?.classList.add('hidden'); 
-                document.getElementById('read-only-controls')?.classList.remove('hidden');
-                
-                getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', new URLSearchParams(window.location.search).get('letterId')))
-                .then(snap => {
-                    if(snap.exists()) {
-                        const snapData = snap.data().data;
-                        setSecureRecipientEmail((snapData.toEmail || "").trim().toLowerCase());
-                        applyState(snapData);
-                        
-                        const isManualExpired = snapData.isExpired === true || snapData.isExpired === "true";
-                        let isPastDeadline = false;
-                        if (snapData.deadline) {
-                            const deadlineDate = new Date(snapData.deadline);
-                            deadlineDate.setHours(23, 59, 59, 999);
-                            if (new Date() > deadlineDate) isPastDeadline = true;
-                        }
-                        
-                        const isSigned = snapData.partnerSignUrl && snapData.partnerSignUrl.trim() !== '';
-                        const isExpired = isManualExpired || isPastDeadline;
-
-                        if (isSigned || isExpired) {
-                            document.getElementById('btn-ro-sign')?.classList.add('hidden');
-                            if(isExpired && !isSigned) {
-                                showToast("This document has expired and can no longer be signed.", "error");
+                    let maxCount = 0;
+                    const prefix = `FD-${currentYear}/`;
+                    lettersList.forEach(letter => {
+                        if (letter.ref && letter.ref.startsWith(prefix)) {
+                            const numPart = letter.ref.replace(prefix, '');
+                            const num = parseInt(numPart, 10);
+                            if (!isNaN(num) && num > maxCount) {
+                                maxCount = num;
                             }
                         }
-                    } else {
-                        const dw = document.getElementById('document-wrapper');
-                        if (dw) dw.innerHTML = '<div class="p-10 text-gray-500 font-bold">Letter not found.</div>';
+                    });
+                    const nextNum = maxCount + 1;
+                    inputs.ref.value = `${prefix}${String(nextNum).padStart(3, '0')}`;
+                }
+
+                if(row['Recipient Name']) inputs.toName.value = row['Recipient Name'];
+                if(row['Recipient Email']) inputs.toEmail.value = row['Recipient Email'];
+                if(row['Date']) inputs.date.value = row['Date'];
+                
+                headers.forEach(h => {
+                    if(!['Recipient Name', 'Recipient Email', 'Date', 'Ref'].includes(h)) {
+                        const tag = h.startsWith('[') ? h : `[${h}]`;
+                        customVars[tag] = row[h];
                     }
-                }).catch(err => {
-                    console.error("Failed to load secure letter data", err);
-                    showToast("Failed to load letter.", "error");
+                });
+                
+                renderCustomVariables();
+                updatePreview();
+                
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
+                await setDoc(docRef, {
+                    data: getCurrentState(),
+                    type: inputs.template.value || 'blank',
+                    subject: inputs.subject.value.trim() || 'Bulk Document',
+                    recipient: inputs.toName.value.trim() || 'Unknown Recipient',
+                    ref: inputs.ref.value.trim(),
+                    createdAt: Date.now()
+                });
+                
+                lettersList.push({
+                    id: currentLetterId,
+                    ref: inputs.ref.value.trim(),
+                    createdAt: Date.now()
+                });
+
+                await new Promise(r => setTimeout(r, 200)); 
+                
+                const wrapper = document.getElementById('document-wrapper');
+                const pages = wrapper.querySelectorAll('.a4-page');
+                pages.forEach(page => {
+                    page.classList.remove('shadow-2xl');
+                    page.style.boxShadow = 'none';
+                    page.style.margin = '0';
+                });
+
+                const safeName = (row['Recipient Name'] || `Letter_${i+1}`).replace(/[^a-zA-Z0-9\-]/g, '_');
+                const opt = {
+                    margin:       0,
+                    filename:     `${safeName}.pdf`,
+                    image:        { type: 'jpeg', quality: 1 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: 'css', before: '.page-break-before' }
+                };
+
+                if(actionType === 'zip') {
+                    const pdfBuffer = await html2pdf().set(opt).from(wrapper).outputPdf('arraybuffer');
+                    zip.file(`${safeName}.pdf`, pdfBuffer);
+                } else if(actionType === 'email') {
+                    if(row['Recipient Email']) {
+                        const pdfBase64 = await html2pdf().set(opt).from(wrapper).outputPdf('datauristring');
+                        
+                        emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+                        const templateParams = {
+                            to_name: row['Recipient Name'] || 'Client',
+                            to_email: row['Recipient Email'],
+                            subject: inputs.subject.value,
+                            message: "Please find the attached document from Falconix Digital.",
+                            my_attachment: pdfBase64 
+                        };
+                        
+                        try {
+                            await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+                        } catch(err) {
+                            console.error(err);
+                        }
+                    }
+                }
+                
+                pages.forEach(page => {
+                    page.classList.add('shadow-2xl');
+                    page.style.boxShadow = '';
+                    page.style.margin = '0 auto';
                 });
             }
+            
+            if(actionType === 'zip') {
+                progressText.innerText = "Zipping files...";
+                const content = await zip.generateAsync({type:"blob"});
+                
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "Bulk_Letters.zip";
+                link.click();
+            }
+            
+            progressText.innerText = "Done!";
+            showToast("Bulk processing complete!", "success");
+            setTimeout(() => {
+                document.getElementById('bulk-csv-modal').classList.add('hidden');
+                document.getElementById('bulk-progress-container').classList.add('hidden');
+                btnDL.disabled = false; btnEM.disabled = false;
+                applyState(originalState); 
+            }, 1500);
+        };
+
+        const loginWrapper = document.getElementById('login-wrapper');
+        const appWrapper = document.getElementById('app-wrapper');
+        const loginBtn = document.getElementById('google-login-btn');
+        const loginError = document.getElementById('login-error');
+        const authLogoutBtn = document.getElementById('auth-logout-btn');
+
+        const btnSaveCloud = document.getElementById('btn-save-cloud');
+        const btnViewCloud = document.getElementById('btn-view-cloud');
+        const cloudModal = document.getElementById('cloud-modal');
+        const cloudContainer = document.getElementById('cloud-letters-container');
+
+        function setupDatabaseListener() {
+            if (!currentUser) return;
+            const lettersRef = collection(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters');
+            
+            unsubscribeLetters = onSnapshot(lettersRef, (snapshot) => {
+                lettersList = [];
+                snapshot.forEach(doc => {
+                    lettersList.push({ id: doc.id, ...doc.data() });
+                });
+                
+                lettersList.sort((a, b) => b.createdAt - a.createdAt);
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                if (inputs.template.value === 'blank' && !urlParams.get('letterId')) {
+                    fetchNextRefNumber();
+                }
+
+                if (!cloudModal.classList.contains('hidden')) {
+                    renderCloudLetters();
+                }
+            }, (error) => {
+                console.error("Database sync error:", error);
+                showToast("Real-time database sync failed.", "error");
+            });
+
+            const tplRef = collection(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates');
+            unsubscribeCustomTemplates = onSnapshot(tplRef, (snapshot) => {
+                customTemplatesList = [];
+                snapshot.forEach(doc => {
+                    customTemplatesList.push({ id: doc.id, ...doc.data() });
+                });
+                renderTemplateDropdown();
+                
+                if (!document.getElementById('manage-templates-modal').classList.contains('hidden')) {
+                    renderManageTemplates();
+                }
+            });
+        }
+
+        function renderManageTemplates() {
+            const container = document.getElementById('custom-templates-container');
+            if (customTemplatesList.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10">No custom templates saved yet.</div>';
+                return;
+            }
+            
+            const formatDate = (ms) => new Date(ms).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+            let html = '<div class="space-y-3">';
+            customTemplatesList.forEach(t => {
+                html += `
+                    <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-gray-900 dark:text-white">${t.name}</h4>
+                            <p class="text-xs text-gray-500 mt-1">Saved on ${formatDate(t.createdAt)}</p>
+                        </div>
+                        <button onclick="deleteCustomTemplate('${t.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        document.querySelector('[title="Manage Templates"]').addEventListener('click', () => {
+            document.getElementById('manage-templates-modal').classList.remove('hidden');
+            renderManageTemplates();
         });
+
+        onAuthStateChanged(auth, (user) => {
+            if (isReadOnlyMode) {
+                currentUser = user; 
+                return; 
+            }
+
+            if (user && user.email === ALLOWED_EMAIL) {
+                currentUser = user;
+                
+                loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    loginWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('hidden');
+                    appWrapper.classList.add('flex');
+                    setTimeout(() => appWrapper.classList.remove('opacity-0'), 50);
+                    
+                    loadAutoSave();
+                    updateDraftsDropdown();
+                    saveStateToHistory(true); 
+                    updatePreview();
+                    setupDatabaseListener();
+                }, 500);
+
+            } else {
+                currentUser = null;
+                if (unsubscribeLetters) unsubscribeLetters();
+                if (unsubscribeCustomTemplates) unsubscribeCustomTemplates();
+                lettersList = [];
+                customTemplatesList = [];
+                
+                appWrapper.classList.add('opacity-0');
+                setTimeout(() => {
+                    appWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('flex');
+                    loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                }, 500);
+                
+                if (user) {
+                    loginError.innerText = "Unauthorized account. Access restricted.";
+                    loginError.classList.remove('hidden');
+                    signOut(auth);
+                }
+            }
+        });
+
+        loginBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            const defaultHtml = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                console.error(err);
+                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.classList.remove('hidden');
+            } finally {
+                if(!currentUser) loginBtn.innerHTML = defaultHtml;
+            }
+        });
+
+        authLogoutBtn.addEventListener('click', () => {
+            if (currentUser) {
+                signOut(auth);
+            }
+        });
+
+        btnSaveCloud.addEventListener('click', async () => {
+            if (!currentUser) {
+                showToast("You must be logged in.", "error");
+                return;
+            }
+
+            const currentRef = inputs.ref.value.trim();
+            if (currentRef !== "") {
+                const isDuplicate = lettersList.some(l => l.ref === currentRef && l.id !== currentLetterId);
+                if (isDuplicate) {
+                    showToast("A letter with this Reference Number already exists!", "error");
+                    return;
+                }
+            }
+
+            const originalHtml = btnSaveCloud.innerHTML;
+            btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Saving...';
+            btnSaveCloud.disabled = true;
+
+            try {
+                const state = getCurrentState();
+                const letterType = inputs.template.value || 'blank';
+                
+                const docRef = doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', currentLetterId);
+
+                await setDoc(docRef, {
+                    data: state,
+                    type: letterType,
+                    subject: inputs.subject.value.trim() || 'Untitled Document',
+                    recipient: inputs.toName.value.trim() || 'Unknown Recipient',
+                    ref: inputs.ref.value.trim(),
+                    createdAt: Date.now()
+                });
+
+                btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Saved to Cloud!';
+                showToast("Letter saved securely to the cloud.", "success");
+                
+                await window.resetLetter(true);
+                
+                setTimeout(() => { btnSaveCloud.innerHTML = originalHtml; btnSaveCloud.disabled = false; }, 2000);
+            } catch (error) {
+                console.error(error);
+                showToast("Failed to save to cloud.", "error");
+                btnSaveCloud.innerHTML = originalHtml;
+                btnSaveCloud.disabled = false;
+            }
+        });
+
+        window.copyShareLink = function(id) {
+            const link = window.location.origin + window.location.pathname + '?letterId=' + id;
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            
+            textArea.style.position = "fixed";
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.width = "2em";
+            textArea.style.height = "2em";
+            textArea.style.padding = "0";
+            textArea.style.border = "none";
+            textArea.style.outline = "none";
+            textArea.style.boxShadow = "none";
+            textArea.style.background = "transparent";
+            
+            document.body.appendChild(textArea);
+            
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("Share link copied to clipboard!", "success");
+                } else {
+                    showToast("Failed to copy link. Browser blocked action.", "error");
+                }
+            } catch (err) {
+                console.error("Copy error:", err);
+                showToast("Failed to copy link.", "error");
+            }
+            
+            document.body.removeChild(textArea);
+        };
+
+        function renderCloudLetters() {
+            cloudContainer.innerHTML = '';
+            
+            if (lettersList.length === 0) {
+                cloudContainer.innerHTML = '<div class="text-center text-gray-500 mt-10">No cloud letters saved yet.</div>';
+                return;
+            }
+
+            const grouped = lettersList.reduce((acc, curr) => {
+                if (!acc[curr.type]) acc[curr.type] = [];
+                acc[curr.type].push(curr);
+                return acc;
+            }, {});
+
+            const formatDate = (ms) => new Date(ms).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+            let html = '<div class="space-y-8">';
+            const typeLabels = {
+                blank: 'Blank Documents', offer: 'Job Offer Letters', collab: 'Collaboration Proposals',
+                nda: 'Non-Disclosure Agreements', warning: 'Warning Letters', termination: 'Termination Letters',
+                apology: 'Formal Apologies', onboarding: 'Client Onboarding'
+            };
+
+            Object.keys(grouped).forEach(type => {
+                const groupLetters = grouped[type];
+                let label = typeLabels[type] || type;
+                if (type.startsWith('custom_')) {
+                    const tplId = type.replace('custom_', '');
+                    const tpl = customTemplatesList.find(t => t.id === tplId);
+                    label = tpl ? tpl.name : 'Custom Template';
+                }
+                
+                html += `
+                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+                        <div class="bg-brand/10 dark:bg-brand/20 px-4 py-3 border-b border-brand/20">
+                            <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${label} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
+                        </div>
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                `;
+                
+                groupLetters.forEach(letter => {
+                    const dataStr = encodeURIComponent(JSON.stringify(letter.data));
+                    const isSigned = letter.data && letter.data.partnerSignUrl && letter.data.partnerSignUrl.length > 50;
+                    
+                    html += `
+                        <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
+                                    ${isSigned ? `<span class="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Signed</span>` : ''}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
+                                <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="copyShareLink('${letter.id}')" class="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"><i class="ph ph-link"></i> Copy Link</button>
+                                <button onclick="loadCloudLetter('${dataStr}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
+                                <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            });
+            html += '</div>';
+            cloudContainer.innerHTML = html;
+        }
+
+        btnViewCloud.addEventListener('click', () => {
+            if (!currentUser) return;
+            cloudModal.classList.remove('hidden');
+            if (lettersList.length > 0) {
+                renderCloudLetters();
+            } else {
+                cloudContainer.innerHTML = '<div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
+            }
+        });
+
+        window.loadCloudLetter = function(encodedData) {
+            try {
+                const data = JSON.parse(decodeURIComponent(encodedData));
+                applyState(data);
+                saveStateToHistory(true);
+                cloudModal.classList.add('hidden');
+                showToast("Cloud letter loaded successfully.", "success");
+            } catch (e) {
+                showToast("Failed to load letter data.", "error");
+            }
+        };
+
+        window.deleteCloudLetter = async function(id) {
+            if (!currentUser) return;
+            if (!confirm("Are you sure you want to permanently delete this archived letter?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', id));
+                showToast("Letter deleted securely.", "success");
+            } catch (e) {
+                showToast("Failed to delete letter.", "error");
+            }
+        };
+
     </script>
 </body>
 </html>
