@@ -255,7 +255,7 @@
                         <div class="pt-2">
                             <label class="block text-[10px] text-gray-500 mb-1">Company Logo (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="url" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <input type="text" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
                                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm" title="Upload Logo">
                                     <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
                                     <input type="file" id="file-logo" class="hidden" accept="image/*">
@@ -380,7 +380,7 @@
                         <div class="pt-2">
                             <label class="block text-[10px] text-gray-500 mb-1">Digital Signature (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="url" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <input type="text" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
                                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
                                     <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
                                     <input type="file" id="file-sign" class="hidden" accept="image/*">
@@ -402,7 +402,7 @@
                         <div class="pt-2">
                             <label class="block text-[10px] text-gray-500 mb-1">Partner Logo (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="url" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <input type="text" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
                                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
                                     <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
                                     <input type="file" id="file-partner-logo" class="hidden" accept="image/*">
@@ -412,7 +412,7 @@
                         <div class="pt-2">
                             <label class="block text-[10px] text-gray-500 mb-1">E-Signature Image Data</label>
                             <div class="flex gap-2">
-                                <input type="url" id="input-partner-sign-url" placeholder="Waiting for client to sign..." class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-500 dark:text-gray-400 font-mono text-[10px]">
+                                <input type="text" id="input-partner-sign-url" placeholder="Waiting for client to sign..." class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-500 dark:text-gray-400 font-mono text-[10px]">
                                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
                                     <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
                                     <input type="file" id="file-partner-sign" class="hidden" accept="image/*">
@@ -821,16 +821,18 @@
             modal.classList.remove('hidden');
             
             // Resize canvas to properly map pixels for drawing
-            const rect = sigCanvas.parentElement.getBoundingClientRect();
-            sigCanvas.width = rect.width;
-            sigCanvas.height = rect.height;
-            
-            sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080'; // Dark blue signature ink
-            sigCtx.lineWidth = 3;
-            sigCtx.lineCap = 'round';
-            sigCtx.lineJoin = 'round';
-            
-            clearSignature();
+            setTimeout(() => {
+                const rect = sigCanvas.parentElement.getBoundingClientRect();
+                sigCanvas.width = rect.width;
+                sigCanvas.height = rect.height;
+                
+                sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080'; // Dark blue signature ink
+                sigCtx.lineWidth = 3;
+                sigCtx.lineCap = 'round';
+                sigCtx.lineJoin = 'round';
+                
+                clearSignature();
+            }, 50);
         };
 
         window.closeSignatureModal = function() {
@@ -1393,20 +1395,20 @@
                     ${watermarkHtml}
                     
                     <div class="absolute top-32 bottom-20 left-0 right-0 flex items-center justify-center pointer-events-none z-0">
-                        <img src="${state.logoUrl}" class="w-3/4 max-w-lg opacity-[0.06] object-contain ${state.logoUrl ? '' : 'hidden'}" alt="Watermark" crossorigin="anonymous">
+                        <img src="${state.logoUrl}" class="w-3/4 max-w-lg opacity-[0.06] object-contain ${state.logoUrl ? '' : 'hidden'}" alt="Watermark">
                     </div>
                     
                     <div class="px-12 py-8 bg-darkBg flex justify-between items-center relative z-10 border-b border-gray-900 shadow-sm">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brandAccent via-brand to-brandDark"></div>
                         <div class="flex items-center gap-4">
-                            ${state.logoUrl ? `<img src="${state.logoUrl}" class="h-20 w-auto object-contain drop-shadow-md" alt="Company Logo" crossorigin="anonymous">` : ''}
+                            ${state.logoUrl ? `<img src="${state.logoUrl}" class="h-20 w-auto object-contain drop-shadow-md" alt="Company Logo">` : ''}
                             <div class="flex flex-col justify-center">
                                 <h1 class="text-3xl font-black tracking-tight leading-none text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
                                 <p class="text-xs text-brandAccent font-bold tracking-widest uppercase mt-1.5 leading-none">Innovation In Flight</p>
                             </div>
                             ${state.partnerLogoUrl ? `
                                 <i class="ph ph-x text-gray-500 text-xl ml-4"></i>
-                                <img src="${state.partnerLogoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Partner Logo" crossorigin="anonymous">
+                                <img src="${state.partnerLogoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Partner Logo">
                             ` : ''}
                         </div>
                         <div class="text-right text-[11px] text-gray-300 leading-relaxed">
@@ -1449,11 +1451,11 @@
                                     <p class="text-sm text-gray-800 mb-4">Sincerely,</p>
                                     <div class="mb-2 relative w-max h-20 flex items-end">
                                         ${state.signUrl 
-                                            ? `<img src="${state.signUrl}" class="h-20 object-contain mix-blend-multiply" alt="Signature" crossorigin="anonymous">` 
+                                            ? `<img src="${state.signUrl}" class="h-20 object-contain mix-blend-multiply" alt="Signature">` 
                                             : `<p class="font-signature text-4xl text-blue-900 transform -rotate-3 opacity-90 pb-2 pr-4">${state.signName}</p>`}
                                         ${state.logoUrl ? `
                                         <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
-                                            <img src="${state.logoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Company Seal" crossorigin="anonymous">
+                                            <img src="${state.logoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Company Seal">
                                         </div>
                                         ` : ''}
                                     </div>
@@ -1466,11 +1468,11 @@
                                     <p class="text-sm text-gray-800 mb-4">Acknowledged & Agreed,</p>
                                     <div class="mb-2 relative w-max h-20 flex items-end">
                                         ${state.partnerSignUrl 
-                                            ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature" crossorigin="anonymous">` 
+                                            ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature">` 
                                             : `<div class="h-20 w-40"></div>`}
                                         ${state.partnerLogoUrl ? `
                                         <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
-                                            <img src="${state.partnerLogoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Partner Seal" crossorigin="anonymous">
+                                            <img src="${state.partnerLogoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Partner Seal">
                                         </div>
                                         ` : ''}
                                     </div>
@@ -1493,7 +1495,7 @@
                         <div class="flex items-center gap-3">
                             <div class="flex gap-2">
                                 <div class="flex flex-col items-center justify-center">
-                                    <img src="${staticQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Website QR" crossorigin="anonymous">
+                                    <img src="${staticQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Website QR">
                                     <span class="text-[6px] font-bold mt-1 text-gray-400 uppercase tracking-widest">Website</span>
                                 </div>
                                 <div class="flex flex-col items-center justify-center">
@@ -2015,6 +2017,24 @@
                     fetchNextRefNumber();
                 }
 
+                // NEW: Auto-sync signature if the currently open letter is signed by a client
+                if (!isReadOnlyMode && currentLetterId) {
+                    const activeDbLetter = lettersList.find(l => l.id === currentLetterId);
+                    if (activeDbLetter && activeDbLetter.data) {
+                        const dbSig = activeDbLetter.data.partnerSignUrl;
+                        const localSig = inputs.partnerSignUrl.value;
+                        if (dbSig && dbSig.length > 50 && (!localSig || localSig.length < 50)) {
+                            // Client just signed it! Auto-update the admin's editor!
+                            inputs.partnerSignUrl.value = dbSig;
+                            inputs.partnerSignName.value = activeDbLetter.data.partnerSignName || inputs.partnerSignName.value;
+                            inputs.partnerSignLocation.value = activeDbLetter.data.partnerSignLocation || '';
+                            inputs.partnerSignTime.value = activeDbLetter.data.partnerSignTime || '';
+                            updatePreview();
+                            showToast("Client just signed this document! Signature added.", "success");
+                        }
+                    }
+                }
+
                 if (!cloudModal.classList.contains('hidden')) {
                     renderCloudLetters();
                 }
@@ -2309,7 +2329,6 @@
                 `;
                 
                 groupLetters.forEach(letter => {
-                    const dataStr = encodeURIComponent(JSON.stringify(letter.data));
                     const isSigned = letter.data && letter.data.partnerSignUrl && letter.data.partnerSignUrl.length > 50;
                     
                     const hasExpiry = letter.data && letter.data.expiryDate && letter.data.expiryDate !== '';
@@ -2329,7 +2348,7 @@
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <button onclick="copyShareLink('${letter.id}')" class="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"><i class="ph ph-link"></i> Copy Link</button>
-                                <button onclick="loadCloudLetter('${dataStr}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
+                                <button onclick="loadCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
                                 <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
                             </div>
                         </div>
@@ -2352,16 +2371,20 @@
             }
         });
 
-        window.loadCloudLetter = function(encodedData) {
+        window.loadCloudLetter = function(id) {
+            const letter = lettersList.find(l => l.id === id);
+            if (!letter) {
+                showToast("Failed to locate letter in memory.", "error");
+                return;
+            }
             try {
-                const data = JSON.parse(decodeURIComponent(encodedData));
-                applyState(data);
+                applyState(letter.data);
                 saveStateToHistory(true);
                 cloudModal.classList.add('hidden');
                 toggleDashboard(false);
                 showToast("Cloud letter loaded successfully.", "success");
             } catch (e) {
-                showToast("Failed to load letter data.", "error");
+                showToast("Failed to apply letter data.", "error");
             }
         };
 
