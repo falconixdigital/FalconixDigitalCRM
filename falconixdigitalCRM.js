@@ -21,7 +21,6 @@ const ADMIN_NAMES = {
 const RESTRICTED_DASHBOARD_EMAILS = [
     'pabitramondal.ind@gmail.com'
 ];
-
 const RESTRICTED_CLIENTS_EMAILS = [
     'pabitramondal.ind@gmail.com'
 ];
