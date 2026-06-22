@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falconix Digital - Smart Letter Generator</title>
+    <title>Falconix Digital - Smart Letter Generator Pro</title>
     
-    <link rel="icon" type="image/png" href="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png">
+    <link class="js-favicon" rel="icon" type="image/png" href="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -23,14 +23,21 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: '#8b5cf6',
-                        brandDark: '#4c1d95',
-                        brandAccent: '#06b6d4',
-                        darkCard: '#141414',
-                        darkBg: '#080808'
+                        brand: {
+                            indigo: '#8b5cf6',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            amber: '#f59e0b'
+                        },
+                        darkCard: '#121212',
+                        darkBg: '#09090b',
+                        darkBorder: '#27272a'
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                        display: ['Playfair Display', 'serif'],
                         signature: ['Dancing Script', 'cursive']
                     }
                 }
@@ -40,18 +47,20 @@
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: #374151; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
         
         .a4-page {
             width: 210mm;
             height: 296.5mm;
             background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             margin: 0 auto;
             position: relative;
             color: #1f2937;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
         }
         
         .page-break-before {
@@ -61,31 +70,74 @@
 
         .preview-container {
             overflow: auto;
-            background-color: #f3f4f6;
-            padding: 2rem;
-            border-radius: 0.75rem;
+            background-color: #f4f4f5;
+            padding: 2.5rem;
+            border-radius: 1rem;
         }
-        .dark .preview-container { background-color: #000000; }
+        .dark .preview-container { background-color: #0c0c0e; }
         
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .toast-enter {
-            animation: slideInRight 0.3s forwards;
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-darkBg text-gray-800 dark:text-gray-200 font-sans transition-colors duration-200 h-screen flex flex-col overflow-hidden">
+<body class="bg-slate-50 dark:bg-darkBg text-slate-800 dark:text-zinc-200 font-sans transition-colors duration-200 h-screen flex flex-col overflow-hidden">
+
+    <!-- Custom Dialog / Modal Confirmation Panel -->
+    <div id="confirm-modal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-darkCard w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-slate-100 dark:border-darkBorder transform scale-95 transition-transform duration-200">
+            <div class="flex items-center gap-3 text-amber-500 mb-3">
+                <i class="ph ph-warning-circle text-3xl"></i>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="confirm-title">Are you sure?</h3>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-zinc-400 mb-6" id="confirm-message">This action cannot be undone.</p>
+            <div class="flex gap-3 justify-end">
+                <button id="confirm-cancel-btn" class="px-4 py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 rounded-lg text-xs font-semibold transition-colors">Cancel</button>
+                <button id="confirm-ok-btn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold transition-colors">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EmailJS API Setup Dialog -->
+    <div id="api-modal" class="fixed inset-0 bg-black/60 z-[260] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-darkCard w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-darkBorder">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="ph ph-gear text-violet-500"></i> API & Services Setup</h2>
+                <button onclick="document.getElementById('api-modal').classList.add('hidden')" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"><i class="ph ph-x text-lg"></i></button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600 dark:text-zinc-400">
+                <p>Configure your secure EmailJS API keys below. These are stored locally inside your browser and are never exposed publicly.</p>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">EmailJS Public Key</label>
+                    <input type="text" id="api-public-key" placeholder="user_xxxxxxxxxxxxxxxxx" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg p-2.5 text-slate-900 dark:text-zinc-200 font-mono text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">EmailJS Service ID</label>
+                    <input type="text" id="api-service-id" placeholder="service_xxxxxxx" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg p-2.5 text-slate-900 dark:text-zinc-200 font-mono text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">EmailJS Template ID</label>
+                    <input type="text" id="api-template-id" placeholder="template_xxxxxxx" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg p-2.5 text-slate-900 dark:text-zinc-200 font-mono text-xs">
+                </div>
+                <button onclick="saveApiKeys()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="ph ph-floppy-disk text-lg"></i> Save Configurations
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Login Modal -->
-    <div id="login-wrapper" class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-darkBg transition-opacity duration-500">
-        <div class="bg-white dark:bg-darkCard w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-gray-200 dark:border-gray-800">
-            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-brand/30 object-cover border border-gray-200 dark:border-gray-700">
-            <h1 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center mt-2">Smart Letter Generator - Restricted Access</p>
+    <div id="login-wrapper" class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-darkBg transition-opacity duration-500">
+        <div class="bg-white dark:bg-darkCard w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-slate-200 dark:border-darkBorder">
+            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-slate-200 dark:border-darkBorder">
+            <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Falconix <span class="text-violet-500">Digital</span></h1>
+            <p class="text-sm text-slate-500 dark:text-zinc-400 mb-8 text-center mt-2 font-medium">Smart Letter Generator Pro - Restricted Access</p>
             
-            <button id="google-login-btn" class="w-full bg-white dark:bg-gray-100 text-gray-800 hover:bg-gray-50 border border-gray-300 dark:border-transparent py-3 px-4 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-3">
+            <button id="google-login-btn" class="w-full bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-darkBorder py-3 px-4 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-3">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
             </button>
@@ -97,84 +149,96 @@
     <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
 
     <div id="app-wrapper" class="hidden h-screen w-full flex-col opacity-0 transition-opacity duration-500">
-        <!-- Top accent bar -->
-        <div class="h-1.5 w-full bg-gradient-to-r from-brandAccent via-brand to-brandDark shrink-0 z-50"></div>
+        <!-- Dynamic color header bar -->
+        <div id="accent-bar" class="h-1.5 w-full bg-violet-500 transition-all duration-300 shrink-0 z-50"></div>
 
         <!-- Header -->
-        <header class="bg-white dark:bg-darkCard border-b border-gray-200 dark:border-gray-800 py-2 px-6 flex justify-between items-center shrink-0">
+        <header class="bg-white dark:bg-darkCard border-b border-slate-200 dark:border-darkBorder py-2 px-6 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-3">
                 <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Digital Logo" class="h-8 w-auto object-contain">
                 <div class="flex flex-col justify-center">
-                    <h1 class="font-black text-lg leading-none tracking-tight text-gray-900 dark:text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
-                    <p class="text-[9px] text-brandAccent font-bold tracking-widest uppercase mt-1 leading-none">Innovation In Flight</p>
+                    <h1 class="font-black text-lg leading-none tracking-tight text-slate-900 dark:text-white">Falconix <span id="logo-accent-text" class="text-violet-500">Digital</span></h1>
+                    <p class="text-[9px] text-cyan-500 font-bold tracking-widest uppercase mt-1 leading-none">Innovation In Flight</p>
                 </div>
-                <div class="hidden sm:block border-l border-gray-300 dark:border-gray-700 ml-4 pl-4">
-                    <h2 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Smart Letter Generator</h2>
+                <div class="hidden sm:block border-l border-slate-300 dark:border-darkBorder ml-4 pl-4">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Smart Letter Generator Pro</h2>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <button id="btn-dashboard-toggle" onclick="toggleDashboard(true)" class="text-xs font-bold bg-brand/10 text-brand dark:bg-brand/20 dark:text-brandAccent px-3 py-1.5 rounded-lg hover:bg-brand/20 dark:hover:bg-brand/30 transition-colors flex items-center gap-1.5">
+            <div class="flex items-center gap-2">
+                <button onclick="document.getElementById('api-modal').classList.remove('hidden')" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors" title="API Credentials Configuration">
+                    <i class="ph ph-key text-slate-500 dark:text-zinc-400 text-lg"></i>
+                </button>
+                <button id="btn-dashboard-toggle" onclick="toggleDashboard(true)" class="text-xs font-bold bg-violet-500/10 text-violet-500 dark:bg-violet-500/20 dark:text-violet-300 px-3 py-1.5 rounded-lg hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
                     <i class="ph ph-squares-four text-base"></i> Dashboard
                 </button>
-                <button id="auth-logout-btn" class="text-xs font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1.5">
+                <button id="auth-logout-btn" class="text-xs font-bold bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-200 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1.5">
                     <i class="ph ph-sign-out text-base"></i> Logout
                 </button>
-                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
                     <i class="ph ph-moon text-xl dark:hidden"></i>
-                    <i class="ph ph-sun text-xl hidden dark:block text-brandAccent"></i>
+                    <i class="ph ph-sun text-xl hidden dark:block text-yellow-500"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Cloud Modal -->
+        <!-- Cloud Archive Modal -->
         <div id="cloud-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-            <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
-                <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-cloud-check text-brand text-xl"></i> Cloud Letters Archive</h2>
-                    <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
+            <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col border border-slate-200 dark:border-darkBorder overflow-hidden">
+                <div class="p-5 border-b border-slate-200 dark:border-darkBorder flex justify-between items-center bg-slate-50 dark:bg-zinc-900/50">
+                    <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-cloud-check text-violet-500 text-xl"></i> Cloud Letters Archive</h2>
+                    <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-6" id="cloud-letters-container">
-                    <div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
+                    <div class="flex justify-center items-center h-full text-slate-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
                 </div>
             </div>
         </div>
 
         <!-- Custom Templates Modal -->
         <div id="manage-templates-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-            <div class="bg-white dark:bg-darkCard w-full max-w-2xl h-[70vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
-                <div class="p-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-files text-brand text-xl"></i> Manage Cloud Templates</h2>
-                    <button onclick="document.getElementById('manage-templates-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
+            <div class="bg-white dark:bg-darkCard w-full max-w-2xl h-[70vh] rounded-2xl shadow-2xl flex flex-col border border-slate-200 dark:border-darkBorder overflow-hidden">
+                <div class="p-5 border-b border-slate-200 dark:border-darkBorder flex justify-between items-center bg-slate-50 dark:bg-zinc-900/50">
+                    <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-lg"><i class="ph ph-files text-violet-500 text-xl"></i> Manage Cloud Templates</h2>
+                    <button onclick="document.getElementById('manage-templates-modal').classList.add('hidden')" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-500 transition-colors"><i class="ph ph-x text-lg"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-6" id="custom-templates-container">
-                    <div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
+                    <div class="flex justify-center items-center h-full text-slate-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>
                 </div>
             </div>
         </div>
 
         <!-- Bulk CSV Modal -->
         <div id="bulk-csv-modal" class="fixed inset-0 bg-black/60 z-[250] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800">
+            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-slate-200 dark:border-darkBorder">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-files text-brand"></i> Bulk Generation (CSV)</h2>
-                    <button onclick="document.getElementById('bulk-csv-modal').classList.add('hidden')" class="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded-lg transition-colors"><i class="ph ph-x text-lg"></i></button>
+                    <h2 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="ph ph-files text-violet-500"></i> Bulk Generation (CSV)</h2>
+                    <button onclick="document.getElementById('bulk-csv-modal').classList.add('hidden')" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"><i class="ph ph-x text-lg"></i></button>
                 </div>
-                <div class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
+                <div class="space-y-4 text-sm text-slate-600 dark:text-zinc-400">
                     <p>Upload a CSV file to automatically generate or email multiple letters.</p>
-                    <p class="text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-500 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
+                    <div class="flex items-center justify-between bg-slate-50 dark:bg-zinc-900 p-3 rounded-lg border border-slate-200 dark:border-darkBorder">
+                        <div>
+                            <p class="font-semibold text-slate-900 dark:text-white">Download CSV Template</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Includes current variables as headers</p>
+                        </div>
+                        <button onclick="downloadCSVTemplate()" class="bg-violet-500 hover:bg-violet-600 text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1.5">
+                            <i class="ph ph-download"></i> Template
+                        </button>
+                    </div>
+                    <p class="text-xs bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-500 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
                         <strong>Important:</strong> CSV headers must exactly match your variable names (e.g., <code class="font-mono bg-white dark:bg-black px-1 rounded">Recipient Name</code>, <code class="font-mono bg-white dark:bg-black px-1 rounded">Recipient Email</code>, <code class="font-mono bg-white dark:bg-black px-1 rounded">Salary</code>). The <code>Recipient Email</code> column is mandatory for sending bulk emails.
                     </p>
-                    <input type="file" id="bulk-csv-file" accept=".csv" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-200">
+                    <input type="file" id="bulk-csv-file" accept=".csv" class="w-full border border-slate-300 dark:border-darkBorder rounded-lg p-2 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-200">
                     
                     <div id="bulk-progress-container" class="hidden">
-                        <p class="text-xs font-semibold text-brand mb-1" id="bulk-progress-text">Processing 0 / 0</p>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-brand h-2 rounded-full transition-all duration-300" id="bulk-progress-bar" style="width: 0%"></div>
+                        <p class="text-xs font-semibold text-violet-500 mb-1" id="bulk-progress-text">Processing 0 / 0</p>
+                        <div class="w-full bg-slate-200 dark:bg-zinc-700 rounded-full h-2">
+                            <div class="bg-violet-500 h-2 rounded-full transition-all duration-300" id="bulk-progress-bar" style="width: 0%"></div>
                         </div>
                     </div>
 
-                    <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-                        <button onclick="processBulk('zip')" id="btn-bulk-download" class="flex-1 bg-brand hover:bg-brandDark text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                    <div class="flex gap-3 pt-4 border-t border-slate-200 dark:border-darkBorder">
+                        <button onclick="processBulk('zip')" id="btn-bulk-download" class="flex-1 bg-violet-500 hover:bg-violet-600 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
                             <i class="ph ph-file-zip text-lg"></i> Download ZIP
                         </button>
                         <button onclick="processBulk('email')" id="btn-bulk-email" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
@@ -187,21 +251,21 @@
 
         <!-- Signature Pad Modal -->
         <div id="signature-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 flex flex-col items-center relative border border-gray-200 dark:border-gray-800">
-                <button onclick="closeSignatureModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"><i class="ph ph-x text-xl"></i></button>
-                <h3 class="font-bold text-xl mb-1 text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-signature text-brand"></i> Client E-Signature</h3>
-                <p class="text-sm text-gray-500 mb-6 text-center">Please draw your signature below to legally acknowledge this document.</p>
+            <div class="bg-white dark:bg-darkCard w-full max-w-lg rounded-2xl shadow-2xl p-6 flex flex-col items-center relative border border-slate-200 dark:border-darkBorder">
+                <button onclick="closeSignatureModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-white transition-colors"><i class="ph ph-x text-xl"></i></button>
+                <h3 class="font-bold text-xl mb-1 text-slate-900 dark:text-white flex items-center gap-2"><i class="ph ph-signature text-violet-500"></i> Client E-Signature</h3>
+                <p class="text-sm text-slate-500 mb-6 text-center">Please draw your signature below to legally acknowledge this document.</p>
                 
-                <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900 w-full aspect-[2/1] touch-none relative">
+                <div class="border-2 border-dashed border-slate-300 dark:border-zinc-700 rounded-xl overflow-hidden bg-slate-50 dark:bg-zinc-900 w-full aspect-[2/1] touch-none relative">
                     <canvas id="signature-pad" class="w-full h-full cursor-crosshair touch-none"></canvas>
                     <div class="absolute bottom-2 right-4 pointer-events-none opacity-20">
-                        <i class="ph-fill ph-pen-nib text-4xl text-gray-500"></i>
+                        <i class="ph-fill ph-pen-nib text-4xl text-slate-500"></i>
                     </div>
                 </div>
                 
                 <div class="flex gap-3 mt-6 w-full">
-                    <button onclick="clearSignature()" class="flex-1 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl font-semibold transition-colors">Clear</button>
-                    <button id="btn-save-signature" class="flex-[2] py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors flex justify-center items-center gap-2 shadow-lg shadow-green-500/20">
+                    <button onclick="clearSignature()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 rounded-xl font-semibold transition-colors">Clear</button>
+                    <button id="btn-save-signature" class="flex-[2] py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold transition-colors flex justify-center items-center gap-2 shadow-lg shadow-emerald-500/20">
                         <i class="ph ph-check-circle text-lg"></i> Submit Signature
                     </button>
                 </div>
@@ -211,210 +275,238 @@
         <main class="flex-1 overflow-hidden flex flex-col lg:flex-row">
             
             <!-- Editor Sidebar -->
-            <section id="editor-sidebar" class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 lg:h-full">
-                <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                    <h2 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-brand text-lg"></i> Editor Controls</h2>
+            <section id="editor-sidebar" class="w-full lg:w-[450px] bg-white dark:bg-darkCard border-r border-slate-200 dark:border-darkBorder flex flex-col shrink-0 lg:h-full">
+                <div class="p-6 border-b border-slate-200 dark:border-darkBorder flex justify-between items-center">
+                    <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="ph ph-faders text-violet-500 text-lg"></i> Editor Controls</h2>
                     <div class="flex items-center gap-1">
-                        <button type="button" onclick="undo()" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="Undo (Whole Letter)"><i class="ph ph-arrow-u-up-left text-lg"></i></button>
-                        <button type="button" onclick="redo()" class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="Redo (Whole Letter)"><i class="ph ph-arrow-u-up-right text-lg"></i></button>
-                        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 mx-1"></div>
-                        <button type="button" onclick="resetLetter()" class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors" title="Reset Letter"><i class="ph ph-arrow-counter-clockwise text-lg"></i></button>
+                        <button type="button" onclick="undo()" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-colors" title="Undo"><i class="ph ph-arrow-u-up-left text-lg"></i></button>
+                        <button type="button" onclick="redo()" class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 transition-colors" title="Redo"><i class="ph ph-arrow-u-up-right text-lg"></i></button>
+                        <div class="w-px h-5 bg-slate-300 dark:bg-zinc-700 mx-1"></div>
+                        <button type="button" onclick="resetLetter()" class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/30 text-red-500 transition-colors" title="Reset Letter"><i class="ph ph-arrow-counter-clockwise text-lg"></i></button>
                     </div>
                 </div>
                 
                 <div class="p-6 overflow-y-auto flex-1 space-y-6">
                     
-                    <div class="space-y-3 bg-brand/5 p-4 rounded-xl border border-brand/20">
+                    <div class="space-y-3 bg-violet-500/5 p-4 rounded-xl border border-violet-500/20">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-bold text-brand uppercase tracking-wider"><i class="ph ph-cloud-arrow-up mr-1"></i> Cloud Manager</label>
-                            <button id="btn-view-cloud" class="text-[10px] bg-brand text-white font-semibold px-2.5 py-1.5 rounded-lg hover:bg-brandDark transition-colors shadow-sm">View Archives</button>
+                            <label class="block text-xs font-bold text-violet-500 uppercase tracking-wider"><i class="ph ph-cloud-arrow-up mr-1"></i> Cloud Manager</label>
+                            <button id="btn-view-cloud" class="text-[10px] bg-violet-500 text-white font-semibold px-2.5 py-1.5 rounded-lg hover:bg-violet-600 transition-colors shadow-sm">View Archives</button>
                         </div>
-                        <button id="btn-save-cloud" class="w-full bg-brandAccent hover:bg-brandAccent/80 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-md flex justify-center items-center gap-2">
+                        <button id="btn-save-cloud" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-md flex justify-center items-center gap-2">
                             <i class="ph ph-cloud-check text-lg"></i> Save Letter to Cloud
                         </button>
                         
-                        <div class="flex justify-between items-center mt-3 pt-3 border-t border-brand/20">
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Local Drafts</label>
-                            <button type="button" onclick="saveCurrentDraft()" class="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold px-2 py-1 rounded transition-colors">Save Local</button>
+                        <div class="flex justify-between items-center mt-3 pt-3 border-t border-violet-500/20">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Local Drafts</label>
+                            <button type="button" onclick="saveCurrentDraft()" class="text-[10px] bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-semibold px-2 py-1 rounded transition-colors">Save Local</button>
                         </div>
-                        <select id="input-drafts" onchange="loadDraft(this.value)" class="w-full bg-white dark:bg-gray-900 border border-brand/30 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none cursor-pointer text-gray-900 dark:text-white font-medium">
+                        <select id="input-drafts" onchange="loadDraft(this.value)" class="w-full bg-white dark:bg-zinc-900 border border-violet-500/30 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none cursor-pointer text-slate-900 dark:text-white font-medium">
                             <option value="">-- Load a Local Draft --</option>
                         </select>
                     </div>
 
+                    <!-- Layout & Brand Settings -->
+                    <div class="space-y-3 bg-slate-50 dark:bg-zinc-900/40 p-4 rounded-xl border border-slate-200 dark:border-darkBorder">
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="ph ph-palette"></i> Theme & Typography Settings
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">Color Theme</label>
+                                <select id="input-theme-color" onchange="changeAccentColor(this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-violet-500 text-slate-900 dark:text-white font-semibold">
+                                    <option value="indigo">Royal Violet</option>
+                                    <option value="cyan">Digital Cyan</option>
+                                    <option value="emerald">Eco Emerald</option>
+                                    <option value="rose">Corporate Rose</option>
+                                    <option value="amber">Warm Amber</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">Typography Font</label>
+                                <select id="input-font-family" onchange="changePreviewFont(this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-violet-500 text-slate-900 dark:text-white font-semibold">
+                                    <option value="sans">Modern Sans (Inter)</option>
+                                    <option value="serif">Academic Serif (Lora)</option>
+                                    <option value="display">Elegant Display (Playfair)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Company Details -->
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Company Details</label>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Company Details</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <input type="text" id="input-agency-phone" value="+91 86370 28337" placeholder="Mobile No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                            <input type="text" id="input-agency-web" value="falconixdigital.netlify.app" placeholder="Website" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                            <input type="text" id="input-agency-phone" value="+91 86370 28337" placeholder="Mobile No." class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
+                            <input type="text" id="input-agency-web" value="falconixdigital.netlify.app" placeholder="Website" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
                         </div>
-                        <input type="text" id="input-agency-email" value="digitalfalconix@gmail.com" placeholder="Email" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                        <input type="text" id="input-agency-address" value="Motihari, Bihar, India" placeholder="Company Address" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                        <input type="text" id="input-agency-email" value="digitalfalconix@gmail.com" placeholder="Email" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
+                        <input type="text" id="input-agency-address" value="Motihari, Bihar, India" placeholder="Company Address" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
                         
                         <div class="pt-2">
-                            <label class="block text-[10px] text-gray-500 mb-1">Company Logo (Image URL or Upload)</label>
+                            <label class="block text-[10px] text-slate-500 mb-1">Company Logo (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="text" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm" title="Upload Logo">
-                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                <input type="text" id="input-logo-url" value="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" placeholder="https://example.com/logo.png" class="flex-1 min-w-0 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
+                                <label class="cursor-pointer bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-darkBorder rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm" title="Upload Logo">
+                                    <i class="ph ph-upload-simple text-slate-700 dark:text-zinc-300"></i>
                                     <input type="file" id="file-logo" class="hidden" accept="image/*">
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
                     <!-- Document Settings & EXPIRY -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Document Settings</label>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Document Settings</label>
                             <div class="flex gap-1">
-                                <button type="button" onclick="saveAsCustomTemplate()" class="text-[10px] bg-brand/10 text-brand px-2 py-1.5 font-semibold rounded hover:bg-brand/20 transition-colors" title="Save Current as Template"><i class="ph ph-floppy-disk"></i> Save Tpl</button>
-                                <button type="button" onclick="document.getElementById('manage-templates-modal').classList.remove('hidden')" class="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1.5 font-semibold rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Manage Templates"><i class="ph ph-gear"></i></button>
+                                <button type="button" onclick="saveAsCustomTemplate()" class="text-[10px] bg-violet-500/10 text-violet-500 px-2 py-1.5 font-semibold rounded hover:bg-violet-500/20 transition-colors" title="Save Current as Template"><i class="ph ph-floppy-disk"></i> Save Tpl</button>
+                                <button type="button" onclick="document.getElementById('manage-templates-modal').classList.remove('hidden')" class="text-[10px] bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 px-2 py-1.5 font-semibold rounded hover:bg-slate-300 dark:hover:bg-zinc-700 transition-colors" title="Manage Templates"><i class="ph ph-gear"></i></button>
                             </div>
                         </div>
-                        <select id="input-template" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all cursor-pointer text-gray-900 dark:text-white">
+                        <select id="input-template" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all cursor-pointer text-slate-900 dark:text-white">
                         </select>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Issue Date</label>
-                                <input type="date" id="input-date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white">
+                                <label class="block text-[10px] text-slate-500 mb-1">Issue Date</label>
+                                <input type="date" id="input-date" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none appearance-none text-slate-900 dark:text-white">
                             </div>
                             <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Ref No.</label>
-                                <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
+                                <label class="block text-[10px] text-slate-500 mb-1">Ref No.</label>
+                                <input type="text" id="input-ref" placeholder="Ref No." class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
                             </div>
                         </div>
                         <!-- EXPIRATION & WATERMARK CONTROLS -->
-                        <div class="space-y-3 mt-1 p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="space-y-3 mt-1 p-3 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-darkBorder rounded-xl">
                             <div class="flex items-center justify-between">
-                                <label class="block text-[10px] text-gray-500 font-bold uppercase tracking-wider"><i class="ph ph-shield-check"></i> Security & Watermark</label>
+                                <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider"><i class="ph ph-shield-check"></i> Security & Watermark</label>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">Expiry Date</label>
-                                    <input type="date" id="input-expiry-date" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none appearance-none text-gray-900 dark:text-white" title="Deadline for signing">
+                                    <label class="block text-[10px] text-slate-500 mb-1">Expiry Date</label>
+                                    <input type="date" id="input-expiry-date" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none appearance-none text-slate-900 dark:text-white" title="Deadline for signing">
                                 </div>
                                 <div class="flex items-end">
-                                    <label class="flex items-center justify-center gap-2 cursor-pointer w-full bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 h-[38px] transition-colors">
-                                        <input type="checkbox" id="input-manual-expire" class="text-red-500 rounded focus:ring-red-500 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
-                                        <span class="text-sm font-bold text-red-600 dark:text-red-400">Force Expired</span>
+                                    <label class="flex items-center justify-center gap-2 cursor-pointer w-full bg-white hover:bg-slate-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 h-[38px] transition-colors">
+                                        <input type="checkbox" id="input-manual-expire" class="text-red-500 rounded focus:ring-red-500 bg-slate-100 dark:bg-zinc-850 border-slate-300 dark:border-zinc-700">
+                                        <span class="text-sm font-bold text-red-650 dark:text-red-400">Force Expired</span>
                                     </label>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-[10px] text-gray-500 mb-1">Custom Watermark (Overrides 'EXPIRED')</label>
-                                <input type="text" id="input-watermark-text" placeholder="e.g., DRAFT, CONFIDENTIAL, REJECTED" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white uppercase">
+                                <label class="block text-[10px] text-slate-500 mb-1">Custom Watermark (Overrides 'EXPIRED')</label>
+                                <input type="text" id="input-watermark-text" placeholder="e.g., DRAFT, CONFIDENTIAL" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white uppercase">
                             </div>
                         </div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
                     <!-- Recipient Details -->
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Recipient Details</label>
-                        <input type="text" id="input-to-name" placeholder="Recipient Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="email" id="input-to-email" placeholder="Recipient Email (For direct sending)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="text" id="input-to-company" placeholder="Company Name or Phone (Optional)" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <textarea id="input-to-address" placeholder="Recipient Address" rows="2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white"></textarea>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Recipient Details</label>
+                        <input type="text" id="input-to-name" placeholder="Recipient Name" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <input type="email" id="input-to-email" placeholder="Recipient Email (For direct sending)" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <input type="text" id="input-to-company" placeholder="Company Name or Phone (Optional)" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <textarea id="input-to-address" placeholder="Recipient Address" rows="2" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white"></textarea>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
-                    <!-- Custom Variables -->
+                    <!-- Custom Variables Panel (Auto and Manual) -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Custom Variables</label>
-                            <button type="button" onclick="addCustomVariable()" class="text-[10px] bg-brand/10 text-brand px-2 py-1.5 font-semibold rounded hover:bg-brand/20 transition-colors">+ Add Variable</button>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Document Variables</label>
+                            <button type="button" onclick="addCustomVariable()" class="text-[10px] bg-violet-500/10 text-violet-500 px-2 py-1.5 font-semibold rounded hover:bg-violet-500/20 transition-colors">+ Add Manual</button>
                         </div>
+                        <p class="text-[10px] text-slate-400 dark:text-zinc-500 leading-tight">Variables added below or detected as <code class="bg-slate-150 px-1 py-0.5 rounded text-violet-500 font-mono">[Variable]</code> in the body text will parse live.</p>
                         <div id="custom-variables-container" class="space-y-2">
-                            <p class="text-xs text-gray-500 italic">No custom variables added yet.</p>
+                            <p class="text-xs text-slate-500 italic">No variables active.</p>
                         </div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
                     <!-- Content Body -->
                     <div class="space-y-3">
                         <div class="flex flex-col gap-2">
                             <div class="flex justify-between items-end">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Letter Content</label>
-                                <span class="text-[10px] text-brandAccent font-medium bg-brandAccent/10 px-2 py-0.5 rounded-full">Smart Variables Active</span>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Letter Content</label>
+                                <span class="text-[10px] text-cyan-500 font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full">Smarter Scanner Active</span>
                             </div>
                             
-                            <div class="flex flex-wrap gap-1 bg-gray-200 dark:bg-gray-800 p-1 rounded-lg border border-gray-300 dark:border-gray-700 items-center">
-                                <button type="button" onclick="insertFormat('**', '**')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bold Text"><i class="ph ph-text-b"></i></button>
-                                <button type="button" onclick="insertFormat('_', '_')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Italic Text"><i class="ph ph-text-italic"></i></button>
-                                <button type="button" onclick="insertFormat('==', '==')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Highlight Point"><i class="ph ph-highlighter"></i></button>
-                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                                <button type="button" onclick="insertFormat('[center]\n', '\n[/center]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Center"><i class="ph ph-text-align-center"></i></button>
-                                <button type="button" onclick="insertFormat('[right]\n', '\n[/right]')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Align Right"><i class="ph ph-text-align-right"></i></button>
-                                <button type="button" onclick="insertFormat('- ', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Bullet Point"><i class="ph ph-list-bullets"></i></button>
-                                <button type="button" onclick="insertFormat('\n| Header 1 | Header 2 |\n|---|---|\n| Data 1 | Data 2 |\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-700 dark:text-gray-300 transition-colors" title="Insert Table"><i class="ph ph-table"></i></button>
-                                <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                                <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-brand transition-colors" title="Insert Page Break"><i class="ph ph-file-dashed"></i></button>
+                            <div class="flex flex-wrap gap-1 bg-slate-200 dark:bg-zinc-800 p-1 rounded-lg border border-slate-300 dark:border-darkBorder items-center">
+                                <button type="button" onclick="insertFormat('**', '**')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Bold"><i class="ph ph-text-b"></i></button>
+                                <button type="button" onclick="insertFormat('_', '_')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Italic"><i class="ph ph-text-italic"></i></button>
+                                <button type="button" onclick="insertFormat('==', '==')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Highlight"><i class="ph ph-highlighter"></i></button>
+                                <div class="w-px h-5 bg-slate-300 dark:bg-zinc-700 mx-1"></div>
+                                <button type="button" onclick="insertFormat('[center]\n', '\n[/center]')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Center"><i class="ph ph-text-align-center"></i></button>
+                                <button type="button" onclick="insertFormat('[right]\n', '\n[/right]')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Right"><i class="ph ph-text-align-right"></i></button>
+                                <button type="button" onclick="insertFormat('- ', '')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Bullet"><i class="ph ph-list-bullets"></i></button>
+                                <button type="button" onclick="insertFormat('\n| Header 1 | Header 2 |\n|---|---|\n| Data 1 | Data 2 |\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-slate-700 dark:text-zinc-300 transition-colors" title="Table"><i class="ph ph-table"></i></button>
+                                <div class="w-px h-5 bg-slate-300 dark:bg-zinc-700 mx-1"></div>
+                                <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="p-1.5 hover:bg-white dark:hover:bg-zinc-700 rounded text-violet-500 transition-colors" title="Page Break"><i class="ph ph-file-dashed"></i></button>
                             </div>
                         </div>
                         
-                        <input type="text" id="input-subject" placeholder="Subject Line" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm font-medium focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <textarea id="input-body" placeholder="Write content here... Tags like [Recipient Name] will auto-replace!" rows="12" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-3 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white leading-relaxed resize-none"></textarea>
+                        <input type="text" id="input-subject" placeholder="Subject Line" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm font-medium focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <textarea id="input-body" placeholder="Write content... e.g., Dear [Recipient Name], your role is [Role]!" rows="12" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-3 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white leading-relaxed resize-none"></textarea>
                         
                         <div class="flex justify-end pt-1">
-                            <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="text-xs bg-brand/10 hover:bg-brand/20 text-brand font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5">
+                            <button type="button" onclick="insertFormat('\n\n---\n\n', '')" class="text-xs bg-violet-500/10 hover:bg-violet-500/20 text-violet-500 dark:text-violet-300 font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-1.5">
                                 <i class="ph ph-plus-circle text-base"></i> Add New Page
                             </button>
                         </div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
                     <!-- Signatory -->
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Signatory Authority</label>
-                        <input type="text" id="input-sign-name" value="Pabitra Mondal" placeholder="Your Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="text" id="input-sign-role" value="Founder & CEO, Falconix Digital" placeholder="Your Title" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Signatory Authority</label>
+                        <input type="text" id="input-sign-name" value="Pabitra Mondal" placeholder="Your Name" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <input type="text" id="input-sign-role" value="Founder & CEO, Falconix Digital" placeholder="Your Title" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
                         
                         <div class="pt-2">
-                            <label class="block text-[10px] text-gray-500 mb-1">Digital Signature (Image URL or Upload)</label>
+                            <label class="block text-[10px] text-slate-500 mb-1">Digital Signature (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="text" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                <input type="text" id="input-sign-url" value="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" placeholder="https://example.com/signature.png" class="flex-1 min-w-0 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
+                                <label class="cursor-pointer bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-darkBorder rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-slate-700 dark:text-zinc-300"></i>
                                     <input type="file" id="file-sign" class="hidden" accept="image/*">
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800">
+                    <hr class="border-slate-200 dark:border-darkBorder">
 
                     <!-- Partner E-Signature Details -->
                     <div class="space-y-3">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Client / Partner E-Signature</label>
-                        <p class="text-[10px] text-gray-500 mb-2 leading-tight">These fields are updated automatically when a client signs via their secure link, or you can fill them manually.</p>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Client / Partner E-Signature</label>
+                        <p class="text-[10px] text-slate-500 mb-2 leading-tight">These fields update dynamically when a client signs through the document verification link.</p>
                         
-                        <input type="text" id="input-partner-sign-name" placeholder="Client Signatory Name" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
-                        <input type="text" id="input-partner-sign-role" placeholder="Client Title / Company" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none transition-all text-gray-900 dark:text-white">
+                        <input type="text" id="input-partner-sign-name" placeholder="Client Signatory Name" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
+                        <input type="text" id="input-partner-sign-role" placeholder="Client Title / Company" class="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none transition-all text-slate-900 dark:text-white">
                         
                         <div class="pt-2">
-                            <label class="block text-[10px] text-gray-500 mb-1">Partner Logo (Image URL or Upload)</label>
+                            <label class="block text-[10px] text-slate-500 mb-1">Partner Logo (Image URL or Upload)</label>
                             <div class="flex gap-2">
-                                <input type="text" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white">
-                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                <input type="text" id="input-partner-logo-url" placeholder="https://example.com/partner-logo.png" class="flex-1 min-w-0 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white">
+                                <label class="cursor-pointer bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-darkBorder rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-slate-700 dark:text-zinc-300"></i>
                                     <input type="file" id="file-partner-logo" class="hidden" accept="image/*">
                                 </label>
                             </div>
                         </div>
                         <div class="pt-2">
-                            <label class="block text-[10px] text-gray-500 mb-1">E-Signature Image Data</label>
+                            <label class="block text-[10px] text-slate-500 mb-1">E-Signature Image Data</label>
                             <div class="flex gap-2">
-                                <input type="text" id="input-partner-sign-url" placeholder="Waiting for client to sign..." class="flex-1 min-w-0 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-500 dark:text-gray-400 font-mono text-[10px]">
-                                <label class="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
-                                    <i class="ph ph-upload-simple text-gray-700 dark:text-gray-300"></i>
+                                <input type="text" id="input-partner-sign-url" placeholder="Waiting for client signature..." class="flex-1 min-w-0 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-darkBorder rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-violet-500 outline-none text-slate-500 dark:text-zinc-400 font-mono text-[10px]">
+                                <label class="cursor-pointer bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-300 dark:border-darkBorder rounded-lg px-3 flex items-center justify-center transition-colors shadow-sm">
+                                    <i class="ph ph-upload-simple text-slate-700 dark:text-zinc-300"></i>
                                     <input type="file" id="file-partner-sign" class="hidden" accept="image/*">
                                 </label>
                             </div>
@@ -426,90 +518,90 @@
                 </div>
 
                 <!-- Export Options -->
-                <div class="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-darkCard shrink-0">
+                <div class="p-6 border-t border-slate-200 dark:border-darkBorder bg-slate-50 dark:bg-darkCard shrink-0">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 mb-3">
-                        <button id="btn-download" class="w-full bg-brand hover:bg-brandDark text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2">
+                        <button id="btn-download" class="w-full bg-violet-500 hover:bg-violet-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2">
                             <i class="ph ph-download-simple text-xl"></i> Export PDF
                         </button>
                         <button id="btn-email" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
                             <i class="ph ph-paper-plane-right text-xl"></i> Email Client
                         </button>
                     </div>
-                    <button onclick="document.getElementById('bulk-csv-modal').classList.remove('hidden')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2">
+                    <button onclick="document.getElementById('bulk-csv-modal').classList.remove('hidden')" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
                         <i class="ph ph-files text-xl"></i> Bulk CSV Merge
                     </button>
                 </div>
             </section>
 
-            <!-- Preview Sidebar -->
+            <!-- Preview Workspace -->
             <section class="flex-1 preview-container relative">
                 <!-- Dashboard Wrapper -->
                 <div id="dashboard-wrapper" class="hidden w-full max-w-5xl mx-auto flex-col h-full gap-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Overview Dashboard</h2>
-                            <p class="text-gray-500 text-sm mt-1">Monitor your document generation and signing activity in real-time.</p>
+                            <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Overview Dashboard</h2>
+                            <p class="text-slate-500 text-sm mt-1">Monitor your document generation and signing activity in real-time.</p>
                         </div>
-                        <button onclick="toggleDashboard(false)" class="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold py-2 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2 border border-gray-200 dark:border-gray-700">
+                        <button onclick="toggleDashboard(false)" class="bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-semibold py-2 px-4 rounded-xl transition-all shadow-sm flex items-center gap-2 border border-slate-200 dark:border-darkBorder">
                             <i class="ph ph-arrow-left text-lg"></i> Back to Editor
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-2">
                         <!-- Total Docs -->
-                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-between">
-                            <div class="flex items-center gap-3 text-brand mb-4">
-                                <div class="p-2.5 bg-brand/10 rounded-xl"><i class="ph ph-files text-2xl"></i></div>
-                                <span class="font-bold text-sm text-gray-600 dark:text-gray-400">Total Generated</span>
+                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-darkBorder flex flex-col justify-between">
+                            <div class="flex items-center gap-3 text-violet-500 mb-4">
+                                <div class="p-2.5 bg-violet-500/10 rounded-xl"><i class="ph ph-files text-2xl"></i></div>
+                                <span class="font-bold text-sm text-slate-600 dark:text-zinc-400">Total Generated</span>
                             </div>
-                            <p class="text-5xl font-black text-gray-900 dark:text-white" id="dash-total">0</p>
+                            <p class="text-5xl font-black text-slate-900 dark:text-white" id="dash-total">0</p>
                         </div>
                         <!-- Pending -->
-                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-between">
-                            <div class="flex items-center gap-3 text-yellow-500 mb-4">
-                                <div class="p-2.5 bg-yellow-500/10 rounded-xl"><i class="ph ph-clock text-2xl"></i></div>
-                                <span class="font-bold text-sm text-gray-600 dark:text-gray-400">Pending Signatures</span>
+                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-darkBorder flex flex-col justify-between">
+                            <div class="flex items-center gap-3 text-amber-500 mb-4">
+                                <div class="p-2.5 bg-amber-500/10 rounded-xl"><i class="ph ph-clock text-2xl"></i></div>
+                                <span class="font-bold text-sm text-slate-600 dark:text-zinc-400">Pending Signatures</span>
                             </div>
-                            <p class="text-5xl font-black text-gray-900 dark:text-white" id="dash-pending">0</p>
+                            <p class="text-5xl font-black text-slate-900 dark:text-white" id="dash-pending">0</p>
                         </div>
                         <!-- Signed -->
-                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-between">
-                            <div class="flex items-center gap-3 text-green-500 mb-4">
-                                <div class="p-2.5 bg-green-500/10 rounded-xl"><i class="ph ph-check-circle text-2xl"></i></div>
-                                <span class="font-bold text-sm text-gray-600 dark:text-gray-400">Successfully Signed</span>
+                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-darkBorder flex flex-col justify-between">
+                            <div class="flex items-center gap-3 text-emerald-500 mb-4">
+                                <div class="p-2.5 bg-emerald-500/10 rounded-xl"><i class="ph ph-check-circle text-2xl"></i></div>
+                                <span class="font-bold text-sm text-slate-600 dark:text-zinc-400">Successfully Signed</span>
                             </div>
-                            <p class="text-5xl font-black text-gray-900 dark:text-white" id="dash-signed">0</p>
+                            <p class="text-5xl font-black text-slate-900 dark:text-white" id="dash-signed">0</p>
                         </div>
                         <!-- Expired -->
-                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-between">
+                        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-darkBorder flex flex-col justify-between">
                             <div class="flex items-center gap-3 text-red-500 mb-4">
                                 <div class="p-2.5 bg-red-500/10 rounded-xl"><i class="ph ph-x-circle text-2xl"></i></div>
-                                <span class="font-bold text-sm text-gray-600 dark:text-gray-400">Expired Docs</span>
+                                <span class="font-bold text-sm text-slate-600 dark:text-zinc-400">Expired Docs</span>
                             </div>
-                            <p class="text-5xl font-black text-gray-900 dark:text-white" id="dash-expired">0</p>
+                            <p class="text-5xl font-black text-slate-900 dark:text-white" id="dash-expired">0</p>
                         </div>
                     </div>
                     
-                    <div class="bg-white dark:bg-darkCard p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 mt-4 flex-1">
-                        <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-6 flex items-center gap-2"><i class="ph ph-lightning text-brandAccent"></i> Quick Actions</h3>
+                    <div class="bg-white dark:bg-darkCard p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-darkBorder mt-4 flex-1">
+                        <h3 class="font-bold text-xl text-slate-900 dark:text-white mb-6 flex items-center gap-2"><i class="ph ph-lightning text-cyan-500"></i> Quick Actions</h3>
                         <div class="flex flex-wrap gap-4">
-                            <button onclick="toggleDashboard(false); resetLetter(true);" class="bg-brand hover:bg-brandDark text-white px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 shadow-lg shadow-brand/20 text-sm"><i class="ph ph-plus-circle text-xl"></i> Create New Letter</button>
-                            <button onclick="document.getElementById('cloud-modal').classList.remove('hidden')" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-folder-open text-xl"></i> Browse Cloud Archives</button>
-                            <button onclick="document.getElementById('manage-templates-modal').classList.remove('hidden')" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-files text-xl"></i> Manage Custom Templates</button>
-                            <button onclick="document.getElementById('bulk-csv-modal').classList.remove('hidden')" class="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-600 dark:text-purple-400 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-table text-xl"></i> Bulk Generate via CSV</button>
+                            <button onclick="toggleDashboard(false); resetLetter(true);" class="bg-violet-500 hover:bg-violet-600 text-white px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 shadow-lg shadow-violet-500/20 text-sm"><i class="ph ph-plus-circle text-xl"></i> Create New Letter</button>
+                            <button onclick="document.getElementById('cloud-modal').classList.remove('hidden')" class="bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-folder-open text-xl"></i> Browse Cloud Archives</button>
+                            <button onclick="document.getElementById('manage-templates-modal').classList.remove('hidden')" class="bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-files text-xl"></i> Manage Custom Templates</button>
+                            <button onclick="document.getElementById('bulk-csv-modal').classList.remove('hidden')" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-4 rounded-xl font-semibold transition-all flex items-center gap-3 text-sm"><i class="ph ph-table text-xl"></i> Bulk Generate via CSV</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Document Wrapper -->
+                <!-- Document Page Compilation Container -->
                 <div id="document-wrapper" class="flex flex-col gap-8 pb-8 relative">
                 </div>
                 
                 <div id="read-only-controls" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[150] hidden flex gap-3">
-                    <button id="btn-ro-sign" onclick="openSignatureModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
+                    <button id="btn-ro-sign" onclick="openSignatureModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
                         <i class="ph ph-signature text-xl"></i> Sign Document
                     </button>
-                    <button id="btn-ro-download" class="bg-brand hover:bg-brandDark text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
+                    <button id="btn-ro-download" class="bg-violet-500 hover:bg-violet-600 text-white font-bold py-3 px-8 rounded-full transition-all shadow-2xl flex items-center justify-center gap-2 border-2 border-white/20 whitespace-nowrap">
                         <i class="ph ph-download-simple text-xl"></i> Download PDF
                     </button>
                 </div>
@@ -519,8 +611,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signInWithCustomToken, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -529,18 +620,13 @@
             projectId: "fd-employee-data",
             storageBucket: "fd-employee-data.firebasestorage.app",
             messagingSenderId: "151106809716",
-            appId: "1:151106809716:web:7f540e0ce6b77bd70f4621",
-            measurementId: "G-Z4K2GGQTX6"
+            appId: "1:151106809716:web:7f540e0ce6b77bd70f4621"
         };
 
         const app = initializeApp(firebaseConfig);
         const fbAppId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-letters';
 
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'), 
-            isTokenAutoRefreshEnabled: true
-        });
-
+        // Set up authentication first prior to any DB calls to fulfill rules check
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
@@ -565,10 +651,10 @@
             const container = document.getElementById('toast-container');
             if(!container) return;
             const toast = document.createElement('div');
-            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
+            let bgClass = 'bg-slate-800 dark:bg-zinc-100 text-white dark:text-slate-900';
             let icon = 'ph-info';
             if (type === 'success') {
-                bgClass = 'bg-green-500 text-white';
+                bgClass = 'bg-emerald-500 text-white';
                 icon = 'ph-check-circle';
             } else if (type === 'error') {
                 bgClass = 'bg-red-500 text-white';
@@ -584,6 +670,26 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         };
+
+        // Modern Confirmation Dialog Hook
+        let confirmPromiseResolve = null;
+        window.showConfirmDialog = function(title, message) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            return new Promise((resolve) => {
+                confirmPromiseResolve = resolve;
+            });
+        };
+
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            if(confirmPromiseResolve) confirmPromiseResolve(false);
+        });
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            if(confirmPromiseResolve) confirmPromiseResolve(true);
+        });
 
         const inputs = {
             template: document.getElementById('input-template'),
@@ -641,22 +747,6 @@
             nda: {
                 subject: "Mutual Non-Disclosure Agreement",
                 body: "Dear **[Recipient Name]**,\n\nIn preparation for our upcoming discussions regarding a potential partnership, please find attached our standard Mutual Non-Disclosure Agreement (NDA).\n\nAs we will be sharing proprietary business strategies, client systems, and technical architectures, ==this agreement ensures that both parties maintain absolute confidentiality.==\n\nPlease review the attached document, sign it, and return a scanned copy to our office prior to our meeting scheduled for [Date].\n\nThank you for your cooperation."
-            },
-            warning: {
-                subject: "First Formal Warning Notice",
-                body: "Dear **[Recipient Name]**,\n\nThis letter serves as a formal warning regarding your recent performance and conduct at [Company Name]. \n\n==Despite previous informal discussions, we have not seen the required improvement.== \n\nSpecifically, we have noted the following issues:\n- [Insert Issue 1]\n- [Insert Issue 2]\n\nPlease consider this a formal notice that further infractions or failure to improve may result in more severe disciplinary action, up to and including termination.\n\nWe will schedule a review meeting on **[Date]** to discuss your progress."
-            },
-            termination: {
-                subject: "Notice of Employment Termination",
-                body: "Dear **[Recipient Name]**,\n\nThis letter is to formally notify you that your employment with [Company Name] is terminated, effective **[Date]**.\n\n==This decision was made after careful consideration and is final.==\n\nYou will receive your final compensation, including any accrued benefits, by the end of the current billing cycle. Please coordinate with HR to return all company property, including keys, laptops, and access badges, immediately.\n\nWe wish you the best in your future endeavors."
-            },
-            apology: {
-                subject: "Formal Apology Regarding [Insert Issue]",
-                body: "Dear **[Recipient Name]**,\n\nOn behalf of the entire team at [Company Name], I am writing to sincerely apologize for the recent issues you experienced with our services.\n\n==We hold ourselves to the highest standards of client satisfaction, and in this instance, we clearly fell short.==\n\nWe have conducted an internal review and are taking immediate steps to ensure this does not happen again. As a gesture of our commitment to your business, we would like to offer [Insert Compensation/Discount/Action].\n\nThank you for your continued patience, understanding, and partnership."
-            },
-            onboarding: {
-                subject: "Welcome to [Company Name]!",
-                body: "Dear **[Recipient Name]**,\n\nWelcome aboard! We are thrilled to partner with you and look forward to a highly successful collaboration.\n\nThis letter outlines our initial steps for your onboarding process. Over the next few days, our dedicated team will:\n- Set up your secure client portal\n- Schedule a formal kickoff meeting\n- Share the initial project roadmap\n\n==Please review the attached onboarding documents and let us know if you have any questions prior to our meeting on **[Date]**.==\n\nWe are excited to get started and drive results for your business!"
             }
         };
 
@@ -669,19 +759,79 @@
         let currentLetterId = crypto.randomUUID();
         let secureRecipientEmail = ""; 
         let customVars = {};
+        let activeThemeColor = 'indigo';
+        let activePreviewFont = 'sans';
+
+        // Key Configuration Utilities for Local Storage
+        window.saveApiKeys = function() {
+            const pk = document.getElementById('api-public-key').value.trim();
+            const si = document.getElementById('api-service-id').value.trim();
+            const ti = document.getElementById('api-template-id').value.trim();
+            
+            localStorage.setItem('emailjs_pk', pk);
+            localStorage.setItem('emailjs_si', si);
+            localStorage.setItem('emailjs_ti', ti);
+            
+            showToast("API Credentials Saved locally!", "success");
+            document.getElementById('api-modal').classList.add('hidden');
+        };
+
+        function loadApiKeys() {
+            document.getElementById('api-public-key').value = localStorage.getItem('emailjs_pk') || '';
+            document.getElementById('api-service-id').value = localStorage.getItem('emailjs_si') || '';
+            document.getElementById('api-template-id').value = localStorage.getItem('emailjs_ti') || '';
+        }
+
+        // Live variable tracking with regular expressions
+        function parseAndScanTextVariables() {
+            const bodyText = inputs.body.value;
+            const regex = /\[([A-Z0-9a-z_ \-]+)\]/gi;
+            let match;
+            const detectedTags = new Set();
+            const defaultTags = ['[Recipient Name]', '[Company Name]', '[Partner Name]', '[Date]'];
+            
+            while ((match = regex.exec(bodyText)) !== null) {
+                const fullTag = match[0];
+                if (!defaultTags.includes(fullTag)) {
+                    detectedTags.add(fullTag);
+                }
+            }
+            
+            let updated = false;
+            // Clean removed variables
+            Object.keys(customVars).forEach(tag => {
+                if (!detectedTags.has(tag) && !tag.startsWith('_manual_')) {
+                    delete customVars[tag];
+                    updated = true;
+                }
+            });
+
+            // Add newly detected variables
+            detectedTags.forEach(tag => {
+                if (customVars[tag] === undefined) {
+                    customVars[tag] = "";
+                    updated = true;
+                }
+            });
+
+            if (updated) {
+                renderCustomVariables();
+            }
+        }
 
         window.addCustomVariable = function() {
-            let name = prompt("Enter variable name (e.g., Salary, Joining Date):");
+            let name = prompt("Enter variable name (e.g., Salary, Commission):");
             if (!name) return;
             name = name.trim();
             const tag = name.startsWith('[') && name.endsWith(']') ? name : `[${name}]`;
             
-            if (customVars[tag] !== undefined) {
+            const internalTag = `_manual_${tag}`;
+            if (customVars[internalTag] !== undefined) {
                 showToast("Variable already exists!", "error");
                 return;
             }
             
-            customVars[tag] = "";
+            customVars[internalTag] = "";
             renderCustomVariables();
             updatePreview();
             saveStateToHistory(true);
@@ -700,17 +850,20 @@
             const keys = Object.keys(customVars);
             
             if (keys.length === 0) {
-                container.innerHTML = '<p class="text-xs text-gray-500 italic">No custom variables added yet.</p>';
+                container.innerHTML = '<p class="text-xs text-slate-500 italic">No custom variables added yet.</p>';
                 return;
             }
             
             keys.forEach(tag => {
+                const isManual = tag.startsWith('_manual_');
+                const cleanTag = isManual ? tag.replace('_manual_', '') : tag;
+                
                 const wrapper = document.createElement('div');
-                wrapper.className = 'flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm';
+                wrapper.className = 'flex items-center gap-2 bg-white dark:bg-zinc-800 p-2 rounded-lg border border-slate-200 dark:border-darkBorder shadow-sm';
                 wrapper.innerHTML = `
-                    <label class="text-xs font-semibold text-brandAccent w-1/3 truncate" title="${tag}">${tag}</label>
-                    <input type="text" class="custom-var-input flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-brand outline-none text-gray-900 dark:text-white" data-tag="${tag}" value="${customVars[tag]}" placeholder="Value...">
-                    <button type="button" class="text-red-400 hover:text-red-600 transition-colors p-1" onclick="removeCustomVariable('${tag}')"><i class="ph ph-trash text-base"></i></button>
+                    <label class="text-xs font-bold text-violet-500 w-1/3 truncate" title="${cleanTag}">${cleanTag}</label>
+                    <input type="text" class="custom-var-input flex-1 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-violet-500 outline-none text-slate-900 dark:text-white" data-tag="${tag}" value="${customVars[tag]}" placeholder="Value...">
+                    ${isManual ? `<button type="button" class="text-red-400 hover:text-red-650 transition-colors p-1" onclick="removeCustomVariable('${tag}')"><i class="ph ph-trash text-base"></i></button>` : '<span class="text-[8px] bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400 px-1.5 py-1 rounded font-bold tracking-wider uppercase">Auto</span>'}
                 `;
                 container.appendChild(wrapper);
             });
@@ -723,6 +876,26 @@
                 });
             });
         }
+
+        // Layout Theme Styling Upgrades
+        window.changeAccentColor = function(color) {
+            activeThemeColor = color;
+            const bar = document.getElementById('accent-bar');
+            const logoText = document.getElementById('logo-accent-text');
+            
+            // Map color styles
+            const bgThemes = { indigo: 'bg-violet-500', cyan: 'bg-cyan-500', emerald: 'bg-emerald-500', rose: 'bg-rose-500', amber: 'bg-amber-500' };
+            const textThemes = { indigo: 'text-violet-500', cyan: 'text-cyan-500', emerald: 'text-emerald-500', rose: 'text-rose-500', amber: 'text-amber-500' };
+            
+            bar.className = `h-1.5 w-full transition-all duration-300 shrink-0 z-50 ${bgThemes[color]}`;
+            logoText.className = `transition-all duration-300 ${textThemes[color]}`;
+            updatePreview();
+        };
+
+        window.changePreviewFont = function(font) {
+            activePreviewFont = font;
+            updatePreview();
+        };
 
         function getCurrentState() {
             const state = {};
@@ -737,6 +910,8 @@
             });
             state._customVars = { ...customVars };
             state.letterId = currentLetterId;
+            state.themeColor = activeThemeColor;
+            state.fontFamily = activePreviewFont;
             return state;
         }
 
@@ -753,6 +928,13 @@
             });
             customVars = stateData._customVars || {};
             currentLetterId = stateData.letterId || letterIdParam || crypto.randomUUID();
+            activeThemeColor = stateData.themeColor || 'indigo';
+            activePreviewFont = stateData.fontFamily || 'sans';
+            
+            document.getElementById('input-theme-color').value = activeThemeColor;
+            document.getElementById('input-font-family').value = activePreviewFont;
+            changeAccentColor(activeThemeColor);
+            
             renderCustomVariables();
             updatePreview();
         }
@@ -763,7 +945,6 @@
         let isDrawing = false;
 
         window.openSignatureModal = async function() {
-            // SECURITY FIX: Check if Expiry is triggered
             const hasExpiry = inputs.expiryDate.value && inputs.expiryDate.value !== '';
             const isPastExpiry = hasExpiry && (new Date() > new Date(inputs.expiryDate.value + 'T23:59:59'));
             const isExpired = inputs.manualExpire.checked || isPastExpiry;
@@ -780,10 +961,10 @@
             }
 
             const isAuthorized = (email) => {
-                return email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase();
+                return email && (email.toLowerCase() === recipientEmail || email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
             };
 
-            // Trigger Google Login if not logged in, or if logged in with the wrong account
+            // Trigger Firebase Google Popup if not logged in
             if (!currentUser || !isAuthorized(currentUser.email)) {
                 if (currentUser) {
                     await signOut(auth);
@@ -811,26 +992,23 @@
                     console.error("Login failed", err);
                     btn.innerHTML = origHtml;
                     btn.disabled = false;
-                    showToast("Identity verification cancelled or failed.", "error");
+                    showToast("Identity verification cancelled.", "error");
                     return;
                 }
             }
 
-            // Identity Verified! Proceed to open modal
             const modal = document.getElementById('signature-modal');
             modal.classList.remove('hidden');
             
-            // Resize canvas to properly map pixels for drawing
             setTimeout(() => {
                 const rect = sigCanvas.parentElement.getBoundingClientRect();
                 sigCanvas.width = rect.width;
                 sigCanvas.height = rect.height;
                 
-                sigCtx.strokeStyle = localStorage.theme === 'dark' ? '#fff' : '#000080'; // Dark blue signature ink
+                sigCtx.strokeStyle = '#0a0a54'; // Classical rich deep corporate blue signing color
                 sigCtx.lineWidth = 3;
                 sigCtx.lineCap = 'round';
                 sigCtx.lineJoin = 'round';
-                
                 clearSignature();
             }, 50);
         };
@@ -887,9 +1065,8 @@
         sigCanvas.addEventListener('touchend', stopDraw, {passive: false});
 
         document.getElementById('btn-save-signature').addEventListener('click', async () => {
-            // DOUBLE SECURITY CHECK
             const recipientEmail = isReadOnlyMode ? secureRecipientEmail : inputs.toEmail.value.trim().toLowerCase();
-            const isAuthorized = currentUser && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
+            const isAuthorized = currentUser && currentUser.email && (currentUser.email.toLowerCase() === recipientEmail || currentUser.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
             
             if (!isAuthorized) {
                 showToast("Security Block: Unauthorized identity detected.", "error");
@@ -909,8 +1086,7 @@
                 inputs.partnerSignName.value = signerName;
             }
 
-            // Fetch IP and Location for Legal Validity
-            let geoData = "Location Unavailable";
+            let geoData = "Location Access Restricted";
             try {
                 const geoRes = await fetch('https://ipapi.co/json/');
                 const geoJson = await geoRes.json();
@@ -937,18 +1113,15 @@
                 updatePreview();
                 closeSignatureModal();
                 showToast("Signature attached successfully!", "success");
-                
                 document.getElementById('btn-ro-sign').classList.add('hidden');
-                
             } catch (err) {
                 console.error("Signature Save Error: ", err);
-                showToast("Failed to save signature. Check Firestore Rules.", "error");
+                showToast("Failed to save signature. Check Database access.", "error");
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         });
-
 
         const urlParams = new URLSearchParams(window.location.search);
         const letterIdParam = urlParams.get('letterId');
@@ -965,21 +1138,29 @@
             
             const main = document.querySelector('main');
             main.classList.remove('lg:flex-row');
-            main.classList.add('bg-gray-100', 'dark:bg-darkBg', 'justify-center');
+            main.classList.add('bg-slate-50', 'dark:bg-darkBg', 'justify-center');
             
             const preview = document.querySelector('.preview-container');
             preview.classList.add('w-full', 'max-w-4xl', 'mx-auto');
             
             document.getElementById('read-only-controls').classList.remove('hidden');
 
-            getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', letterIdParam))
-            .then(snap => {
+            // CRITICAL SETUP (Rule 3): Trigger Anonymous/Custom Auth *prior* to querying database
+            const initReadOnlyAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                return getDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', letterIdParam));
+            };
+
+            initReadOnlyAuth().then(snap => {
                 if(snap.exists()) {
                     const snapData = snap.data().data;
                     secureRecipientEmail = (snapData.toEmail || "").trim().toLowerCase();
                     applyState(snapData);
                     
-                    // Expiry check
                     const hasExpiry = snapData.expiryDate && snapData.expiryDate !== '';
                     const isPastExpiry = hasExpiry && (new Date() > new Date(snapData.expiryDate + 'T23:59:59'));
                     const isExpired = snapData.manualExpire === true || snapData.manualExpire === 'true' || isPastExpiry;
@@ -990,14 +1171,13 @@
                     if (isExpired) {
                         showToast("This document has expired. Action is restricted.", "error");
                     }
-
                 } else {
-                    document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-gray-500 font-bold text-xl mt-20">Letter not found or has been removed.</div>';
+                    document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-slate-500 font-bold text-xl mt-20">Letter not found or has been removed.</div>';
                     document.getElementById('read-only-controls').classList.add('hidden');
                 }
             }).catch(err => {
-                console.error(err);
-                document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-red-500 font-bold text-xl mt-20">Access Denied. Check Firestore Rules.</div>';
+                console.error("Firebase read failure:", err);
+                document.getElementById('document-wrapper').innerHTML = '<div class="text-center p-10 text-red-500 font-bold text-xl mt-20">Access Denied. Internal Firebase error.</div>';
                 document.getElementById('read-only-controls').classList.add('hidden');
             });
         }
@@ -1070,7 +1250,10 @@
         };
 
         window.resetLetter = async function(force = false) {
-            if(!force && !confirm("Are you sure you want to reset the letter? This will clear all your current content.")) return;
+            if(!force) {
+                const confirmReset = await showConfirmDialog("Reset Letter Content", "Are you sure you want to clear your changes? This action is irreversible.");
+                if(!confirmReset) return;
+            }
             inputs.template.value = "blank";
             inputs.toName.value = "";
             inputs.toEmail.value = "";
@@ -1085,7 +1268,6 @@
             inputs.partnerSignLocation.value = "";
             inputs.partnerSignTime.value = "";
             
-            // New expiry defaults
             inputs.expiryDate.value = "";
             inputs.manualExpire.checked = false;
             inputs.watermarkText.value = "";
@@ -1101,7 +1283,7 @@
             }
             updatePreview();
             saveStateToHistory(true);
-            if (!force) showToast("Letter reset to blank.", "success");
+            if (!force) showToast("Letter reset successfully.", "success");
         };
 
         function getDrafts() {
@@ -1109,14 +1291,14 @@
         }
 
         window.saveCurrentDraft = function() {
-            const name = prompt("Enter a name for this draft checkpoint (e.g., 'Offer Letter V1'):");
+            const name = prompt("Enter a name for this checkpoint:");
             if (!name) return;
             
             const draftsData = getDrafts();
             draftsData.list.push({ id: Date.now().toString(), name: name, timestamp: new Date().toISOString(), data: getCurrentState() });
             localStorage.setItem('letter_drafts', JSON.stringify(draftsData));
             updateDraftsDropdown();
-            showToast("Local draft saved successfully!", "success");
+            showToast("Draft checkpoint saved successfully!", "success");
         };
 
         window.loadDraft = function(id) {
@@ -1126,7 +1308,7 @@
             if (draft) {
                 applyState(draft.data);
                 saveStateToHistory(true);
-                showToast("Draft loaded successfully.", "success");
+                showToast("Draft checkpoint loaded.", "success");
             }
             document.getElementById('input-drafts').value = ""; 
         };
@@ -1194,12 +1376,13 @@
         setupImageUpload('file-partner-logo', 'input-partner-logo-url');
         setupImageUpload('file-partner-sign', 'input-partner-sign-url');
 
+        // Markdown Formatting Parser
         function parseFormatting(text) {
-            if (!text) return '<span class="text-gray-400 italic">[Your letter content will appear here.]</span>';
+            if (!text) return '<span class="text-slate-400 dark:text-zinc-500 italic">[Document Body Content]</span>';
             
             let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
-            html = html.replace(/==([^=]+)==/g, '<mark class="bg-brandAccent/40 px-1.5 py-0.5 rounded font-semibold text-gray-900">$1</mark>');
+            html = html.replace(/==([^=]+)==/g, '<mark class="bg-yellow-100 text-slate-900 px-1 py-0.5 rounded font-semibold">$1</mark>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
             
@@ -1226,7 +1409,7 @@
                     if (inList) { finalHtml += '</ul>'; inList = false; }
                     
                     if (!inTable) {
-                        finalHtml += '<table class="w-full text-left border-collapse my-4 border border-gray-300 dark:border-gray-700"><thead>';
+                        finalHtml += '<table class="w-full text-left border-collapse my-4 border border-slate-300"><thead>';
                         inTable = true;
                     }
                     
@@ -1237,7 +1420,7 @@
                         finalHtml += '<tr>';
                         cells.forEach(cell => {
                             const tag = finalHtml.includes('<tbody>') ? 'td' : 'th';
-                            finalHtml += `<${tag} class="border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm">${cell.trim()}</${tag}>`;
+                            finalHtml += `<${tag} class="border border-slate-300 px-3 py-2 text-sm">${cell.trim()}</${tag}>`;
                         });
                         finalHtml += '</tr>';
                     }
@@ -1284,8 +1467,25 @@
                 textarea.selectionEnd = start + insertion.length;
             }
             
+            parseAndScanTextVariables();
             updatePreview();
             saveStateToHistory(true); 
+        };
+
+        // Generates dynamic CSV template based on auto-detected and custom variables
+        window.downloadCSVTemplate = function() {
+            const baseHeaders = ["Recipient Name", "Recipient Email", "Date", "Ref"];
+            const currentVars = Object.keys(customVars).map(v => v.startsWith('_manual_') ? v.replace('_manual_', '') : v);
+            const headers = [...baseHeaders, ...currentVars].map(h => `"${h.replace(/"/g, '""')}"`);
+            
+            const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Falconix_Bulk_Import_Template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
         window.updatePreview = function() {
@@ -1322,7 +1522,6 @@
 
             autoSave(); 
 
-            // Expiry Checks
             const hasExpiry = state.expiryDate && state.expiryDate !== '';
             const isPastExpiry = hasExpiry && (new Date() > new Date(state.expiryDate + 'T23:59:59'));
             const isExpired = state.manualExpire || isPastExpiry;
@@ -1340,11 +1539,12 @@
             };
 
             for (let key in customVars) {
-                variableMap[key] = customVars[key].trim() || '__________';
+                const isManual = key.startsWith('_manual_');
+                const cleanKey = isManual ? key.replace('_manual_', '') : key;
+                variableMap[cleanKey] = customVars[key].trim() || '__________';
             }
 
             const pages = (state.body || '').split(/(?:\r?\n)?---(?:\r?\n)?/);
-            
             const staticQrCodeUrl = "https://i.ibb.co/4RpHrqMH/FD.jpg";
             
             const shareUrl = window.location.origin + window.location.pathname + '?letterId=' + currentLetterId;
@@ -1352,6 +1552,18 @@
             qr.addData(shareUrl);
             qr.make();
             const dynamicQrCodeUrl = qr.createDataURL(4, 0);
+
+            // Fetch accent styling definitions
+            const themeBorders = { indigo: 'border-violet-500', cyan: 'border-cyan-500', emerald: 'border-emerald-500', rose: 'border-rose-500', amber: 'border-amber-500' };
+            const themeTexts = { indigo: 'text-violet-500', cyan: 'text-cyan-500', emerald: 'text-emerald-500', rose: 'text-rose-500', amber: 'text-amber-500' };
+            const themeBackgrounds = { indigo: 'from-violet-600 to-violet-900', cyan: 'from-cyan-600 to-cyan-900', emerald: 'from-emerald-600 to-emerald-900', rose: 'from-rose-600 to-rose-900', amber: 'from-amber-600 to-amber-900' };
+            
+            const activeBorder = themeBorders[activeThemeColor];
+            const activeText = themeTexts[activeThemeColor];
+            const activeHeaderGrad = themeBackgrounds[activeThemeColor];
+            
+            // Set dynamic preview font style
+            const previewFontClass = activePreviewFont === 'serif' ? 'font-serif' : (activePreviewFont === 'display' ? 'font-display' : 'font-sans');
 
             let html = '';
 
@@ -1364,18 +1576,16 @@
                 for (const [tag, actualValue] of Object.entries(variableMap)) {
                     const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
                     const safeValue = actualValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    parsedContent = parsedContent.replace(regex, `<span class="bg-brandAccent/10 text-brandDark dark:text-brandAccent rounded px-1 font-semibold">${safeValue}</span>`);
+                    parsedContent = parsedContent.replace(regex, `<span class="bg-slate-100 border-b-2 ${activeBorder} text-slate-800 rounded px-1.5 py-0.5 font-semibold">${safeValue}</span>`);
                 }
 
                 let watermarkHtml = '';
                 if (finalWatermark) {
-                    let wmColorClass = 'text-gray-400 border-gray-400';
+                    let wmColorClass = 'text-slate-300 border-slate-300';
                     if (['EXPIRED', 'REJECTED', 'VOID', 'CANCELLED'].some(w => finalWatermark.includes(w))) {
                         wmColorClass = 'text-red-500 border-red-500';
                     } else if (['APPROVED', 'VERIFIED', 'SUCCESS'].some(w => finalWatermark.includes(w))) {
-                        wmColorClass = 'text-green-500 border-green-500';
-                    } else if (['CONFIDENTIAL', 'SECRET'].some(w => finalWatermark.includes(w))) {
-                        wmColorClass = 'text-purple-500 border-purple-500';
+                        wmColorClass = 'text-emerald-500 border-emerald-500';
                     }
 
                     let wmTextSize = 'text-[100px] border-[10px]';
@@ -1384,131 +1594,141 @@
 
                     watermarkHtml = `
                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-[60] overflow-hidden">
-                        <div class="transform -rotate-[35deg] ${wmTextSize} font-black ${wmColorClass} opacity-[0.15] uppercase tracking-widest p-8 rounded-[3rem] whitespace-nowrap shadow-sm">${finalWatermark}</div>
+                        <div class="transform -rotate-[35deg] ${wmTextSize} font-black ${wmColorClass} opacity-[0.12] uppercase tracking-widest p-8 rounded-[3rem] whitespace-nowrap">${finalWatermark}</div>
                     </div>
                     `;
                 }
 
                 html += `
-                <div class="a4-page flex flex-col relative overflow-hidden bg-white ${isFirst ? '' : 'page-break-before shadow-2xl'}">
+                <div class="a4-page flex flex-col relative overflow-hidden bg-white ${previewFontClass} ${isFirst ? '' : 'page-break-before shadow-2xl'}">
                     
                     ${watermarkHtml}
                     
                     <div class="absolute top-32 bottom-20 left-0 right-0 flex items-center justify-center pointer-events-none z-0">
-                        <img src="${state.logoUrl}" class="w-3/4 max-w-lg opacity-[0.06] object-contain ${state.logoUrl ? '' : 'hidden'}" alt="Watermark">
+                        <img src="${state.logoUrl}" class="w-3/4 max-w-lg opacity-[0.04] object-contain ${state.logoUrl ? '' : 'hidden'}" alt="Watermark">
                     </div>
                     
-                    <div class="px-12 py-8 bg-darkBg flex justify-between items-center relative z-10 border-b border-gray-900 shadow-sm">
-                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brandAccent via-brand to-brandDark"></div>
+                    <!-- Header -->
+                    <div class="px-12 py-8 bg-zinc-950 flex justify-between items-center relative z-10 border-b border-zinc-900 shadow-sm shrink-0">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${activeHeaderGrad}"></div>
                         <div class="flex items-center gap-4">
-                            ${state.logoUrl ? `<img src="${state.logoUrl}" class="h-20 w-auto object-contain drop-shadow-md" alt="Company Logo">` : ''}
+                            ${state.logoUrl ? `<img src="${state.logoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Company Logo">` : ''}
                             <div class="flex flex-col justify-center">
-                                <h1 class="text-3xl font-black tracking-tight leading-none text-white" style="font-family: 'Inter', sans-serif;">Falconix <span class="text-brand">Digital</span></h1>
-                                <p class="text-xs text-brandAccent font-bold tracking-widest uppercase mt-1.5 leading-none">Innovation In Flight</p>
+                                <h1 class="text-2xl font-black tracking-tight leading-none text-white">Falconix <span class="${activeText}">Digital</span></h1>
+                                <p class="text-[9px] text-cyan-400 font-bold tracking-widest uppercase mt-1 leading-none">Innovation In Flight</p>
                             </div>
                             ${state.partnerLogoUrl ? `
-                                <i class="ph ph-x text-gray-500 text-xl ml-4"></i>
-                                <img src="${state.partnerLogoUrl}" class="h-16 w-auto object-contain drop-shadow-md" alt="Partner Logo">
+                                <i class="ph ph-x text-slate-500 text-xl ml-4"></i>
+                                <img src="${state.partnerLogoUrl}" class="h-14 w-auto object-contain" alt="Partner Logo">
                             ` : ''}
                         </div>
-                        <div class="text-right text-[11px] text-gray-300 leading-relaxed">
-                            <p class="flex items-center justify-end gap-1.5"><i class="ph-fill ph-phone text-brandAccent"></i> <span>${state.agencyPhone}</span></p>
-                            <p class="flex items-center justify-end gap-1.5"><i class="ph-fill ph-envelope-simple text-brandAccent"></i> <span>${state.agencyEmail}</span></p>
-                            <p class="flex items-center justify-end gap-1.5"><i class="ph-fill ph-globe text-brandAccent"></i> <span>${state.agencyWeb}</span></p>
+                        <div class="text-right text-[10px] text-slate-300 leading-normal">
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-phone text-cyan-400"></i> <span>${state.agencyPhone}</span></p>
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-envelope-simple text-cyan-400"></i> <span class="underline">${state.agencyEmail}</span></p>
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-globe text-cyan-400"></i> <span>${state.agencyWeb}</span></p>
                         </div>
                     </div>
 
-                    <div class="px-12 py-10 flex-1 flex flex-col relative z-10 bg-white/0 min-h-0 overflow-hidden">
+                    <div class="px-12 py-8 flex-1 flex flex-col relative z-10 bg-white/0 min-h-0 overflow-hidden">
                         ${isFirst ? `
-                            <div class="flex justify-between items-start mb-8 text-sm text-gray-700">
-                                <div class="font-medium"><p>Ref: <span class="text-black">${state.ref}</span></p></div>
-                                <div class="font-medium text-right">
+                            <div class="flex justify-between items-start mb-6 text-xs text-slate-700">
+                                <div class="font-semibold"><p>Ref: <span class="text-black font-mono font-bold">${state.ref}</span></p></div>
+                                <div class="font-semibold text-right">
                                     <p>Date: <span class="text-black">${new Date(state.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span></p>
-                                    ${state.expiryDate ? `<p class="text-xs text-red-600 mt-1">Valid Until: <span class="font-bold">${new Date(state.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span></p>` : ''}
+                                    ${state.expiryDate ? `<p class="text-[10px] text-red-600 mt-0.5 font-bold uppercase tracking-wider flex items-center justify-end gap-1"><i class="ph ph-shield-check"></i> Valid Until: ${new Date(state.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>` : ''}
                                 </div>
                             </div>
-                            <div class="mb-8">
-                                <p class="text-sm font-bold text-black mb-1">To,</p>
-                                <p class="text-sm font-semibold text-black">${state.toName}</p>
-                                ${state.toCompany ? `<p class="text-sm font-medium text-gray-800">${state.toCompany}</p>` : ''}
-                                ${state.toAddress ? `<p class="text-sm text-gray-700 whitespace-pre-line mt-1">${state.toAddress}</p>` : ''}
+                            <div class="mb-6">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">To Recipient,</p>
+                                <p class="text-sm font-bold text-slate-900">${state.toName}</p>
+                                ${state.toCompany ? `<p class="text-xs font-semibold text-slate-600">${state.toCompany}</p>` : ''}
+                                ${state.toAddress ? `<p class="text-xs text-slate-600 whitespace-pre-line mt-1 leading-relaxed">${state.toAddress}</p>` : ''}
                             </div>
-                            <div class="mb-8 flex">
-                                <span class="text-sm font-bold text-black w-20 shrink-0">Subject:</span>
-                                <p class="text-sm font-bold text-black flex-1 underline underline-offset-4 decoration-brand">${state.subject}</p>
+                            <div class="mb-6 flex items-start border-l-2 ${activeBorder} pl-3">
+                                <span class="text-xs font-bold text-slate-400 w-16 shrink-0 mt-0.5 uppercase tracking-wider">Subject:</span>
+                                <p class="text-sm font-extrabold text-slate-900 flex-1 leading-snug">${state.subject}</p>
                             </div>
-                        ` : `<div class="mb-6"><span class="text-xs text-gray-400 uppercase tracking-wider font-bold">Continued...</span></div>`}
+                        ` : `<div class="mb-4 flex items-center justify-between border-b pb-2"><span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Document Continuity</span><span class="text-[10px] text-slate-400">${state.ref}</span></div>`}
 
-                        <div class="text-sm text-gray-800 leading-[1.8] flex-1">
-                            <div class="text-justify text-gray-800 space-y-2">
+                        <div class="text-sm text-slate-800 leading-[1.8] flex-1">
+                            <div class="text-justify text-slate-800 space-y-3">
                                 ${parsedContent}
                             </div>
                         </div>
 
                         ${isLast ? `
-                            <div class="mt-16 pt-8 grid grid-cols-2 gap-8">
+                            <div class="mt-10 pt-4 grid grid-cols-2 gap-8 shrink-0">
                                 <div>
-                                    <p class="text-sm text-gray-800 mb-4">Sincerely,</p>
-                                    <div class="mb-2 relative w-max h-20 flex items-end">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sincerely,</p>
+                                    <div class="mb-1 relative w-max h-14 flex items-end">
                                         ${state.signUrl 
-                                            ? `<img src="${state.signUrl}" class="h-20 object-contain mix-blend-multiply" alt="Signature">` 
-                                            : `<p class="font-signature text-4xl text-blue-900 transform -rotate-3 opacity-90 pb-2 pr-4">${state.signName}</p>`}
+                                            ? `<img src="${state.signUrl}" class="h-14 object-contain mix-blend-multiply" alt="Signature">` 
+                                            : `<p class="font-signature text-3xl text-blue-900 transform -rotate-2 opacity-90 pb-1 pr-4">${state.signName}</p>`}
                                         ${state.logoUrl ? `
-                                        <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
-                                            <img src="${state.logoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Company Seal">
+                                        <div class="absolute top-0 right-0 transform rotate-[-12deg] -translate-y-3 translate-x-8 pointer-events-none opacity-[0.15]">
+                                            <img src="${state.logoUrl}" class="w-14 h-14 object-contain mix-blend-multiply" alt="Company Seal">
                                         </div>
                                         ` : ''}
                                     </div>
-                                    <p class="text-sm font-bold text-black mt-2">${state.signName}</p>
-                                    <p class="text-xs font-medium text-gray-700">${state.signRole}</p>
+                                    <p class="text-xs font-bold text-slate-900">${state.signName}</p>
+                                    <p class="text-[10px] font-medium text-slate-500">${state.signRole}</p>
                                 </div>
 
                                 ${(state.partnerSignName || state.partnerSignRole || state.partnerSignUrl) ? `
                                 <div>
-                                    <p class="text-sm text-gray-800 mb-4">Acknowledged & Agreed,</p>
-                                    <div class="mb-2 relative w-max h-20 flex items-end">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Acknowledged & Agreed,</p>
+                                    <div class="mb-1 relative w-max h-14 flex items-end">
                                         ${state.partnerSignUrl 
-                                            ? `<img src="${state.partnerSignUrl}" class="h-20 object-contain mix-blend-multiply" alt="Partner Signature">` 
-                                            : `<div class="h-20 w-40"></div>`}
+                                            ? `<img src="${state.partnerSignUrl}" class="h-14 object-contain mix-blend-multiply" alt="Partner Signature">` 
+                                            : `<div class="h-14 w-32 border-b-2 border-dashed border-slate-300"></div>`}
                                         ${state.partnerLogoUrl ? `
-                                        <div class="absolute top-0 right-0 transform rotate-[-10deg] -translate-y-4 translate-x-10 pointer-events-none opacity-[0.15]">
-                                            <img src="${state.partnerLogoUrl}" class="w-20 h-20 object-contain mix-blend-multiply" alt="Partner Seal">
+                                        <div class="absolute top-0 right-0 transform rotate-[-12deg] -translate-y-3 translate-x-8 pointer-events-none opacity-[0.15]">
+                                            <img src="${state.partnerLogoUrl}" class="w-14 h-14 object-contain mix-blend-multiply" alt="Partner Seal">
                                         </div>
                                         ` : ''}
                                     </div>
-                                    <p class="text-sm font-bold text-black mt-2">${state.partnerSignName || 'Partner Name'}</p>
-                                    <p class="text-xs font-medium text-gray-700">${state.partnerSignRole || 'Partner Title'}</p>
-                                    ${(state.partnerSignLocation || state.partnerSignTime) ? `
-                                    <div class="mt-3 text-[8px] text-gray-400 leading-tight border-t border-gray-200 pt-1.5 w-max font-mono">
-                                        ${state.partnerSignTime ? `<p>Timestamp: ${state.partnerSignTime}</p>` : ''}
-                                        ${state.partnerSignLocation ? `<p>Audit: ${state.partnerSignLocation}</p>` : ''}
-                                    </div>
-                                    ` : ''}
+                                    <p class="text-xs font-bold text-slate-900">${state.partnerSignName || 'Client Signatory'}</p>
+                                    <p class="text-[10px] font-medium text-slate-500">${state.partnerSignRole || 'Acknowledgee'}</p>
                                 </div>
                                 ` : ''}
                             </div>
+                            
+                            <!-- E-Signature Verification Audit Strip -->
+                            ${state.partnerSignUrl ? `
+                            <div class="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3 shrink-0">
+                                <div class="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><i class="ph ph-shield-check text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Secured Legally via Falconix E-Sign Service</p>
+                                    <div class="grid grid-cols-2 gap-x-4 mt-0.5">
+                                        <p class="text-[9px] text-slate-500 font-mono truncate">Audit: ${state.partnerSignLocation}</p>
+                                        <p class="text-[9px] text-slate-500 font-mono text-right">Time: ${state.partnerSignTime}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
                         ` : ''}
                     </div>
 
-                    <div class="px-12 py-5 bg-darkBg flex justify-between items-center text-[10px] text-gray-400 relative z-10">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandDark via-brand to-brandAccent"></div>
+                    <!-- Footer -->
+                    <div class="px-12 py-5 bg-zinc-950 flex justify-between items-center text-[9px] text-slate-400 shrink-0">
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${activeHeaderGrad}"></div>
                         <div class="flex items-center gap-3">
-                            <div class="flex gap-2">
-                                <div class="flex flex-col items-center justify-center">
-                                    <img src="${staticQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Website QR">
-                                    <span class="text-[6px] font-bold mt-1 text-gray-400 uppercase tracking-widest">Website</span>
+                            <div class="flex gap-1.5">
+                                <div class="flex flex-col items-center">
+                                    <img src="${staticQrCodeUrl}" class="w-8 h-8 rounded bg-white p-0.5 object-cover" alt="Website QR">
+                                    <span class="text-[5px] font-bold mt-0.5 text-slate-500 uppercase">Website</span>
                                 </div>
-                                <div class="flex flex-col items-center justify-center">
-                                    <img src="${dynamicQrCodeUrl}" class="w-10 h-10 rounded bg-white p-0.5 object-cover" alt="Verify QR">
-                                    <span class="text-[6px] font-bold mt-1 text-brandAccent uppercase tracking-widest">Verify</span>
+                                <div class="flex flex-col items-center">
+                                    <img src="${dynamicQrCodeUrl}" class="w-8 h-8 rounded bg-white p-0.5 object-cover" alt="Verify QR">
+                                    <span class="text-[5px] font-bold mt-0.5 ${activeText} uppercase">Verify</span>
                                 </div>
                             </div>
-                            <div class="flex flex-col justify-center border-l border-gray-700 pl-3 h-10">
-                                <span class="font-bold text-gray-300 mb-0.5 text-[11px]">Falconix Digital</span>
+                            <div class="flex flex-col justify-center border-l border-zinc-800 pl-3 h-8">
+                                <span class="font-bold text-slate-300 text-[10px]">Falconix Digital</span>
                                 <span>Address: ${state.agencyAddress}</span>
                             </div>
                         </div>
-                        <p class="font-medium text-brandAccent tracking-widest uppercase text-right">
+                        <p class="font-medium ${activeText} tracking-wider uppercase text-right">
                             ${isLast ? 'CONFIDENTIAL' : `PAGE ${index + 1} OF ${pages.length}`}
                         </p>
                     </div>
@@ -1518,6 +1738,11 @@
 
             document.getElementById('document-wrapper').innerHTML = html;
         }
+
+        // Live Scanner Action Bindings
+        inputs.body.addEventListener('input', () => {
+            parseAndScanTextVariables();
+        });
 
         Object.values(inputs).forEach(input => {
             if (input.type === 'checkbox') {
@@ -1547,10 +1772,6 @@
                     <option value="telecaller_tnc">Telecaller T&C Agreement</option>
                     <option value="collab">Business Collaboration Proposal</option>
                     <option value="nda">Non-Disclosure Agreement</option>
-                    <option value="warning">Formal Warning Letter</option>
-                    <option value="termination">Termination Letter</option>
-                    <option value="apology">Formal Apology</option>
-                    <option value="onboarding">Client Onboarding</option>
                 </optgroup>
             `;
             if (customTemplatesList.length > 0) {
@@ -1590,7 +1811,8 @@
         };
 
         window.deleteCustomTemplate = async function(id) {
-            if (!confirm("Are you sure you want to delete this custom template?")) return;
+            const confirmDelete = await showConfirmDialog("Delete Template", "Are you sure you want to permanently delete this cloud custom template?");
+            if (!confirmDelete) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates', id));
                 showToast("Template deleted.", "success");
@@ -1607,12 +1829,14 @@
                 if (tpl) {
                     inputs.subject.value = tpl.subject;
                     inputs.body.value = tpl.body;
+                    parseAndScanTextVariables();
                     updatePreview();
                     saveStateToHistory(true);
                 }
             } else if (templates[val]) {
                 inputs.subject.value = templates[val].subject;
                 inputs.body.value = templates[val].body;
+                parseAndScanTextVariables();
                 updatePreview();
                 saveStateToHistory(true);
             }
@@ -1704,6 +1928,17 @@
                 return;
             }
 
+            // Secure key recovery check prior to API initialization
+            const emailjsPk = localStorage.getItem('emailjs_pk') || "YOUR_EMAILJS_PUBLIC_KEY";
+            const emailjsSi = localStorage.getItem('emailjs_si') || "YOUR_SERVICE_ID";
+            const emailjsTi = localStorage.getItem('emailjs_ti') || "YOUR_TEMPLATE_ID";
+
+            if (emailjsPk === "YOUR_EMAILJS_PUBLIC_KEY" || !emailjsPk) {
+                showToast("API keys missing! Please click the key icon to configure EmailJS first.", "error");
+                document.getElementById('api-modal').classList.remove('hidden');
+                return;
+            }
+
             const wrapper = document.getElementById('document-wrapper');
             const previewContainer = document.querySelector('.preview-container');
             const mainContent = document.querySelector('main');
@@ -1760,24 +1995,24 @@
 
                     btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Sending...`;
 
-                    emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+                    emailjs.init(emailjsPk); 
 
                     const templateParams = {
                         to_name: inputs.toName.value.trim() || 'Client',
                         to_email: recipientEmail,
                         subject: subjectText,
-                        message: "Please find the attached document from Falconix Digital.",
+                        message: "Please find your secure smart document compiled and attached by Falconix Digital.",
                         my_attachment: pdfBase64 
                     };
 
-                    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+                    emailjs.send(emailjsSi, emailjsTi, templateParams)
                         .then(function(response) {
-                           showToast("Email sent successfully!", "success");
+                           showToast("Email dispatched successfully!", "success");
                            btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Sent!`;
                            setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
                         }, function(error) {
                            console.error(error);
-                           showToast("EmailJS error. Ensure your API keys are set in the code.", "error");
+                           showToast("Failed to dispatch email. Verify configured API credentials.", "error");
                            btn.innerHTML = originalHtml; btn.disabled = false;
                         });
                         
@@ -1793,7 +2028,7 @@
                         page.style.boxShadow = '';
                         page.style.margin = '0 auto';
                     });
-                    showToast("Failed to generate PDF for email.", "error");
+                    showToast("Failed to compile document for email transfer.", "error");
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 });
@@ -1825,13 +2060,13 @@
 
         window.processBulk = async function(actionType) { 
             const fileInput = document.getElementById('bulk-csv-file');
-            if(!fileInput.files.length) return showToast("Please select a CSV file.", "error");
+            if(!fileInput.files.length) return showToast("Please select a valid CSV file.", "error");
             
             const file = fileInput.files[0];
             const text = await file.text();
             
             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-            if(lines.length < 2) return showToast("CSV must have a header row and at least one data row.", "error");
+            if(lines.length < 2) return showToast("CSV structure invalid. Must include header row.", "error");
             
             const headers = splitCSV(lines[0]).map(h => h.trim().replace(/^"|"$/g, ''));
             const dataRows = [];
@@ -1861,7 +2096,7 @@
 
             for(let i=0; i<dataRows.length; i++) {
                 const row = dataRows[i];
-                progressText.innerText = `Processing ${i+1} of ${dataRows.length} (${row['Recipient Name'] || 'Letter '+ (i+1)})...`;
+                progressText.innerText = `Processing ${i+1} of ${dataRows.length} (${row['Recipient Name'] || 'Row '+ (i+1)})...`;
                 progressBar.style.width = `${((i+1)/dataRows.length)*100}%`;
                 
                 currentLetterId = crypto.randomUUID();
@@ -1890,8 +2125,14 @@
                 
                 headers.forEach(h => {
                     if(!['Recipient Name', 'Recipient Email', 'Date', 'Ref'].includes(h)) {
-                        const tag = h.startsWith('[') ? h : `[${h}]`;
-                        customVars[tag] = row[h];
+                        // Scan for manual vs auto variables
+                        const autoTag = `[${h}]`;
+                        const manualTag = `_manual_[${h}]`;
+                        if (customVars[manualTag] !== undefined) {
+                            customVars[manualTag] = row[h];
+                        } else {
+                            customVars[autoTag] = row[h];
+                        }
                     }
                 });
                 
@@ -1903,7 +2144,7 @@
                     data: getCurrentState(),
                     type: inputs.template.value || 'blank',
                     subject: inputs.subject.value.trim() || 'Bulk Document',
-                    recipient: inputs.toName.value.trim() || 'Unknown Recipient',
+                    recipient: inputs.toName.value.trim() || 'Recipient',
                     ref: inputs.ref.value.trim(),
                     createdAt: Date.now()
                 });
@@ -1940,18 +2181,21 @@
                 } else if(actionType === 'email') {
                     if(row['Recipient Email']) {
                         const pdfBase64 = await html2pdf().set(opt).from(wrapper).outputPdf('datauristring');
-                        
-                        emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); 
+                        const emailjsPk = localStorage.getItem('emailjs_pk') || "YOUR_EMAILJS_PUBLIC_KEY";
+                        const emailjsSi = localStorage.getItem('emailjs_si') || "YOUR_SERVICE_ID";
+                        const emailjsTi = localStorage.getItem('emailjs_ti') || "YOUR_TEMPLATE_ID";
+
+                        emailjs.init(emailjsPk); 
                         const templateParams = {
                             to_name: row['Recipient Name'] || 'Client',
                             to_email: row['Recipient Email'],
                             subject: inputs.subject.value,
-                            message: "Please find the attached document from Falconix Digital.",
+                            message: "Please find your secure smart document compiled and attached by Falconix Digital.",
                             my_attachment: pdfBase64 
                         };
                         
                         try {
-                            await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+                            await emailjs.send(emailjsSi, emailjsTi, templateParams);
                         } catch(err) {
                             console.error(err);
                         }
@@ -1966,17 +2210,17 @@
             }
             
             if(actionType === 'zip') {
-                progressText.innerText = "Zipping files...";
+                progressText.innerText = "Packaging archive files...";
                 const content = await zip.generateAsync({type:"blob"});
                 
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(content);
-                link.download = "Bulk_Letters.zip";
+                link.download = "Falconix_Bulk_Letters_Batch.zip";
                 link.click();
             }
             
-            progressText.innerText = "Done!";
-            showToast("Bulk processing complete!", "success");
+            progressText.innerText = "Processing completed successfully!";
+            showToast("Bulk batch generated!", "success");
             setTimeout(() => {
                 document.getElementById('bulk-csv-modal').classList.add('hidden');
                 document.getElementById('bulk-progress-container').classList.add('hidden');
@@ -2017,20 +2261,18 @@
                     fetchNextRefNumber();
                 }
 
-                // NEW: Auto-sync signature if the currently open letter is signed by a client
                 if (!isReadOnlyMode && currentLetterId) {
                     const activeDbLetter = lettersList.find(l => l.id === currentLetterId);
                     if (activeDbLetter && activeDbLetter.data) {
                         const dbSig = activeDbLetter.data.partnerSignUrl;
                         const localSig = inputs.partnerSignUrl.value;
                         if (dbSig && dbSig.length > 50 && (!localSig || localSig.length < 50)) {
-                            // Client just signed it! Auto-update the admin's editor!
                             inputs.partnerSignUrl.value = dbSig;
                             inputs.partnerSignName.value = activeDbLetter.data.partnerSignName || inputs.partnerSignName.value;
                             inputs.partnerSignLocation.value = activeDbLetter.data.partnerSignLocation || '';
                             inputs.partnerSignTime.value = activeDbLetter.data.partnerSignTime || '';
                             updatePreview();
-                            showToast("Client just signed this document! Signature added.", "success");
+                            showToast("Client just signed this document! Live synchronized.", "success");
                         }
                     }
                 }
@@ -2042,7 +2284,7 @@
                 updateDashboardStats();
             }, (error) => {
                 console.error("Database sync error:", error);
-                showToast("Real-time database sync failed.", "error");
+                showToast("Real-time sync error. Verify Firebase permissions.", "error");
             });
 
             const tplRef = collection(db, 'artifacts', fbAppId, 'public', 'data', 'custom_templates');
@@ -2062,19 +2304,19 @@
         function renderManageTemplates() {
             const container = document.getElementById('custom-templates-container');
             if (customTemplatesList.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 mt-10">No custom templates saved yet.</div>';
+                container.innerHTML = '<div class="text-center text-slate-500 mt-10">No custom templates saved yet.</div>';
                 return;
             }
             
             let html = '<div class="space-y-3">';
             customTemplatesList.forEach(t => {
                 html += `
-                    <div class="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-center">
+                    <div class="p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl flex justify-between items-center">
                         <div>
-                            <h4 class="font-bold text-gray-900 dark:text-white">${t.name}</h4>
-                            <p class="text-xs text-gray-500 mt-1">Saved on ${formatDate(t.createdAt)}</p>
+                            <h4 class="font-bold text-slate-900 dark:text-white">${t.name}</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">Saved on ${formatDate(t.createdAt)}</p>
                         </div>
-                        <button onclick="deleteCustomTemplate('${t.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                        <button onclick="deleteCustomTemplate('${t.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-lg text-xs font-semibold transition-colors">Delete</button>
                     </div>
                 `;
             });
@@ -2154,6 +2396,7 @@
                     appWrapper.classList.add('flex');
                     setTimeout(() => appWrapper.classList.remove('opacity-0'), 50);
                     
+                    loadApiKeys();
                     loadAutoSave();
                     updateDraftsDropdown();
                     saveStateToHistory(true); 
@@ -2192,7 +2435,7 @@
                 await signInWithPopup(auth, provider);
             } catch (err) {
                 console.error(err);
-                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.innerText = "Identity verification canceled.";
                 loginError.classList.remove('hidden');
             } finally {
                 if(!currentUser) loginBtn.innerHTML = defaultHtml;
@@ -2221,7 +2464,7 @@
             }
 
             const originalHtml = btnSaveCloud.innerHTML;
-            btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Saving...';
+            btnSaveCloud.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Archiving...';
             btnSaveCloud.disabled = true;
 
             try {
@@ -2234,20 +2477,20 @@
                     data: state,
                     type: letterType,
                     subject: inputs.subject.value.trim() || 'Untitled Document',
-                    recipient: inputs.toName.value.trim() || 'Unknown Recipient',
+                    recipient: inputs.toName.value.trim() || 'Recipient',
                     ref: inputs.ref.value.trim(),
                     createdAt: Date.now()
                 });
 
-                btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Saved to Cloud!';
-                showToast("Letter saved securely to the cloud.", "success");
+                btnSaveCloud.innerHTML = '<i class="ph ph-check text-lg"></i> Archived!';
+                showToast("Document archived successfully in cloud.", "success");
                 
                 await window.resetLetter(true);
                 
                 setTimeout(() => { btnSaveCloud.innerHTML = originalHtml; btnSaveCloud.disabled = false; }, 2000);
             } catch (error) {
                 console.error(error);
-                showToast("Failed to save to cloud.", "error");
+                showToast("Failed to write document to cloud.", "error");
                 btnSaveCloud.innerHTML = originalHtml;
                 btnSaveCloud.disabled = false;
             }
@@ -2255,7 +2498,6 @@
 
         window.copyShareLink = function(id) {
             const link = window.location.origin + window.location.pathname + '?letterId=' + id;
-            
             const textArea = document.createElement("textarea");
             textArea.value = link;
             
@@ -2280,13 +2522,12 @@
                 if (successful) {
                     showToast("Share link copied to clipboard!", "success");
                 } else {
-                    showToast("Failed to copy link. Browser blocked action.", "error");
+                    showToast("Copy action blocked by browser environment.", "error");
                 }
             } catch (err) {
                 console.error("Copy error:", err);
                 showToast("Failed to copy link.", "error");
             }
-            
             document.body.removeChild(textArea);
         };
 
@@ -2294,7 +2535,7 @@
             cloudContainer.innerHTML = '';
             
             if (lettersList.length === 0) {
-                cloudContainer.innerHTML = '<div class="text-center text-gray-500 mt-10">No cloud letters saved yet.</div>';
+                cloudContainer.innerHTML = '<div class="text-center text-slate-500 mt-10">No cloud letters archived yet.</div>';
                 return;
             }
 
@@ -2307,8 +2548,7 @@
             let html = '<div class="space-y-8">';
             const typeLabels = {
                 blank: 'Blank Documents', offer: 'Job Offer Letters', collab: 'Collaboration Proposals',
-                nda: 'Non-Disclosure Agreements', warning: 'Warning Letters', termination: 'Termination Letters',
-                apology: 'Formal Apologies', onboarding: 'Client Onboarding'
+                nda: 'Non-Disclosure Agreements'
             };
 
             Object.keys(grouped).forEach(type => {
@@ -2321,11 +2561,11 @@
                 }
                 
                 html += `
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-                        <div class="bg-brand/10 dark:bg-brand/20 px-4 py-3 border-b border-brand/20">
-                            <h3 class="font-bold text-brand uppercase tracking-wider text-xs">${label} <span class="bg-brand text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
+                    <div class="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                        <div class="bg-violet-500/10 dark:bg-violet-500/20 px-4 py-3 border-b border-violet-500/10">
+                            <h3 class="font-bold text-violet-500 uppercase tracking-wider text-xs">${label} <span class="bg-violet-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-2">${groupLetters.length}</span></h3>
                         </div>
-                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                        <div class="divide-y divide-slate-100 dark:divide-zinc-800">
                 `;
                 
                 groupLetters.forEach(letter => {
@@ -2336,20 +2576,20 @@
                     const isExpired = (letter.data && (letter.data.manualExpire === true || letter.data.manualExpire === 'true')) || isPastExpiry;
                     
                     html += `
-                        <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div class="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/35 transition-colors">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <h4 class="font-bold text-gray-900 dark:text-white text-sm">${letter.subject}</h4>
-                                    ${isExpired ? `<span class="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-x-circle"></i> Expired</span>` : `<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Active</span>`}
-                                    ${isSigned ? `<span class="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Signed</span>` : ''}
+                                    <h4 class="font-bold text-slate-900 dark:text-white text-sm">${letter.subject}</h4>
+                                    ${isExpired ? `<span class="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-x-circle"></i> Expired</span>` : `<span class="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Active</span>`}
+                                    ${isSigned ? `<span class="bg-emerald-100 text-emerald-750 dark:bg-emerald-950/40 dark:text-emerald-400 text-[9px] px-1.5 py-0.5 rounded-sm font-bold uppercase tracking-wider flex items-center gap-1"><i class="ph-fill ph-check-circle"></i> Signed</span>` : ''}
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Ref: <span class="font-medium">${letter.ref || 'N/A'}</span> &bull; To: ${letter.recipient}</p>
-                                <p class="text-[10px] text-gray-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
+                                <p class="text-xs text-slate-500 mt-1">Ref: <span class="font-medium font-mono">${letter.ref || 'N/A'}</span> &bull; Recipient: ${letter.recipient}</p>
+                                <p class="text-[10px] text-slate-400 mt-1"><i class="ph ph-clock"></i> Saved: ${formatDate(letter.createdAt)}</p>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <button onclick="copyShareLink('${letter.id}')" class="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"><i class="ph ph-link"></i> Copy Link</button>
-                                <button onclick="loadCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors">Load</button>
-                                <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                                <button onclick="copyShareLink('${letter.id}')" class="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/20 transition-colors flex items-center gap-1"><i class="ph ph-link"></i> Copy Link</button>
+                                <button onclick="loadCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold hover:bg-blue-500/20 transition-colors">Load</button>
+                                <button onclick="deleteCloudLetter('${letter.id}')" class="px-3 py-1.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-red-500/20 transition-colors">Delete</button>
                             </div>
                         </div>
                     `;
@@ -2367,14 +2607,14 @@
             if (lettersList.length > 0) {
                 renderCloudLetters();
             } else {
-                cloudContainer.innerHTML = '<div class="flex justify-center items-center h-full text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
+                cloudContainer.innerHTML = '<div class="flex justify-center items-center h-full text-slate-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
             }
         });
 
         window.loadCloudLetter = function(id) {
             const letter = lettersList.find(l => l.id === id);
             if (!letter) {
-                showToast("Failed to locate letter in memory.", "error");
+                showToast("Failed to load letter from cloud memory.", "error");
                 return;
             }
             try {
@@ -2384,18 +2624,19 @@
                 toggleDashboard(false);
                 showToast("Cloud letter loaded successfully.", "success");
             } catch (e) {
-                showToast("Failed to apply letter data.", "error");
+                showToast("Failed to apply cloud letter configuration.", "error");
             }
         };
 
         window.deleteCloudLetter = async function(id) {
             if (!currentUser) return;
-            if (!confirm("Are you sure you want to permanently delete this archived letter?")) return;
+            const confirmDelete = await showConfirmDialog("Delete Letter", "Are you sure you want to permanently delete this letter from your cloud archives?");
+            if (!confirmDelete) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', fbAppId, 'public', 'data', 'saved_letters', id));
-                showToast("Letter deleted securely.", "success");
+                showToast("Letter successfully deleted.", "success");
             } catch (e) {
-                showToast("Failed to delete letter.", "error");
+                showToast("Failed to remove letter from database.", "error");
             }
         };
 
