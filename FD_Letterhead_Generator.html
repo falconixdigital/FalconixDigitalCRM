@@ -1382,7 +1382,8 @@
             
             let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             
-            html = html.replace(/==([^=]+)==/g, '<mark class="bg-yellow-100 text-slate-900 px-1 py-0.5 rounded font-semibold">$1</mark>');
+            // Simplified background highlight to fix html2canvas alignment
+            html = html.replace(/==([^=]+)==/g, '<span style="background-color: rgba(253, 224, 71, 0.7); font-weight: 600;">$1</span>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
             
@@ -1576,7 +1577,8 @@
                 for (const [tag, actualValue] of Object.entries(variableMap)) {
                     const regex = new RegExp(tag.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'gi');
                     const safeValue = actualValue.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    parsedContent = parsedContent.replace(regex, `<span class="bg-slate-100 border-b-2 ${activeBorder} text-slate-800 rounded px-1.5 py-0.5 font-semibold">${safeValue}</span>`);
+                    // Simplified to bold text to avoid html2canvas text-wrapping bugs
+                    parsedContent = parsedContent.replace(regex, `<strong class="${activeText}">${safeValue}</strong>`);
                 }
 
                 let watermarkHtml = '';
@@ -1623,9 +1625,9 @@
                             ` : ''}
                         </div>
                         <div class="text-right text-[10px] text-slate-300 leading-normal">
-                            <p class="flex items-center justify-end gap-1"><i class="ph ph-phone text-cyan-400"></i> <span>${state.agencyPhone}</span></p>
-                            <p class="flex items-center justify-end gap-1"><i class="ph ph-envelope-simple text-cyan-400"></i> <span class="underline">${state.agencyEmail}</span></p>
-                            <p class="flex items-center justify-end gap-1"><i class="ph ph-globe text-cyan-400"></i> <span>${state.agencyWeb}</span></p>
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-phone text-cyan-400"></i> <a href="tel:${state.agencyPhone.replace(/\s+/g, '')}" class="text-inherit no-underline hover:text-white transition-colors">${state.agencyPhone}</a></p>
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-envelope-simple text-cyan-400"></i> <a href="mailto:${state.agencyEmail}" class="text-inherit no-underline hover:text-white transition-colors">${state.agencyEmail}</a></p>
+                            <p class="flex items-center justify-end gap-1"><i class="ph ph-globe text-cyan-400"></i> <a href="${state.agencyWeb.startsWith('http') ? state.agencyWeb : 'https://' + state.agencyWeb}" target="_blank" class="text-inherit no-underline hover:text-white transition-colors">${state.agencyWeb}</a></p>
                         </div>
                     </div>
 
@@ -1651,7 +1653,8 @@
                         ` : `<div class="mb-4 flex items-center justify-between border-b pb-2"><span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Document Continuity</span><span class="text-[10px] text-slate-400">${state.ref}</span></div>`}
 
                         <div class="text-sm text-slate-800 leading-[1.8] flex-1">
-                            <div class="text-justify text-slate-800 space-y-3">
+                            <!-- Removed text-justify to prevent html2canvas line-breaking bugs -->
+                            <div class="text-left text-slate-800 space-y-3">
                                 ${parsedContent}
                             </div>
                         </div>
@@ -1881,7 +1884,8 @@
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: 'css', before: '.page-break-before' }
+                pagebreak:    { mode: 'css', before: '.page-break-before' },
+                enableLinks:  true // Link detection enabled for html2pdf
             };
 
             setTimeout(() => {
@@ -1977,7 +1981,8 @@
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: 'css', before: '.page-break-before' }
+                pagebreak:    { mode: 'css', before: '.page-break-before' },
+                enableLinks:  true
             };
 
             setTimeout(() => {
@@ -2172,7 +2177,8 @@
                     image:        { type: 'jpeg', quality: 1 },
                     html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0, windowHeight: wrapper.scrollHeight },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:    { mode: 'css', before: '.page-break-before' }
+                    pagebreak:    { mode: 'css', before: '.page-break-before' },
+                    enableLinks:  true
                 };
 
                 if(actionType === 'zip') {
