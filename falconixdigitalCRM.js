@@ -7,8 +7,7 @@ const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
 
 const SUPER_ADMINS = [
     'digitalfalconix@gmail.com',
-    'pabitramondal.ind@gmail.com',
-    'ayanmondal21836@gmail.com'
+    'pabitramondal.ind@gmail.com'
 ];
 
 const ADMIN_NAMES = {
@@ -16,16 +15,14 @@ const ADMIN_NAMES = {
     'subhadeep0897@gmail.com': 'Subhadeep Tapadar',
     'pabitramondal.ind@gmail.com': 'Pabitra (Ind)',
     'ayanmondal21836@gmail.com': 'Ayan Mondal',
-    'pabitramondal.ind@gmail.com': 'Falconix Digital'
+    'digitalfalconix@gmail.com': 'Falconix Digital'
 };
 
 const RESTRICTED_DASHBOARD_EMAILS = [
-    'ayanmondal21836@gmail.com',
     'pabitramondal.ind@gmail.com'
 ];
 
 const RESTRICTED_CLIENTS_EMAILS = [
-    'ayanmondal21836@gmail.com',
     'pabitramondal.ind@gmail.com'
 ];
 
