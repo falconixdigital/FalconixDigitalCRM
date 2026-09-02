@@ -697,7 +697,9 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         completedAt: completedAt,
         addedByEmail: addedEmail,
         addedByName: addedName,
-        activityLog: activityLog
+        activityLog: activityLog,
+        // Preserve invoice number during edits
+        ...(isEditing && existingClient?.invoiceNo ? { invoiceNo: existingClient.invoiceNo } : {})
     };
 
     try {
@@ -873,7 +875,6 @@ if (localStorage.getItem('theme') === 'light') {
     if(themeText) themeText.innerText = 'Light Mode';
 }
 
-// --- NEW HELPER: Reusable Population Logic ---
 window.populateFormWithClientData = function(client, overrideId = null) {
     navigate('add-client', true);
     
@@ -922,7 +923,6 @@ window.editClient = function(id) {
     const client = clientsList.find(c => c.id === id);
     if(!client) return;
     
-    // --- NEW: Security Block ---
     if (!isSuperAdminUser && client.addedByEmail !== currentUser.email) {
         showToast("Access Denied: You can only edit clients you created.", "error");
         return;
@@ -936,7 +936,6 @@ window.editRequestFromTable = function(reqId) {
     const req = requestsList.find(r => r.id === reqId);
     if(!req) return;
     
-    // --- NEW: Security Block ---
     if (!isSuperAdminUser && req.requestedByEmail !== currentUser.email) {
         showToast("Access Denied: You can only edit your own requests.", "error");
         return;
@@ -1832,7 +1831,6 @@ window.openInvoiceModal = async function(clientIdentifier, isRequestData = false
 
     let invoiceNo = client.invoiceNo;
     
-    // --- NEW: Sequential Invoice Counter ---
     if (!invoiceNo) {
         if (!isSuperAdminUser) {
             showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
@@ -1840,7 +1838,6 @@ window.openInvoiceModal = async function(clientIdentifier, isRequestData = false
         }
         
         try {
-            // Fetch current counter from database
             const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
             const counterSnap = await getDoc(counterRef);
             let currentCount = 1;
@@ -1849,23 +1846,19 @@ window.openInvoiceModal = async function(clientIdentifier, isRequestData = false
                 currentCount = counterSnap.data().current || 1;
             }
             
-            // Format exactly like FD-001, FD-002
             invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
             
-            // Save incremented counter
             await setDoc(counterRef, { current: currentCount + 1 });
             
-            // Permanently attach this invoice number to the live client
             if (client.id) {
                 const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
                 await updateDoc(clientRef, { invoiceNo: invoiceNo });
             }
             
-            client.invoiceNo = invoiceNo; // Update local data
+            client.invoiceNo = invoiceNo; 
         } catch (err) {
             console.error("Counter Error:", err);
             showToast("Failed to assign official invoice number.", "error");
-            // Fallback to timestamp if database fails temporarily
             const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
             invoiceNo = `FD-${createdAtStr.slice(-6)}`;
         }
@@ -2083,7 +2076,6 @@ function renderRequestsTable() {
         if(descEl) descEl.innerText = "Track the status of your submitted clients and updates.";
         visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
         
-        // Match the rich "Client" table layout perfectly for Normal Admins!
         theadTr.innerHTML = `
             <th class="p-3 md:p-4 font-medium">Name & Contact</th>
             <th class="p-3 md:p-4 font-medium">Business Detail</th>
@@ -2118,12 +2110,8 @@ function renderRequestsTable() {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
             
-            // --- CORE FIX: LIVE DATA LINKING! ---
-            // Bypass the stale `req.clientData` entirely and fetch the actual, live client from the database!
             const liveClient = clientsList.find(c => c.id === req.targetClientId);
             
-            // If the live client doesn't exist yet (because it's a completely new unapproved client), 
-            // fall back to the proposed data. Otherwise, ALWAYS show the live name!
             const clientToRender = liveClient ? liveClient : req.clientData;
             const clientName = clientToRender.name;
             
@@ -2148,7 +2136,6 @@ function renderRequestsTable() {
                     <td class="p-3 md:p-4 text-right">${col4Html}</td>
                 `;
             } else {
-                // --- RICH TABLE RENDER FOR NORMAL ADMINS ---
                 const expected = Math.max(0, (Number(clientToRender.price) || 0) - (Number(clientToRender.discount) || 0)) + (Number(clientToRender.extraCharge) || 0) + (Number(clientToRender.maintenanceCharge) || 0);
                 const paid = calculatePaidAmount(clientToRender);
                 const balance = Math.max(0, expected - paid);
@@ -2210,73 +2197,12 @@ function renderRequestsTable() {
     }
 }
 
-window.editRequestFromTable = function(reqId) {
-    const req = requestsList.find(r => r.id === reqId);
-    if(!req) return;
-    populateFormWithClientData(req.clientData, req.targetClientId);
-};
-
-// --- NEW HELPER: Reusable Population Logic ---
-window.populateFormWithClientData = function(client, overrideId = null) {
-    navigate('add-client', true);
-    
-    document.getElementById('client-id').value = overrideId || client.id || '';
-    document.getElementById('form-name').value = client.name || '';
-    document.getElementById('form-business').value = client.business || '';
-    document.getElementById('form-source').value = client.source || 'Referral';
-    document.getElementById('form-phone').value = client.phone || '';
-    document.getElementById('form-email').value = client.email || '';
-    document.getElementById('form-address').value = client.address || '';
-    document.getElementById('form-website').value = client.website || 'Landing Page';
-    document.getElementById('form-website-url').value = client.websiteUrl || '';
-    document.getElementById('form-price').value = client.price || '';
-    document.getElementById('form-discount').value = client.discount || '';
-    document.getElementById('form-extra-charge').value = client.extraCharge || '';
-    document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
-    document.getElementById('form-deadline').value = client.deadline || '';
-    document.getElementById('form-status').value = client.status || 'Pending';
-    document.getElementById('form-notes').value = client.notes || ''; 
-
-    document.getElementById('installments-container').innerHTML = '';
-    if (client.installments && client.installments.length > 0) {
-        client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
-    } else if (client.advance > 0) {
-        addInstallmentRow('Advance', client.advance, '', 'Paid');
-    }
-
-    document.getElementById('form-tasks-container').innerHTML = '';
-    if (client.tasks && client.tasks.length > 0) {
-        client.tasks.forEach(t => addTaskToForm(t.text, t.completed));
-    }
-
-    document.getElementById('form-title').innerText = overrideId ? "Review & Edit Request" : "Edit Client Details";
-    
-    const submitBtn = document.getElementById('form-submit-btn');
-    if (submitBtn) {
-        submitBtn.innerHTML = isSuperAdminUser 
-            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>'
-            : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-    }
-}
-
-window.editClient = function(id) {
-    const client = clientsList.find(c => c.id === id);
-    if(!client) return;
-    closeModal();
-    populateFormWithClientData(client, client.id);
-};
-
 window.viewRequestDetails = function(reqId) {
     const req = requestsList.find(r => r.id === reqId);
     if(!req) return;
     
-    // --- CORE FIX: LIVE DATA LINKING! ---
-    // Bypass the stale `req.clientData` and fetch the LIVE client!
     let client = clientsList.find(c => c.id === req.targetClientId);
     
-    // Fallback: If the live client doesn't exist yet (because it's a completely new pending client), use the proposed data
     if (!client) {
         client = req.clientData;
     }
@@ -2416,13 +2342,11 @@ window.approveReq = async function(reqId) {
     try {
         const approvedClientData = { ...req.clientData };
         
-        // --- CRITICAL SYNC FIX: Preserve Live Activity, Tasks & Invoices ---
-        // Grab the live client to prevent overwriting real-time updates made while the request was pending
         const liveClient = clientsList.find(c => c.id === req.targetClientId);
         if (liveClient) {
             approvedClientData.activityLog = liveClient.activityLog || [];
             approvedClientData.tasks = liveClient.tasks || [];
-            approvedClientData.createdAt = liveClient.createdAt; // Preserve original creation date
+            approvedClientData.createdAt = liveClient.createdAt; 
             
             if (liveClient.invoiceNo) approvedClientData.invoiceNo = liveClient.invoiceNo;
             if (liveClient.completedAt) approvedClientData.completedAt = liveClient.completedAt;
