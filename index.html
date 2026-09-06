@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital CRM - Secure Login</title>
     <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png">
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -36,6 +36,7 @@
             }
         }
     </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
@@ -858,7 +859,6 @@
                 <div>
                     <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-3 font-medium">Activity & Comments</p>
                     
-                    <!-- NEW COMMENT BOX -->
                     <div class="mb-5 flex gap-2">
                         <textarea id="modal-new-comment" rows="2" class="flex-1 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary resize-none" placeholder="Leave a note for the team..."></textarea>
                         <button id="modal-post-comment-btn" class="bg-accentPrimary hover:bg-accentPrimaryHover text-white px-4 rounded-xl text-sm font-medium transition-colors shadow-md shadow-violet-500/20 shrink-0">Post</button>
@@ -870,8 +870,11 @@
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
+                <button id="modal-email-invoice-btn" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors items-center justify-center gap-2 shadow-sm">
+                    <i class="ph ph-envelope-simple text-xl"></i> Email Invoice
+                </button>
                 <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-gray-800 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
-                    <i class="ph ph-file-pdf text-xl"></i> Invoice
+                    <i class="ph ph-file-pdf text-xl"></i> PDF Invoice
                 </button>
                 <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
@@ -886,15 +889,17 @@
         </div>
     </div>
 
-    <!-- Invoice Modal -->
     <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
         <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
                 <i class="ph ph-x-circle text-2xl"></i> Close
             </button>
-            <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
-                <i class="ph ph-download-simple text-xl"></i> Download PDF
-            </button>
+            
+            <div class="flex gap-2">
+                <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                    <i class="ph ph-download-simple text-xl"></i> <span class="hidden sm:inline">Download PDF</span>
+                </button>
+            </div>
         </div>
 
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
@@ -1077,6 +1082,2613 @@
         </div>
     </div>
 
-    <script type="module" src="falconixdigitalCRM.js"></script>
+    <div id="expense-delete-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
+        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
+                <i class="ph ph-warning-circle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Expense</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">Are you sure you want to permanently delete this expense log?</p>
+            <div class="flex w-full gap-3">
+                <button onclick="hideExpenseDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
+                    Cancel
+                </button>
+                <button id="confirm-expense-delete-btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("URukXHeFeG29YjKpl");
+        })();
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
+
+        const SUPER_ADMINS = [
+            'digitalfalconix@gmail.com',
+            'pabitramondal.ind@gmail.com'
+        ];
+
+        const ADMIN_NAMES = {
+            'pabitramondal2635@gmail.com': 'Pabitra Mondal',
+            'subhadeep0897@gmail.com': 'Subhadeep Tapadar',
+            'pabitramondal.ind@gmail.com': 'Pabitra (Ind)',
+            'ayanmondal21836@gmail.com': 'Ayan Mondal',
+            'digitalfalconix@gmail.com': 'Falconix Digital'
+        };
+
+        const RESTRICTED_DASHBOARD_EMAILS = [
+            'pabitramondal.ind@gmail.com'
+        ];
+        const RESTRICTED_CLIENTS_EMAILS = [
+            'pabitramondal.ind@gmail.com'
+        ];
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
+            authDomain: "falconixdigitalbusiness.firebaseapp.com",
+            projectId: "falconixdigitalbusiness",
+            storageBucket: "falconixdigitalbusiness.firebasestorage.app",
+            messagingSenderId: "835356453879",
+            appId: "1:835356453879:web:b321312b9b9e0881b35cf2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+
+        const appCheck = initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider('6LeLDsQsAAAAANX0XGWIkpuuVEqK4pZ8ndMKcmU2'),
+          isTokenAutoRefreshEnabled: true 
+        });
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+        let currentUser = null;
+        let isSuperAdminUser = false;
+        let clientsList = [];
+        let requestsList = [];
+        let notificationsList = [];
+        let expensesList = [];
+        let unsubscribeClients = null;
+        let unsubscribeRequests = null;
+        let unsubscribeNotifications = null;
+        let unsubscribeExpenses = null;
+
+        let currentOpenClientId = null; 
+
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 10;
+
+        let revenueChartInstance = null;
+        let sourceChartInstance = null;
+
+        const loginWrapper = document.getElementById('login-wrapper');
+        const appWrapper = document.getElementById('app-wrapper');
+        const globalLoader = document.getElementById('global-loader');
+        const loggedInEmailText = document.getElementById('logged-in-email');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const loginError = document.getElementById('login-error');
+
+        const defaultBtnHtml = googleLoginBtn.innerHTML;
+
+        window.addTaskToForm = function(textStr, isCompleted) {
+            const input = document.getElementById('new-task-input');
+            const taskText = (typeof textStr === 'string' && textStr.trim() !== '') 
+                ? textStr.trim() 
+                : (input ? input.value.trim() : '');
+                
+            const completed = typeof isCompleted === 'boolean' ? isCompleted : false;
+
+            if (!taskText) {
+                if (input) input.focus();
+                return;
+            }
+            
+            const container = document.getElementById('form-tasks-container');
+            if (!container) return;
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 p-2 rounded-lg task-row';
+            const safeText = taskText.replace(/"/g, '&quot;');
+            
+            row.innerHTML = `
+                <input type="checkbox" class="task-completed w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer" ${completed ? 'checked' : ''}>
+                <input type="text" class="task-text flex-1 bg-transparent border-none text-sm focus:ring-0 p-0 text-gray-800 dark:text-gray-200 focus:outline-none" value="${safeText}">
+                <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-red-500 p-1 transition-colors"><i class="ph ph-trash text-lg"></i></button>
+            `;
+            
+            container.appendChild(row);
+            if (input) {
+                input.value = '';
+                input.focus(); 
+            }
+        }
+
+        function getTasksData() {
+            const rows = document.querySelectorAll('.task-row');
+            const tasks = [];
+            rows.forEach(row => {
+                tasks.push({
+                    text: row.querySelector('.task-text').value.trim(),
+                    completed: row.querySelector('.task-completed').checked
+                });
+            });
+            return tasks;
+        }
+
+        setTimeout(() => {
+            const taskInput = document.getElementById('new-task-input');
+            if (taskInput) {
+                taskInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); 
+                        addTaskToForm();
+                    }
+                });
+            }
+        }, 1000);
+
+        window.addInstallmentRow = function(title = '', amount = '', date = '', status = 'Pending') {
+            const container = document.getElementById('installments-container');
+            const row = document.createElement('div');
+            row.className = 'flex flex-col md:flex-row gap-2 items-center installment-row';
+            row.innerHTML = `
+                <div class="w-full md:w-2/5">
+                    <input type="text" placeholder="Milestone (e.g. 50% Upfront)" value="${title}" class="inst-title w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                </div>
+                <div class="w-full md:w-1/4">
+                    <input type="number" placeholder="Amt (₹)" value="${amount}" class="inst-amount w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                </div>
+                <div class="w-full md:w-1/4 flex gap-2">
+                    <input type="date" value="${date}" class="inst-date w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
+                </div>
+                <div class="w-full md:w-auto flex items-center gap-2 shrink-0">
+                    <select class="inst-status bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
+                        <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Paid" ${status === 'Paid' ? 'selected' : ''}>Paid</option>
+                    </select>
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" class="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"><i class="ph ph-trash text-lg"></i></button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function getInstallmentsData() {
+            const rows = document.querySelectorAll('.installment-row');
+            const data = [];
+            rows.forEach(row => {
+                data.push({
+                    title: row.querySelector('.inst-title').value.trim(),
+                    amount: parseFloat(row.querySelector('.inst-amount').value) || 0,
+                    date: row.querySelector('.inst-date').value,
+                    status: row.querySelector('.inst-status').value
+                });
+            });
+            return data;
+        }
+
+        function calculatePaidAmount(client) {
+            let paid = 0;
+            if (client.installments && client.installments.length > 0) {
+                paid = client.installments.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+            } else {
+                paid = Number(client.advance) || 0;
+            }
+            
+            if (client.status === 'Completed') {
+                const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                return Math.max(paid, expected);
+            }
+            return paid;
+        }
+
+        async function checkIfAdmin(email) {
+            const lowerEmail = email.toLowerCase();
+            if (SUPER_ADMINS.includes(lowerEmail)) return true;
+            try {
+                const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
+                const snapshot = await getDocs(adminsRef);
+                let foundAdmin = false;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.email && data.email.toLowerCase() === lowerEmail) {
+                        foundAdmin = true;
+                    }
+                });
+                return foundAdmin;
+            } catch (error) {
+                return false; 
+            }
+        }
+
+        googleLoginBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                const isAdmin = await checkIfAdmin(user.email);
+                if (!isAdmin) {
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                    loginError.classList.remove('hidden');
+                }
+            } catch (error) {
+                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.classList.remove('hidden');
+            } finally {
+                if (!currentUser) {
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                }
+            }
+        });
+
+        window.showLogoutModal = function() {
+            document.getElementById('logout-modal').classList.remove('hidden');
+        };
+
+        window.hideLogoutModal = function() {
+            document.getElementById('logout-modal').classList.add('hidden');
+        };
+
+        window.confirmLogout = async function() {
+            hideLogoutModal();
+            await signOut(auth);
+        };
+
+        function getTimeBasedGreetings(name) {
+            const hour = new Date().getHours();
+            let timeGreeting = '';
+            let emoji = '';
+            if (hour >= 5 && hour < 12) {
+                timeGreeting = 'Good morning';
+                emoji = '🌅';
+            } else if (hour >= 12 && hour < 17) {
+                timeGreeting = 'Good afternoon';
+                emoji = '☀️';
+            } else if (hour >= 17 && hour < 21) {
+                timeGreeting = 'Good evening';
+                emoji = '🌇';
+            } else {
+                timeGreeting = 'Good night';
+                emoji = '🌙';
+            }
+            return [
+                { text: `${timeGreeting}, ${name}!`, emoji: emoji },
+                { text: `Welcome back, ${name}!`, emoji: '👋' },
+                { text: `Nice to see you working today!`, emoji: '💻' },
+                { text: `Let's manage your clients`, emoji: '✨' },
+                { text: `Have a wonderful day!`, emoji: '🌟' },
+                { text: `Ready to crush your goals?`, emoji: '💪' },
+                { text: `Let's grow your agency!`, emoji: '📈' },
+                { text: `Hope you're having a productive day!`, emoji: '💼' },
+                { text: `You're doing great!`, emoji: '🏆' },
+                { text: `Have a great day ahead!`, emoji: '🚀' }
+            ];
+        }
+
+        let typewriterTimeout;
+        function startContinuousTypewriter(name) {
+            const phrases = getTimeBasedGreetings(name);
+            const el = document.getElementById('greeting-text');
+            const emojiEl = document.getElementById('greeting-emoji');
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            const gradients = [
+                "from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400",
+                "from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400",
+                "from-orange-600 via-amber-600 to-yellow-500 dark:from-orange-500 dark:via-amber-400 dark:to-yellow-300",
+                "from-rose-600 via-pink-600 to-fuchsia-600 dark:from-rose-400 dark:via-pink-400 dark:to-fuchsia-400",
+                "from-cyan-600 via-blue-600 to-indigo-600 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400"
+            ];
+            el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[0];
+            function type() {
+                const currentPhrase = phrases[phraseIndex];
+                const fullText = currentPhrase.text;
+                if (isDeleting) {
+                    el.innerText = fullText.substring(0, charIndex - 1);
+                    charIndex--;
+                    emojiEl.innerText = ''; 
+                } else {
+                    el.innerText = fullText.substring(0, charIndex + 1);
+                    charIndex++;
+                    if (charIndex === fullText.length) {
+                        emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
+                    }
+                }
+                let typingSpeed = isDeleting ? 30 : 70;
+                if (!isDeleting && charIndex === fullText.length) {
+                    typingSpeed = 2500;
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % phrases.length;
+                    typingSpeed = 500; 
+                    el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[phraseIndex % gradients.length];
+                }
+                typewriterTimeout = setTimeout(type, typingSpeed);
+            }
+            clearTimeout(typewriterTimeout);
+            el.innerText = '';
+            if (emojiEl) emojiEl.innerText = '';
+            setTimeout(type, 300);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const isAdmin = await checkIfAdmin(user.email);
+                if (isAdmin) {
+                    currentUser = user;
+                    isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                    loggedInEmailText.innerText = user.email;
+                    
+                    document.getElementById('nav-requests').classList.remove('hidden');
+                    document.getElementById('nav-requests').classList.add('flex');
+                    
+                    const navDashboard = document.getElementById('nav-dashboard');
+                    const navClientList = document.getElementById('nav-client-list');
+                    
+                    const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
+                    const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
+
+                    if (navDashboard) {
+                        navDashboard.classList.remove('hidden');
+                        navDashboard.classList.add('flex');
+                        if (isRestrictedFromDashboard) {
+                            navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+
+                    if (navClientList) {
+                        if (isRestrictedFromClients) {
+                            navClientList.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+
+                    if (isRestrictedFromDashboard && !isRestrictedFromClients) {
+                        navigate('client-list'); 
+                    } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
+                        navigate('dashboard'); 
+                    } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
+                        navigate('add-client'); 
+                    } else {
+                        navigate('dashboard');
+                    }
+
+                    const expCard = document.getElementById('stat-card-expenses');
+                    if (expCard) {
+                        expCard.classList.remove('hidden');
+                        expCard.classList.add('flex');
+                    }
+                    
+                    const netCard = document.getElementById('stat-card-net-profit');
+                    if (netCard) {
+                        netCard.classList.remove('hidden');
+                        netCard.classList.add('flex');
+                    }
+
+                    const navExp = document.getElementById('nav-expenses');
+                    if (navExp) {
+                        navExp.classList.remove('hidden');
+                        navExp.classList.add('flex');
+                    }
+
+                    const expFormContainer = document.getElementById('expense-form')?.parentElement;
+                    const expHistoryContainer = expFormContainer?.nextElementSibling;
+                    
+                    if (expFormContainer && expHistoryContainer) {
+                        if (!isSuperAdminUser) {
+                            expFormContainer.classList.add('hidden');
+                            expHistoryContainer.classList.remove('lg:col-span-2');
+                            expHistoryContainer.classList.add('lg:col-span-3');
+                        } else {
+                            expFormContainer.classList.remove('hidden');
+                            expHistoryContainer.classList.add('lg:col-span-2');
+                            expHistoryContainer.classList.remove('lg:col-span-3');
+                        }
+                    }
+
+                    loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        loginWrapper.classList.add('hidden');
+                        appWrapper.classList.remove('hidden');
+                        appWrapper.classList.add('flex');
+                        const defaultName = user.email.split('@')[0];
+                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                        startContinuousTypewriter(adminName);
+                    }, 500);
+                    setupDatabaseListener();
+                } else {
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                    loginError.classList.remove('hidden');
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                }
+            } else {
+                currentUser = null;
+                isSuperAdminUser = false;
+                if(unsubscribeClients) unsubscribeClients();
+                if(unsubscribeRequests) unsubscribeRequests();
+                if(unsubscribeNotifications) unsubscribeNotifications();
+                if(unsubscribeExpenses) unsubscribeExpenses();
+                appWrapper.classList.add('hidden');
+                appWrapper.classList.remove('flex');
+                loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                googleLoginBtn.innerHTML = defaultBtnHtml;
+            }
+        });
+
+        function setupDatabaseListener() {
+            if (!currentUser) return;
+            globalLoader.classList.remove('hidden');
+            
+            const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
+            unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
+                clientsList = [];
+                snapshot.forEach((doc) => {
+                    clientsList.push({ id: doc.id, ...doc.data() });
+                });
+                clientsList.sort((a, b) => b.createdAt - a.createdAt);
+                updateDashboardStats();
+                updateCharts();
+                renderLeaderboard();
+                renderClientTable(true);
+
+                if (currentOpenClientId) {
+                    const updatedClient = clientsList.find(c => c.id === currentOpenClientId);
+                    if (updatedClient) {
+                        renderActivityLog(updatedClient);
+                    }
+                }
+
+                globalLoader.classList.add('hidden');
+            }, (error) => {
+                showToast("Database sync error.", "error");
+                globalLoader.classList.add('hidden');
+            });
+
+            const notifRef = collection(db, 'artifacts', appId, 'public', 'data', 'notifications');
+            unsubscribeNotifications = onSnapshot(notifRef, (snapshot) => {
+                notificationsList = [];
+                snapshot.forEach(doc => {
+                    notificationsList.push({ id: doc.id, ...doc.data() });
+                });
+                renderNotifications();
+            });
+
+            const reqsRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
+            unsubscribeRequests = onSnapshot(reqsRef, (snapshot) => {
+                requestsList = [];
+                snapshot.forEach(doc => {
+                    requestsList.push({ id: doc.id, ...doc.data() });
+                });
+                renderRequestsTable();
+                updateRequestsBadge();
+            });
+
+            const expRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
+            unsubscribeExpenses = onSnapshot(expRef, (snapshot) => {
+                expensesList = [];
+                snapshot.forEach(doc => {
+                    expensesList.push({ id: doc.id, ...doc.data() });
+                });
+                expensesList.sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                renderExpenses();
+                updateDashboardStats();
+            });
+        }
+
+        document.getElementById('expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isSuperAdminUser) return;
+            
+            const btn = document.getElementById('exp-submit-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Logging...`;
+            btn.disabled = true;
+
+            try {
+                const newExp = {
+                    description: document.getElementById('exp-desc').value.trim(),
+                    amount: parseFloat(document.getElementById('exp-amount').value),
+                    category: document.getElementById('exp-category').value,
+                    date: document.getElementById('exp-date').value,
+                    addedAt: Date.now()
+                };
+                const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
+                await setDoc(ref, newExp);
+                
+                document.getElementById('expense-form').reset();
+                document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+                showToast("Expense logged successfully!", "success");
+            } catch (err) {
+                showToast("Error logging expense.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+        function renderExpenses() {
+            const tbody = document.getElementById('expenses-tbody');
+            const empty = document.getElementById('expenses-empty');
+            const totalDisplay = document.getElementById('exp-total-display');
+            if (!tbody || !empty || !totalDisplay) return;
+            
+            tbody.innerHTML = '';
+            
+            const totalManual = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+            const totalAutoExtra = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
+            
+            totalDisplay.innerHTML = `Manual: <span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span> + Auto (Extra): <span class="font-bold">₹${totalAutoExtra.toLocaleString('en-IN')}</span>`;
+
+            if (expensesList.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+            } else {
+                tbody.parentElement.classList.remove('hidden');
+                empty.classList.add('hidden');
+                empty.classList.remove('flex');
+                
+                expensesList.forEach(exp => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50/50 dark:hover:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800/50 last:border-0 transition-colors";
+                    
+                    let catColor = "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+                    if(exp.category === 'Hosting/Domain') catColor = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500";
+                    if(exp.category === 'Freelancer') catColor = "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-500";
+                    if(exp.category === 'Marketing') catColor = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-500";
+
+                    const deleteBtnHtml = isSuperAdminUser ? 
+                        `<button onclick="deleteExpense('${exp.id}')" class="text-gray-400 hover:text-red-500 transition-colors p-1"><i class="ph ph-trash text-lg"></i></button>` 
+                        : '';
+
+                    tr.innerHTML = `
+                        <td class="p-3 text-gray-600 dark:text-gray-400">${new Date(exp.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                        <td class="p-3 font-medium text-gray-900 dark:text-gray-200">${exp.description}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide ${catColor}">${exp.category}</span>
+                        </td>
+                        <td class="p-3 text-right font-bold text-red-500">- ₹${Number(exp.amount).toLocaleString('en-IN')}</td>
+                        <td class="p-3 text-center">
+                            ${deleteBtnHtml}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        let expenseToDelete = null;
+        window.deleteExpense = function(id) {
+            expenseToDelete = id;
+            document.getElementById('expense-delete-modal').classList.remove('hidden');
+        };
+        
+        window.hideExpenseDeleteModal = function() {
+            expenseToDelete = null;
+            document.getElementById('expense-delete-modal').classList.add('hidden');
+        };
+
+        const confirmExpenseDeleteBtn = document.getElementById('confirm-expense-delete-btn');
+        if (confirmExpenseDeleteBtn) {
+            confirmExpenseDeleteBtn.addEventListener('click', async () => {
+                if (!expenseToDelete) return;
+                const btn = document.getElementById('confirm-expense-delete-btn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
+                btn.disabled = true;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', expenseToDelete));
+                    showToast("Expense removed.", "success");
+                    hideExpenseDeleteModal();
+                } catch(e) {
+                    showToast("Error deleting expense.", "error");
+                } finally {
+                    btn.innerHTML = orig;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const phoneInputEl = document.getElementById('form-phone');
+            const rawPhone = phoneInputEl.value.trim();
+            const numericPhone = rawPhone.replace(/\D/g, ''); 
+            
+            let formattedPhone = "";
+            if (numericPhone.length === 10) {
+                formattedPhone = "+91 " + numericPhone;
+            } else if (numericPhone.length === 12 && numericPhone.startsWith('91')) {
+                formattedPhone = "+91 " + numericPhone.substring(2);
+            } else {
+                showToast("Please enter a valid 10-digit mobile number.", "error");
+                phoneInputEl.focus();
+                return; 
+            }
+            
+            const emailInput = document.getElementById('form-email').value.trim();
+            if (emailInput !== "") {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailInput)) {
+                    showToast("Please enter a valid email address.", "error");
+                    document.getElementById('form-email').focus();
+                    return;
+                }
+            }
+
+            const priceInput = parseFloat(document.getElementById('form-price').value);
+            const discountInput = parseFloat(document.getElementById('form-discount').value) || 0;
+            const extraInput = parseFloat(document.getElementById('form-extra-charge').value) || 0;
+            const maintInput = parseFloat(document.getElementById('form-maintenance-charge').value) || 0;
+
+            if (isNaN(priceInput) || priceInput <= 0) {
+                showToast("Project price must be greater than ₹0.", "error");
+                document.getElementById('form-price').focus();
+                return;
+            }
+            if (discountInput < 0 || extraInput < 0 || maintInput < 0) {
+                showToast("Charges and discounts cannot be negative.", "error");
+                return;
+            }
+            if (discountInput > priceInput) {
+                showToast("Discount cannot be greater than the project price.", "error");
+                document.getElementById('form-discount').focus();
+                return;
+            }
+
+            phoneInputEl.value = formattedPhone;
+
+            const submitBtn = document.getElementById('form-submit-btn');
+            const idField = document.getElementById('client-id').value;
+            const isEditing = !!idField;
+            const clientId = isEditing ? idField : crypto.randomUUID();
+
+            submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> <span>Processing...</span>`;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const existingClient = isEditing ? clientsList.find(c => c.id === clientId) : null;
+            const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
+            const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
+
+            let logAction = "Client details updated";
+            const statusField = document.getElementById('form-status').value;
+            if (isEditing && existingClient && existingClient.status !== statusField) {
+                logAction = `Status changed to ${statusField}`;
+            } else if (!isEditing) {
+                logAction = "Added new client";
+            }
+
+            if (!isSuperAdminUser) {
+                logAction = isEditing ? "Requested client update" : "Requested client creation";
+            }
+
+            const newLogEntry = {
+                action: logAction,
+                performedBy: addedName,
+                timestamp: Date.now(),
+                isManual: false
+            };
+
+            const activityLog = isEditing && existingClient?.activityLog ? [...existingClient.activityLog] : [];
+            activityLog.push(newLogEntry);
+
+            let completedAt = isEditing ? (existingClient?.completedAt || null) : null;
+            if (statusField === 'Completed' && (!isEditing || existingClient?.status !== 'Completed')) {
+                completedAt = Date.now();
+            } else if (statusField !== 'Completed') {
+                completedAt = null;
+            }
+
+            const clientData = {
+                name: document.getElementById('form-name').value.trim(),
+                business: document.getElementById('form-business').value.trim(),
+                source: document.getElementById('form-source').value,
+                phone: document.getElementById('form-phone').value.trim(),
+                email: document.getElementById('form-email').value.trim(),
+                address: document.getElementById('form-address').value.trim(),
+                website: document.getElementById('form-website').value,
+                websiteUrl: document.getElementById('form-website-url').value.trim(),
+                price: parseFloat(document.getElementById('form-price').value) || 0,
+                discount: parseFloat(document.getElementById('form-discount').value) || 0,
+                extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
+                maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
+                installments: getInstallmentsData(),
+                tasks: getTasksData(),
+                deadline: document.getElementById('form-deadline').value || null,
+                status: statusField,
+                notes: document.getElementById('form-notes').value.trim(),
+                createdAt: isEditing ? (existingClient?.createdAt || Date.now()) : Date.now(),
+                updatedAt: Date.now(),
+                completedAt: completedAt,
+                addedByEmail: addedEmail,
+                addedByName: addedName,
+                activityLog: activityLog,
+                ...(isEditing && existingClient?.invoiceNo ? { invoiceNo: existingClient.invoiceNo } : {})
+            };
+
+            try {
+                if (isSuperAdminUser) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                    await setDoc(docRef, clientData);
+                    
+                    try {
+                        const pendingReq = requestsList.find(r => 
+                            r.status === 'Pending' && r.targetClientId === clientId
+                        );
+
+                        if (pendingReq) {
+                            const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', pendingReq.id);
+                            await updateDoc(reqRef, { 
+                                status: 'Approved',
+                                targetClientId: clientId,
+                                updatedAt: Date.now()
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Auto-resolve failed", err);
+                    }
+                    
+                    showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
+                } else {
+                    const reqId = crypto.randomUUID();
+                    const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
+                    await setDoc(reqRef, {
+                        type: isEditing ? 'UPDATE' : 'ADD',
+                        status: 'Pending',
+                        requestedByEmail: currentUser.email,
+                        requestedByName: ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0],
+                        clientData: clientData,
+                        targetClientId: isEditing ? clientId : reqId,
+                        createdAt: Date.now()
+                    });
+
+                    const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+                    await setDoc(notifRef, {
+                        recipientEmail: 'all',
+                        message: `New Request: ${addedName} wants to ${isEditing ? 'update' : 'add'} client "${clientData.name}".`,
+                        readBy: [],
+                        createdAt: Date.now(),
+                        type: 'info'
+                    });
+
+                    showToast("Request sent to Super Admin for approval.", "success");
+                }
+                document.getElementById('client-form').reset();
+                document.getElementById('client-id').value = "";
+                document.getElementById('installments-container').innerHTML = '';
+                document.getElementById('form-tasks-container').innerHTML = '';
+                document.getElementById('form-title').innerText = "Add New Client";
+                navigate('client-list');
+            } catch (error) {
+                showToast("Failed to process action.", "error");
+            } finally {
+                submitBtn.innerHTML = isSuperAdminUser 
+                    ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
+                    : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        });
+
+        window.toggleMobileMenu = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
+        window.navigate = function(viewId, isEdit = false) {
+            if (viewId === 'dashboard' && currentUser && RESTRICTED_DASHBOARD_EMAILS.includes(currentUser.email.toLowerCase())) {
+                showToast("You don't have access to the dashboard.", "error");
+                return; 
+            }
+            if (viewId === 'client-list' && currentUser && RESTRICTED_CLIENTS_EMAILS.includes(currentUser.email.toLowerCase())) {
+                showToast("You don't have access to the client database.", "error");
+                return; 
+            }
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-accentPrimary', 'bg-gray-200/80', 'dark:bg-gray-800/50');
+                el.classList.add('text-gray-700', 'dark:text-gray-400');
+            });
+            const viewEl = document.getElementById(`view-${viewId}`);
+            if(viewEl) viewEl.classList.add('active');
+            
+            const navBtn = document.getElementById(`nav-${viewId}`);
+            if(navBtn) {
+                navBtn.classList.remove('text-gray-700', 'dark:text-gray-400');
+                navBtn.classList.add('text-accentPrimary', 'bg-gray-200/80', 'dark:bg-gray-800/50');
+            }
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('mobile-overlay');
+                if(sidebar) sidebar.classList.add('-translate-x-full');
+                if(overlay) overlay.classList.add('hidden');
+            }
+            if(viewId === 'add-client' && !isEdit) {
+                const formTitle = document.getElementById('form-title');
+                const formSubmitBtn = document.getElementById('form-submit-btn');
+                if(formTitle) formTitle.innerText = "Add New Client";
+                if(formSubmitBtn) {
+                    formSubmitBtn.innerHTML = isSuperAdminUser 
+                        ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
+                        : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
+                }
+                const clientIdEl = document.getElementById('client-id');
+                const clientForm = document.getElementById('client-form');
+                const instContainer = document.getElementById('installments-container');
+                const tasksContainer = document.getElementById('form-tasks-container');
+                if(clientIdEl) clientIdEl.value = "";
+                if(clientForm) clientForm.reset();
+                if(instContainer) instContainer.innerHTML = '';
+                if(tasksContainer) tasksContainer.innerHTML = '';
+            }
+            if(viewId === 'client-list' || viewId === 'dashboard') {
+                renderClientTable(true);
+            }
+            if(viewId === 'requests') {
+                renderRequestsTable();
+            }
+            if(viewId === 'notifications') {
+                renderNotifications();
+            }
+            if(viewId === 'expenses') {
+                const expDate = document.getElementById('exp-date');
+                if(expDate) expDate.value = new Date().toISOString().split('T')[0];
+            }
+        };
+
+        window.toggleTheme = function() {
+            const html = document.documentElement;
+            const themeText = document.getElementById('theme-text');
+            const themeIcon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                if(themeText) themeText.innerText = 'Dark Mode';
+                if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                if(themeText) themeText.innerText = 'Light Mode';
+                if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+            }
+            setTimeout(() => {
+                if(clientsList.length > 0) updateCharts();
+            }, 50);
+        };
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            const themeText = document.getElementById('theme-text');
+            const themeIcon = document.getElementById('theme-icon');
+            if(themeText) themeText.innerText = 'Dark Mode';
+            if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
+        } else {
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+            if(themeText) themeText.innerText = 'Light Mode';
+        }
+
+        window.populateFormWithClientData = function(client, overrideId = null) {
+            navigate('add-client', true);
+            
+            document.getElementById('client-id').value = overrideId || client.id || '';
+            document.getElementById('form-name').value = client.name || '';
+            document.getElementById('form-business').value = client.business || '';
+            document.getElementById('form-source').value = client.source || 'Referral';
+            document.getElementById('form-phone').value = client.phone || '';
+            document.getElementById('form-email').value = client.email || '';
+            document.getElementById('form-address').value = client.address || '';
+            document.getElementById('form-website').value = client.website || 'Landing Page';
+            document.getElementById('form-website-url').value = client.websiteUrl || '';
+            document.getElementById('form-price').value = client.price || '';
+            document.getElementById('form-discount').value = client.discount || '';
+            document.getElementById('form-extra-charge').value = client.extraCharge || '';
+            document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
+            document.getElementById('form-deadline').value = client.deadline || '';
+            document.getElementById('form-status').value = client.status || 'Pending';
+            document.getElementById('form-notes').value = client.notes || ''; 
+
+            document.getElementById('installments-container').innerHTML = '';
+            if (client.installments && client.installments.length > 0) {
+                client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
+            } else if (client.advance > 0) {
+                addInstallmentRow('Advance', client.advance, '', 'Paid');
+            }
+
+            document.getElementById('form-tasks-container').innerHTML = '';
+            if (client.tasks && client.tasks.length > 0) {
+                client.tasks.forEach(t => addTaskToForm(t.text, t.completed));
+            }
+
+            document.getElementById('form-title').innerText = overrideId ? "Review & Edit Request" : "Edit Client Details";
+            
+            const submitBtn = document.getElementById('form-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerHTML = isSuperAdminUser 
+                    ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>'
+                    : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Update Request</span>';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        window.editClient = function(id) {
+            const client = clientsList.find(c => c.id === id);
+            if(!client) return;
+            
+            if (!isSuperAdminUser && client.addedByEmail !== currentUser.email) {
+                showToast("Access Denied: You can only edit clients you created.", "error");
+                return;
+            }
+            
+            closeModal();
+            populateFormWithClientData(client, client.id);
+        };
+
+        window.editRequestFromTable = function(reqId) {
+            const req = requestsList.find(r => r.id === reqId);
+            if(!req) return;
+            
+            if (!isSuperAdminUser && req.requestedByEmail !== currentUser.email) {
+                showToast("Access Denied: You can only edit your own requests.", "error");
+                return;
+            }
+            
+            closeModal();
+            populateFormWithClientData(req.clientData, req.targetClientId);
+        };
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'Pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border border-yellow-300 dark:border-yellow-800';
+                case 'Active': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border border-blue-300 dark:border-blue-800';
+                case 'Completed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border border-green-300 dark:border-green-800';
+                case 'Cancelled': return 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border border-gray-300 dark:border-gray-700';
+                default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700';
+            }
+        }
+
+        function updateDashboardStats() {
+            const totalClientsEl = document.getElementById('stat-total-clients');
+            if(totalClientsEl) totalClientsEl.innerText = clientsList.length;
+            
+            const activeEl = document.getElementById('stat-active-projects');
+            if(activeEl) activeEl.innerText = clientsList.filter(c => c.status === 'Active').length;
+            
+            const completedEl = document.getElementById('stat-completed-projects');
+            if(completedEl) completedEl.innerText = clientsList.filter(c => c.status === 'Completed').length;
+            
+            const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
+                const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+                const extra = Number(client.extraCharge) || 0;
+                const maintenance = Number(client.maintenanceCharge) || 0;
+                return sum + baseRevenue + extra + maintenance;
+            }, 0);
+            
+            const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
+                const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                const paid = calculatePaidAmount(client);
+                return sum + Math.max(0, expected - paid);
+            }, 0);
+
+            const formattedGross = '₹' + totalGrossRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            const formattedPending = '₹' + totalPendingPayments.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            
+            const profitEl = document.getElementById('stat-total-profit');
+            if(profitEl) {
+                profitEl.innerText = formattedGross;
+                profitEl.title = formattedGross; 
+            }
+            
+            const pendingEl = document.getElementById('stat-pending-payments');
+            if(pendingEl) {
+                pendingEl.innerText = formattedPending;
+                pendingEl.title = formattedPending;
+            }
+
+            const totalAutoExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
+            const totalManualExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+            
+            const totalCombinedExpenses = totalManualExpenses + totalAutoExtraCharges;
+            const trueNetProfit = totalGrossRevenue - totalCombinedExpenses;
+
+            const expEl = document.getElementById('stat-total-expenses');
+            if(expEl) expEl.innerText = '₹' + totalCombinedExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            
+            const netEl = document.getElementById('stat-net-profit');
+            if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+            const recentBody = document.getElementById('recent-clients-tbody');
+            if(recentBody) {
+                recentBody.innerHTML = '';
+                clientsList.slice(0, 5).forEach(client => {
+                    const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+                    tr.onclick = () => openModal(client.id);
+                    
+                    const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                    const paid = calculatePaidAmount(client);
+                    const balance = Math.max(0, expected - paid);
+
+                    let financeHtml = `<div>
+                        <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
+                        ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                    </div>`;
+
+                    let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
+                    let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentPrimary dark:hover:text-accentPrimary transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
+                    
+                    tr.innerHTML = `
+                        <td class="p-3 md:p-4">
+                            <p class="font-medium text-gray-900 dark:text-gray-200">${client.name}</p>
+                            <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500">${client.phone}</p>
+                            <p class="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Added: ${new Date(client.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                        </td>
+                        <td class="p-3 md:p-4 text-xs md:text-sm text-gray-700 dark:text-gray-300">${client.business || '-'}</td>
+                        <td class="p-3 md:p-4">${financeHtml}</td>
+                        <td class="p-3 md:p-4">
+                            <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
+                        </td>
+                        <td class="p-3 md:p-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                ${viewBtnHtml}
+                                ${editBtnHtml}
+                            </div>
+                        </td>
+                    `;
+                    recentBody.appendChild(tr);
+                });
+            }
+
+            const deadlinesContainer = document.getElementById('upcoming-deadlines-list');
+            if(deadlinesContainer) {
+                deadlinesContainer.innerHTML = '';
+                const nowTime = new Date().setHours(0,0,0,0);
+                const upcoming = clientsList.filter(c => (c.status === 'Pending' || c.status === 'Active') && c.deadline).sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
+                if(upcoming.length === 0) {
+                    deadlinesContainer.innerHTML = '<div class="flex-1 flex flex-col items-center justify-center text-center py-4"><i class="ph ph-check-circle text-3xl text-green-500 mb-2"></i><p class="text-sm text-gray-600 dark:text-gray-400">No active deadlines!<br>You are all caught up.</p></div>';
+                } else {
+                    upcoming.forEach(client => {
+                        const d = new Date(client.deadline);
+                        const diffDays = Math.ceil((d - nowTime) / (1000 * 60 * 60 * 24));
+                        let colorClass = 'text-gray-600 dark:text-gray-400';
+                        let iconClass = 'text-gray-500 dark:text-gray-400';
+                        if(diffDays < 0) { 
+                            colorClass = 'text-red-600 dark:text-red-500 font-bold'; 
+                            iconClass = 'text-red-600 dark:text-red-500'; 
+                        } else if(diffDays <= 3) { 
+                            colorClass = 'text-orange-600 dark:text-orange-500 font-bold'; 
+                            iconClass = 'text-orange-600 dark:text-orange-500'; 
+                        }
+                        deadlinesContainer.innerHTML += `
+                            <div class="bg-white/60 dark:bg-gray-800/50 p-3 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-300 dark:border-gray-800/50" onclick="openModal('${client.id}')">
+                                <div class="flex justify-between items-start mb-1">
+                                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-200 truncate pr-2">${client.name}</p>
+                                    <div class="flex items-center gap-1 text-[11px] md:text-xs shrink-0 ${colorClass}">
+                                        <i class="ph ph-clock ${iconClass}"></i>
+                                        <span>${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 dark:text-gray-500 truncate">${client.business || 'N/A'}</p>
+                            </div>
+                        `;
+                    });
+                }
+            }
+        }
+
+        function updateCharts() {
+            if (!document.getElementById('revenueChart')) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#9ca3af' : '#4b5563';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.1)';
+            const last6Months = [];
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                last6Months.push({
+                    label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+                    month: d.getMonth(),
+                    year: d.getFullYear(),
+                    revenue: 0
+                });
+            }
+            const sourcesMap = {};
+            clientsList.forEach(client => {
+                const src = client.source || 'Referral';
+                sourcesMap[src] = (sourcesMap[src] || 0) + 1;
+                if (client.status === 'Completed' && client.createdAt) {
+                    const d = new Date(client.createdAt);
+                    const m = d.getMonth();
+                    const y = d.getFullYear();
+                    const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
+                    if (monthObj) {
+                        monthObj.revenue += Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.maintenanceCharge) || 0);
+                    }
+                }
+            });
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChartInstance) revenueChartInstance.destroy();
+            revenueChartInstance = new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: last6Months.map(m => m.label),
+                    datasets: [{
+                        label: 'Revenue (₹)',
+                        data: last6Months.map(m => m.revenue),
+                        backgroundColor: '#7C3AED',
+                        borderRadius: 6,
+                        hoverBackgroundColor: '#6D28D9',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y.toLocaleString('en-IN');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor }, 
+                            ticks: { 
+                                color: textColor,
+                                callback: function(value) { return '₹' + value.toLocaleString('en-IN'); }
+                            },
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: textColor },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+            const ctxSrc = document.getElementById('sourceChart').getContext('2d');
+            if (sourceChartInstance) sourceChartInstance.destroy();
+            const srcLabels = Object.keys(sourcesMap);
+            const srcData = Object.values(sourcesMap);
+            sourceChartInstance = new Chart(ctxSrc, {
+                type: 'doughnut',
+                data: {
+                    labels: srcLabels,
+                    datasets: [{
+                        data: srcData,
+                        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#64748b', '#ef4444'],
+                        borderWidth: isDark ? 2 : 0,
+                        borderColor: isDark ? '#111111' : '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: window.innerWidth < 768 ? 'bottom' : 'right', 
+                            labels: { color: textColor, padding: 20, usePointStyle: true } 
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        window.renderLeaderboard = function renderLeaderboard() {
+            const filterEl = document.getElementById('leaderboard-filter');
+            const customDateRangeEl = document.getElementById('custom-date-range');
+            const tbody = document.getElementById('leaderboard-tbody');
+            const emptyState = document.getElementById('leaderboard-empty');
+            const tableContainer = document.getElementById('leaderboard-table-container');
+            
+            if(!filterEl || !tbody || !emptyState || !tableContainer) return;
+            
+            const filter = filterEl.value;
+
+            if (filter === 'custom') {
+                if(customDateRangeEl) {
+                    customDateRangeEl.classList.remove('hidden');
+                    customDateRangeEl.classList.add('flex');
+                }
+            } else {
+                if(customDateRangeEl) {
+                    customDateRangeEl.classList.add('hidden');
+                    customDateRangeEl.classList.remove('flex');
+                }
+            }
+
+            const now = new Date();
+            let startDate = new Date(0);
+            let endDate = new Date('9999-12-31');
+
+            if (filter === 'this_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            } else if (filter === 'last_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            } else if (filter === 'this_year') {
+                startDate = new Date(now.getFullYear(), 0, 1);
+            } else if (filter === 'custom') {
+                const customStart = document.getElementById('custom-start-date').value;
+                const customEnd = document.getElementById('custom-end-date').value;
+
+                if (customStart) {
+                    startDate = new Date(customStart);
+                    startDate.setHours(0, 0, 0, 0);
+                }
+                if (customEnd) {
+                    endDate = new Date(customEnd);
+                    endDate.setHours(23, 59, 59, 999);
+                }
+            }
+
+            const statsMap = {};
+
+            clientsList.forEach(client => {
+                const createdAt = new Date(client.createdAt);
+                if (createdAt >= startDate && createdAt <= endDate) { 
+                    const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
+                    const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal';
+
+                    if (!statsMap[email]) {
+                        statsMap[email] = { name: name, clientsCount: 0, revenue: 0, email: email };
+                    }
+
+                    statsMap[email].clientsCount++;
+                    
+                    if (client.status === 'Completed') {
+                        const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+                        statsMap[email].revenue += baseRevenue;
+                        
+                        const maintenance = Number(client.maintenanceCharge) || 0;
+                        if (maintenance > 0) {
+                            if (!statsMap[SUPER_ADMIN_EMAIL]) {
+                                statsMap[SUPER_ADMIN_EMAIL] = { 
+                                    name: ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal', 
+                                    clientsCount: 0, 
+                                    revenue: 0, 
+                                    email: SUPER_ADMIN_EMAIL 
+                                };
+                            }
+                            if (email !== SUPER_ADMIN_EMAIL) {
+                               statsMap[SUPER_ADMIN_EMAIL].revenue += maintenance;
+                            } else {
+                               statsMap[email].revenue += maintenance; 
+                            }
+                        }
+                    }
+                }
+            });
+
+            const statsArray = Object.values(statsMap);
+            statsArray.sort((a, b) => b.revenue - a.revenue || b.clientsCount - a.clientsCount);
+
+            tbody.innerHTML = '';
+            if (statsArray.length === 0) {
+                tableContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                tableContainer.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+
+                statsArray.forEach((stat, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+
+                    let rankHtml = `<span class="font-bold text-gray-500 dark:text-gray-400">#${index + 1}</span>`;
+                    if (index === 0) rankHtml = `<span class="text-xl">🥇</span>`;
+                    else if (index === 1) rankHtml = `<span class="text-xl">🥈</span>`;
+                    else if (index === 2) rankHtml = `<span class="text-xl">🥉</span>`;
+
+                    tr.innerHTML = `
+                        <td class="p-3 md:p-4 text-center">${rankHtml}</td>
+                        <td class="p-3 md:p-4">
+                            <div class="flex items-center gap-2 md:gap-3">
+                                <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm shrink-0 border border-gray-300 dark:border-transparent">
+                                    ${stat.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-gray-200 text-sm">${stat.name}</p>
+                                    <p class="text-[10px] text-gray-500">${stat.email}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 md:p-4 text-center font-medium text-gray-900 dark:text-gray-200">${stat.clientsCount}</td>
+                        <td class="p-3 md:p-4 text-right font-bold text-green-600 dark:text-green-500">₹${stat.revenue.toLocaleString('en-IN')}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        const leaderboardFilter = document.getElementById('leaderboard-filter');
+        if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
+
+        window.loadMoreClients = function() {
+            currentPage++;
+            renderClientTable(false); 
+        };
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func.apply(this, args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        const debouncedSearch = debounce(() => renderClientTable(true), 300);
+        function renderClientTable(resetPage = false) {
+            if (resetPage) currentPage = 1;
+            const tbody = document.getElementById('clients-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const loadMoreBtnContainer = document.getElementById('load-more-container');
+            const searchInput = document.getElementById('search-input');
+            const statusFilter = document.getElementById('filter-status');
+            const ownerFilter = document.getElementById('filter-owner');
+            
+            if(!tbody || !emptyState || !loadMoreBtnContainer) return;
+
+            const searchQ = searchInput ? searchInput.value.toLowerCase() : '';
+            const statusQ = statusFilter ? statusFilter.value : 'All';
+            const ownerQ = ownerFilter ? ownerFilter.value : 'All';
+
+            const filtered = clientsList.filter(client => {
+                const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
+                const matchStatus = statusQ === 'All' || client.status === statusQ;
+                const matchOwner = ownerQ === 'All' || (ownerQ === 'Mine' && client.addedByEmail === currentUser.email);
+                
+                return matchSearch && matchStatus && matchOwner;
+            });
+
+            const paginated = filtered.slice(0, currentPage * ITEMS_PER_PAGE);
+            tbody.innerHTML = '';
+            if (paginated.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                tbody.parentElement.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                paginated.forEach(client => {
+                    const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+                    
+                    const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                    const paid = calculatePaidAmount(client);
+                    const balance = Math.max(0, expected - paid);
+
+                    let financeHtml = `<div>
+                        <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
+                        ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                    </div>`;
+                    const d = new Date(client.deadline);
+                    const diffDays = client.deadline ? Math.ceil((d - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)) : null;
+                    let deadlineHtml = '-';
+                    if(client.deadline) {
+                        let colorClass = 'text-gray-600 dark:text-gray-400';
+                        if(client.status !== 'Completed' && client.status !== 'Cancelled') {
+                            if(diffDays < 0) colorClass = 'text-red-600 dark:text-red-500 font-medium';
+                            else if(diffDays <= 3) colorClass = 'text-orange-600 dark:text-orange-500 font-medium';
+                        }
+                        deadlineHtml = `<p class="text-xs md:text-sm ${colorClass}"><i class="ph ph-clock"></i> ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>`;
+                    }
+                    let actionsHtml = `
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="event.stopPropagation(); openModal('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
+                                <i class="ph ph-eye text-base md:text-lg"></i>
+                            </button>
+                            <a href="https://wa.me/${client.phone.replace(/[^0-9]/g, '')}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
+                                <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
+                            </a>
+                            ${canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Edit">
+                                <i class="ph ph-pencil-simple text-base md:text-lg"></i>
+                            </button>` : ''}
+                        </div>
+                    `;
+                    tr.innerHTML = `
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            <div class="flex items-center gap-2 md:gap-3">
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm md:text-base shrink-0 border border-gray-300 dark:border-transparent">
+                                    ${client.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 dark:text-gray-200 text-sm md:text-base">${client.name}</p>
+                                    <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500 flex items-center gap-1"><i class="ph ph-phone"></i> ${client.phone}</p>
+                                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Added: ${new Date(client.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer text-xs md:text-sm text-gray-700 dark:text-gray-300" onclick="openModal('${client.id}')">
+                            <p class="font-medium">${client.business || 'N/A'}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">${client.website}</p>
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            ${financeHtml}
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium block w-max mb-1 ${getStatusBadge(client.status)}">${client.status}</span>
+                            ${deadlineHtml}
+                        </td>
+                        <td class="p-3 md:p-4 text-right">
+                            ${actionsHtml}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            if (filtered.length > currentPage * ITEMS_PER_PAGE) {
+                loadMoreBtnContainer.classList.remove('hidden');
+            } else {
+                loadMoreBtnContainer.classList.add('hidden');
+            }
+        }
+
+        const searchInputEl = document.getElementById('search-input');
+        if(searchInputEl) searchInputEl.addEventListener('input', debouncedSearch);
+
+        const filterStatusEl = document.getElementById('filter-status');
+        if(filterStatusEl) filterStatusEl.addEventListener('change', () => renderClientTable(true));
+
+        const filterOwnerEl = document.getElementById('filter-owner');
+        if(filterOwnerEl) filterOwnerEl.addEventListener('change', () => renderClientTable(true));
+
+        window.postClientComment = async function(clientId) {
+            const commentInput = document.getElementById('modal-new-comment');
+            const text = commentInput.value.trim();
+            if (!text || !currentUser) return;
+
+            const btn = document.getElementById('modal-post-comment-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+            btn.disabled = true;
+
+            try {
+                const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
+                const newLogEntry = {
+                    action: text,
+                    performedBy: addedName,
+                    timestamp: Date.now(),
+                    isManual: true
+                };
+
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                await updateDoc(clientRef, {
+                    activityLog: arrayUnion(newLogEntry)
+                });
+
+                commentInput.value = '';
+            } catch (error) {
+                showToast("Failed to post comment", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        };
+
+        function renderActivityLog(client) {
+            const logContainer = document.getElementById('modal-activity-log');
+            if(!logContainer) return;
+            const logArray = client.activityLog || [];
+            
+            if (logArray.length === 0) {
+                logContainer.innerHTML = '<p class="text-xs text-gray-500 px-2 py-1">No past activity recorded for this client.</p>';
+            } else {
+                const sortedLog = [...logArray].sort((a,b) => b.timestamp - a.timestamp);
+                logContainer.innerHTML = sortedLog.map(log => {
+                    const dateStr = new Date(log.timestamp).toLocaleString('en-IN');
+                    
+                    if (log.isManual) {
+                        return `
+                            <div class="mb-3 ml-[7px] pl-[13px] border-l-2 border-accentPrimary dark:border-accentPrimary relative">
+                                <div class="absolute w-3 h-3 rounded-full bg-accentPrimary -left-[7px] top-1 shadow-sm shadow-violet-500/50"></div>
+                                <div class="bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/50 rounded-xl p-3 shadow-sm">
+                                    <p class="text-xs text-gray-500 mb-1"><span class="font-bold text-accentPrimary dark:text-accentPrimaryHover">${log.performedBy}</span> commented:</p>
+                                    <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">${log.action}</p>
+                                    <p class="text-[9px] md:text-[10px] text-gray-400 mt-1.5 text-right">${dateStr}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-4 pb-4 last:pb-0 relative">
+                                <div class="absolute w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-500 -left-[5.5px] top-1"></div>
+                                <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold text-gray-900 dark:text-white">${log.performedBy}</span> ${log.action.toLowerCase()}</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5">${dateStr}</p>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
+        }
+
+        window.toggleTaskStatus = async function(clientId, taskIndex, checkbox) {
+            const client = clientsList.find(c => c.id === clientId);
+            if (!client || !client.tasks) return;
+            
+            const isCompleted = checkbox.checked;
+            const label = document.querySelector(`label[for="task-${clientId}-${taskIndex}"]`);
+            if (label) {
+                if (isCompleted) {
+                    label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+                } else {
+                    label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+                }
+            }
+            
+            const updatedTasks = [...client.tasks];
+            updatedTasks[taskIndex].completed = isCompleted;
+            
+            const completedCount = updatedTasks.filter(t => t.completed).length;
+            const progressEl = document.getElementById('modal-task-progress');
+            if (progressEl) progressEl.innerText = `${completedCount}/${updatedTasks.length}`;
+
+            try {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                await updateDoc(clientRef, { tasks: updatedTasks });
+            } catch(e) {
+                showToast("Failed to update task", "error");
+                checkbox.checked = !isCompleted; 
+                
+                if (label) {
+                    if (!isCompleted) {
+                        label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                        label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+                    } else {
+                        label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                        label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+                    }
+                }
+                if (progressEl) {
+                    const oldCompletedCount = updatedTasks.filter(t => t.completed).length + (isCompleted ? -1 : 1);
+                    progressEl.innerText = `${oldCompletedCount}/${updatedTasks.length}`;
+                }
+            }
+        };
+
+        const modal = document.getElementById('client-modal');
+        window.openModal = function(id) {
+            const client = clientsList.find(c => c.id === id);
+            if(!client) return;
+            
+            currentOpenClientId = id; 
+            
+            document.getElementById('modal-name').innerText = client.name;
+            document.getElementById('modal-business').innerText = client.business || 'N/A';
+            document.getElementById('modal-phone').innerText = client.phone;
+            document.getElementById('modal-email').innerText = client.email || 'N/A';
+            document.getElementById('modal-address').innerText = client.address || 'N/A';
+            document.getElementById('modal-website').innerText = client.website;
+            document.getElementById('modal-source').innerText = client.source || 'N/A';
+            
+            const createdDate = client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
+            const createdOnEl = document.getElementById('modal-created-on');
+            if (createdOnEl) createdOnEl.innerText = createdDate;
+
+            const completedContainer = document.getElementById('modal-completed-container');
+            const completedOnEl = document.getElementById('modal-completed-on');
+            if (completedContainer && completedOnEl) {
+                if (client.status === 'Completed') {
+                    let compDateStr = '-';
+                    if (client.completedAt) {
+                        compDateStr = new Date(client.completedAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+                    } else if (client.activityLog) {
+                        const completionLog = client.activityLog.find(log => log.action === 'Status changed to Completed');
+                        if (completionLog) {
+                            compDateStr = new Date(completionLog.timestamp).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+                        } else {
+                            compDateStr = new Date(client.updatedAt || client.createdAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+                        }
+                    }
+                    completedOnEl.innerHTML = `<i class="ph ph-check-circle"></i> ${compDateStr}`;
+                    completedContainer.classList.remove('hidden');
+                } else {
+                    completedContainer.classList.add('hidden');
+                }
+            }
+            
+            const urlEl = document.getElementById('modal-website-url');
+            if (client.websiteUrl) {
+                urlEl.innerText = client.websiteUrl;
+                urlEl.href = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+                urlEl.classList.add('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+                urlEl.classList.remove('text-gray-900', 'dark:text-gray-200');
+            } else {
+                urlEl.innerText = 'Not provided';
+                urlEl.removeAttribute('href');
+                urlEl.classList.remove('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+                urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
+            }
+            
+            const extraCharge = Number(client.extraCharge) || 0;
+            const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+            const discount = Number(client.discount) || 0;
+            const paidAmount = calculatePaidAmount(client);
+            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const balance = Math.max(0, totalExpected - paidAmount);
+
+            document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
+            document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
+            
+            document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+
+            const balanceEl = document.getElementById('modal-balance');
+            if (client.status === 'Completed' || balance <= 0) {
+                balanceEl.innerText = 'Fully Paid';
+                balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
+            } else {
+                balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
+                balanceEl.className = 'font-bold text-xl text-accentPrimary';
+            }
+
+            let instHtml = '';
+            if (client.installments && client.installments.length > 0) {
+                instHtml = client.installments.map(i => {
+                    const isPaid = i.status === 'Paid' || client.status === 'Completed';
+                    const displayStatus = client.status === 'Completed' ? 'Paid' : i.status;
+                    return `
+                    <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
+                            <p class="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><i class="ph ph-calendar-blank"></i> ${i.date ? new Date(i.date).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'}) : 'No due date'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
+                            <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${isPaid ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${displayStatus}</span>
+                        </div>
+                    </div>
+                `}).join('');
+            } else {
+                instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded for this client.</p>';
+            }
+            document.getElementById('modal-installments-list').innerHTML = instHtml;
+
+            const tasksList = document.getElementById('modal-tasks-list');
+            const progressEl = document.getElementById('modal-task-progress');
+            if (tasksList) {
+                if (client.tasks && client.tasks.length > 0) {
+                    const completedCount = client.tasks.filter(t => t.completed).length;
+                    if(progressEl) progressEl.innerText = `${completedCount}/${client.tasks.length}`;
+                    
+                    tasksList.innerHTML = client.tasks.map((t, index) => `
+                        <div class="flex items-start gap-3 p-2.5 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group">
+                            <input type="checkbox" id="task-${client.id}-${index}" ${t.completed ? 'checked' : ''} 
+                                   onchange="toggleTaskStatus('${client.id}', ${index}, this)"
+                                   class="mt-0.5 w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer shrink-0">
+                            <label for="task-${client.id}-${index}" class="text-sm flex-1 cursor-pointer transition-colors ${t.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200 group-hover:text-accentPrimary'}">${t.text}</label>
+                        </div>
+                    `).join('');
+                } else {
+                    if(progressEl) progressEl.innerText = `0/0`;
+                    tasksList.innerHTML = '<p class="text-xs text-gray-500 italic">No tasks added for this project.</p>';
+                }
+            }
+
+            document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
+            document.getElementById('modal-notes').innerText = client.notes || 'No general notes provided.';
+            
+            const statusEl = document.getElementById('modal-status');
+            statusEl.innerText = client.status;
+            statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
+            
+            const addedByEl = document.getElementById('modal-added-by');
+            if (client.addedByName || client.addedByEmail) {
+                addedByEl.innerText = `Added by: ${client.addedByName || client.addedByEmail}`;
+                addedByEl.classList.remove('hidden');
+            } else {
+                addedByEl.classList.add('hidden');
+            }
+            
+            const cleanPhone = client.phone.replace(/[^0-9]/g, '');
+            document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+            
+            const invoiceBtn = document.getElementById('modal-invoice-btn');
+            if (invoiceBtn) {
+                invoiceBtn.onclick = () => openInvoiceModal(id);
+            }
+
+            const emailInvoiceBtn = document.getElementById('modal-email-invoice-btn');
+            if (emailInvoiceBtn) {
+                if (client.email && client.email.trim() !== '') {
+                    emailInvoiceBtn.classList.remove('hidden');
+                    emailInvoiceBtn.classList.add('flex');
+                    emailInvoiceBtn.onclick = () => sendInvoiceEmail(currentOpenClientId);
+                } else {
+                    emailInvoiceBtn.classList.add('hidden');
+                    emailInvoiceBtn.classList.remove('flex');
+                }
+            }
+            
+            const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
+            const editBtn = document.getElementById('modal-edit-btn');
+            if (canEdit) {
+                editBtn.classList.remove('hidden');
+                editBtn.onclick = () => editClient(id);
+            } else {
+                editBtn.classList.add('hidden');
+            }
+            
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            if (isSuperAdminUser) {
+                deleteBtn.classList.remove('hidden');
+                deleteBtn.onclick = () => showDeleteModal(id);
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
+            const commentInput = document.getElementById('modal-new-comment');
+            if (commentInput) commentInput.value = '';
+            
+            const postBtn = document.getElementById('modal-post-comment-btn');
+            if (postBtn) postBtn.onclick = () => postClientComment(id);
+            
+            renderActivityLog(client);
+            if(modal) modal.classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            currentOpenClientId = null;
+            if(modal) modal.classList.add('hidden');
+        };
+
+        if(modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+        }
+
+        const logoutModal = document.getElementById('logout-modal');
+        if(logoutModal) {
+            logoutModal.addEventListener('click', (e) => {
+                if (e.target === logoutModal) hideLogoutModal();
+            });
+        }
+
+        let clientToDelete = null;
+
+        window.showDeleteModal = function(id) {
+            clientToDelete = id;
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            if(deleteModal) deleteModal.classList.remove('hidden');
+        };
+
+        window.hideDeleteModal = function() {
+            clientToDelete = null;
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            if(deleteModal) deleteModal.classList.add('hidden');
+        };
+
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        if(confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', async () => {
+                if (!clientToDelete || !isSuperAdminUser) return;
+                
+                const btn = document.getElementById('confirm-delete-btn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
+                btn.disabled = true;
+                
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
+                    await deleteDoc(docRef);
+                    showToast("Client deleted successfully.", "success");
+                    hideDeleteModal();
+                    closeModal();
+                } catch (error) {
+                    showToast("Failed to delete client.", "error");
+                } finally {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        window.sendInvoiceEmail = async function(clientId) {
+            const client = clientsList.find(c => c.id === clientId);
+            if (!client) return;
+
+            if (!client.invoiceNo) {
+                showToast("Please open the Invoice PDF first to generate an official Invoice Number.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('modal-email-invoice-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Sending...`;
+            btn.disabled = true;
+
+            const extraCharge = Number(client.extraCharge) || 0;
+            const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+            const discount = Number(client.discount) || 0;
+            const paidAmount = calculatePaidAmount(client);
+            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const balance = Math.max(0, totalExpected - paidAmount);
+
+            const templateParams = {
+                to_email: client.email,
+                to_name: client.name,
+                project_name: client.business || 'Digital Services',
+                invoice_no: client.invoiceNo,
+                total_amount: `₹${totalExpected.toLocaleString('en-IN')}`,
+                paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
+                balance_due: `₹${balance.toLocaleString('en-IN')}`,
+                due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
+                reply_to: currentUser.email
+            };
+
+            try {
+                await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
+                showToast("Invoice emailed to client successfully!", "success");
+                
+                const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                
+                await updateDoc(clientRef, {
+                    activityLog: arrayUnion({
+                        action: `Emailed invoice (${client.invoiceNo}) to ${client.email}`,
+                        performedBy: addedName,
+                        timestamp: Date.now(),
+                        isManual: false
+                    })
+                });
+
+                renderActivityLog(client);
+
+            } catch (error) {
+                console.error("EmailJS Error:", error);
+                showToast("Failed to send email. Check console.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        };
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
+            let icon = 'ph-info';
+            if (type === 'success') {
+                bgClass = 'bg-green-500 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500 text-white';
+                icon = 'ph-warning-circle';
+            }
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+
+        window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
+            const client = isRequestData 
+                ? clientIdentifier 
+                : clientsList.find(c => c.id === clientIdentifier);
+
+            if (!client) return;
+
+            let invoiceNo = client.invoiceNo;
+            
+            if (!invoiceNo) {
+                if (!isSuperAdminUser) {
+                    showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
+                    return;
+                }
+                
+                try {
+                    const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
+                    const counterSnap = await getDoc(counterRef);
+                    let currentCount = 1;
+                    
+                    if (counterSnap.exists()) {
+                        currentCount = counterSnap.data().current || 1;
+                    }
+                    
+                    invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
+                    
+                    await setDoc(counterRef, { current: currentCount + 1 });
+                    
+                    if (client.id) {
+                        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
+                        await updateDoc(clientRef, { invoiceNo: invoiceNo });
+                    }
+                    
+                    client.invoiceNo = invoiceNo; 
+                } catch (err) {
+                    console.error("Counter Error:", err);
+                    showToast("Failed to assign official invoice number.", "error");
+                    const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
+                    invoiceNo = `FD-${createdAtStr.slice(-6)}`;
+                }
+            }
+            
+            setElText('inv-no', invoiceNo);
+            setElText('inv-date', new Date().toLocaleDateString('en-IN'));
+            setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
+            setElText('inv-client-name', client.name);
+            setElText('inv-client-business', client.business || 'N/A');
+            setElText('inv-client-address', client.address || 'Address not provided');
+            setElText('inv-client-phone', client.phone);
+            setElText('inv-client-email', client.email || 'N/A');
+
+            const deliveryDaysEl = document.getElementById('inv-delivery-days');
+            if (deliveryDaysEl) {
+                if (client.deadline) {
+                    const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
+                } else {
+                    deliveryDaysEl.innerText = '7 - 14';
+                }
+            }
+
+            const tbody = document.getElementById('inv-table-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                let subtotal = 0;
+
+                const addRow = (desc, amount) => {
+                    if (amount > 0) {
+                        subtotal += amount;
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-gray-50';
+                        tr.innerHTML = `
+                            <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
+                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
+                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                            <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                };
+
+                addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
+                addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
+                addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
+
+                const discount = Number(client.discount) || 0;
+                const total = Math.max(0, subtotal - discount);
+                const paidAmount = calculatePaidAmount(client);
+                const balance = Math.max(0, total - paidAmount);
+
+                setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
+                setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
+                setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
+                setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
+                setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
+
+                const stamp = document.getElementById('inv-paid-stamp');
+                if (stamp) {
+                    if ((balance <= 0 && total > 0) || client.status === 'Completed') {
+                        stamp.classList.remove('hidden');
+                    } else {
+                        stamp.classList.add('hidden');
+                    }
+                }
+            }
+
+            const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
+            const milestonesList = document.getElementById('inv-milestones-list');
+            
+            if (milestonesWrapper && milestonesList) {
+                milestonesList.innerHTML = '';
+                if (client.installments && client.installments.length > 0) {
+                    milestonesWrapper.classList.remove('hidden');
+                    client.installments.forEach(inst => {
+                        const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
+                        const isPaid = inst.status === 'Paid' || client.status === 'Completed';
+                        const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
+                        
+                        const row = document.createElement('div');
+                        row.className = 'flex justify-between text-xs text-gray-600';
+                        row.innerHTML = `
+                            <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
+                            <span class="w-1/4">${dateText}</span>
+                            <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                        `;
+                        milestonesList.appendChild(row);
+                    });
+                } else if (client.advance > 0) {
+                    milestonesWrapper.classList.remove('hidden');
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between text-xs text-gray-600';
+                    row.innerHTML = `
+                        <span class="w-1/2 font-medium">Advance Payment</span>
+                        <span class="w-1/4">-</span>
+                        <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
+                    `;
+                    milestonesList.appendChild(row);
+                } else {
+                    milestonesWrapper.classList.add('hidden');
+                }
+            }
+
+            window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
+
+            const invModal = document.getElementById('invoice-modal');
+            if (invModal) {
+                invModal.classList.remove('hidden');
+                invModal.classList.add('flex');
+            } else {
+                showToast('Invoice layout structure is missing.', 'error');
+            }
+        };
+
+        window.closeInvoiceModal = function() {
+            const invModal = document.getElementById('invoice-modal');
+            if (invModal) {
+                invModal.classList.add('hidden');
+                invModal.classList.remove('flex');
+            }
+        };
+
+        window.downloadInvoicePDF = function() {
+            const element = document.getElementById('invoice-content');
+            const btn = document.getElementById('btn-download-pdf');
+            
+            if (!element) {
+                showToast('Cannot find invoice content.', 'error');
+                return;
+            }
+
+            const opt = {
+                margin:       0,
+                filename:     window.currentInvoiceFilename || 'Falconix_Invoice.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            let originalHtml = '';
+            if (btn) {
+                originalHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating...`;
+                btn.disabled = true;
+            }
+
+            try {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    if (btn) {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }
+                    showToast('Invoice PDF Downloaded Successfully!', 'success');
+                }).catch(err => {
+                    if (btn) {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }
+                    showToast('Error saving PDF file.', 'error');
+                });
+            } catch(err) {
+                showToast('PDF Library failed to load.', 'error');
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        function updateRequestsBadge() {
+            if (!isSuperAdminUser) return;
+            
+            const pendingCount = requestsList.filter(r => r.status === 'Pending').length;
+            const badge = document.getElementById('nav-badge-requests');
+            
+            if (badge) {
+                badge.innerText = pendingCount > 9 ? '9+' : pendingCount;
+                if (pendingCount > 0) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        function renderRequestsTable() {
+            const tbody = document.getElementById('requests-tbody');
+            const emptyState = document.getElementById('requests-empty-state');
+            if(!tbody || !emptyState) return;
+            
+            const theadTr = tbody.previousElementSibling.querySelector('tr');
+            
+            const titleEl = document.querySelector('#view-requests h2');
+            const descEl = document.querySelector('#view-requests p');
+            
+            tbody.innerHTML = '';
+            
+            let visibleReqs = [];
+            if (isSuperAdminUser) {
+                if(titleEl) titleEl.innerText = "Pending Requests";
+                if(descEl) descEl.innerText = "Review client additions and updates from the team.";
+                visibleReqs = requestsList.filter(r => r.status === 'Pending').sort((a,b) => b.createdAt - a.createdAt);
+                
+                theadTr.innerHTML = `
+                    <th class="p-3 md:p-4 font-medium">Requested By</th>
+                    <th class="p-3 md:p-4 font-medium">Type</th>
+                    <th class="p-3 md:p-4 font-medium">Client Name</th>
+                    <th class="p-3 md:p-4 font-medium text-right">Actions</th>
+                `;
+            } else {
+                if(titleEl) titleEl.innerText = "My Requests";
+                if(descEl) descEl.innerText = "Track the status of your submitted clients and updates.";
+                visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
+                
+                theadTr.innerHTML = `
+                    <th class="p-3 md:p-4 font-medium">Name & Contact</th>
+                    <th class="p-3 md:p-4 font-medium">Business Detail</th>
+                    <th class="p-3 md:p-4 font-medium">Finance Status</th>
+                    <th class="p-3 md:p-4 font-medium">Req Status</th>
+                    <th class="p-3 md:p-4 font-medium text-right">Actions</th>
+                `;
+            }
+
+            if (visibleReqs.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                
+                if (isSuperAdminUser) {
+                    const h3 = emptyState.querySelector('h3');
+                    const p = emptyState.querySelector('p');
+                    if(h3) h3.innerText = "All caught up!";
+                    if(p) p.innerText = "There are no pending requests to review.";
+                } else {
+                    const h3 = emptyState.querySelector('h3');
+                    const p = emptyState.querySelector('p');
+                    if(h3) h3.innerText = "No requests";
+                    if(p) p.innerText = "You haven't submitted any requests yet.";
+                }
+            } else {
+                tbody.parentElement.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                
+                visibleReqs.forEach(req => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+                    
+                    const liveClient = clientsList.find(c => c.id === req.targetClientId);
+                    
+                    const clientToRender = liveClient ? liveClient : req.clientData;
+                    const clientName = clientToRender.name;
+                    
+                    if (isSuperAdminUser) {
+                        const col1Html = `
+                            <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
+                        `;
+                        const col4Html = `
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">View</button>
+                                <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors shadow-sm">Approve</button>
+                                <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors shadow-sm">Reject</button>
+                            </div>
+                        `;
+                        tr.innerHTML = `
+                            <td class="p-3 md:p-4">${col1Html}</td>
+                            <td class="p-3 md:p-4">
+                                <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
+                            </td>
+                            <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${clientName}</td>
+                            <td class="p-3 md:p-4 text-right">${col4Html}</td>
+                        `;
+                    } else {
+                        const expected = Math.max(0, (Number(clientToRender.price) || 0) - (Number(clientToRender.discount) || 0)) + (Number(clientToRender.extraCharge) || 0) + (Number(clientToRender.maintenanceCharge) || 0);
+                        const paid = calculatePaidAmount(clientToRender);
+                        const balance = Math.max(0, expected - paid);
+
+                        let financeHtml = `<div>
+                            <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
+                            ${clientToRender.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                        </div>`;
+                        
+                        let statusColor = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500';
+                        if(req.status === 'Approved') statusColor = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500';
+                        if(req.status === 'Rejected') statusColor = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500';
+
+                        const col4Html = `
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="event.stopPropagation(); viewRequestDetails('${req.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
+                                    <i class="ph ph-eye text-base md:text-lg"></i>
+                                </button>
+                                <a href="https://wa.me/${clientToRender.phone.replace(/[^0-9]/g, '')}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
+                                    <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
+                                </a>
+                                ${req.status === 'Pending' ? `<button onclick="event.stopPropagation(); window.editRequestFromTable('${req.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Edit Request">
+                                    <i class="ph ph-pencil-simple text-base md:text-lg"></i>
+                                </button>` : ''}
+                            </div>
+                        `;
+                        
+                        tr.innerHTML = `
+                            <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                                <div class="flex items-center gap-2 md:gap-3">
+                                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm md:text-base shrink-0 border border-gray-300 dark:border-transparent">
+                                        ${clientName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900 dark:text-gray-200 text-sm md:text-base">${clientName}</p>
+                                        <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500 flex items-center gap-1"><i class="ph ph-phone"></i> ${clientToRender.phone}</p>
+                                        <span class="mt-1 inline-block px-2 py-0.5 rounded text-[9px] font-bold ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type} REQ</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3 md:p-4 cursor-pointer text-xs md:text-sm text-gray-700 dark:text-gray-300" onclick="viewRequestDetails('${req.id}')">
+                                <p class="font-medium">${clientToRender.business || 'N/A'}</p>
+                                <p class="text-[10px] md:text-xs text-gray-500">${clientToRender.website}</p>
+                            </td>
+                            <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                                ${financeHtml}
+                            </td>
+                            <td class="p-3 md:p-4 cursor-pointer" onclick="viewRequestDetails('${req.id}')">
+                                <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium block w-max mb-1 ${statusColor}">${req.status}</span>
+                                <p class="text-[10px] md:text-xs text-gray-500 mt-1">${new Date(req.createdAt).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>
+                            </td>
+                            <td class="p-3 md:p-4 text-right">
+                                ${col4Html}
+                            </td>
+                        `;
+                    }
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        window.viewRequestDetails = function(reqId) {
+            const req = requestsList.find(r => r.id === reqId);
+            if(!req) return;
+            
+            let client = clientsList.find(c => c.id === req.targetClientId);
+            
+            if (!client) {
+                client = req.clientData;
+            }
+            
+            currentOpenClientId = client.id || req.targetClientId; 
+            
+            document.getElementById('modal-name').innerText = client.name + ` (${req.type} Request)`;
+            document.getElementById('modal-business').innerText = client.business || 'N/A';
+            document.getElementById('modal-phone').innerText = client.phone;
+            document.getElementById('modal-email').innerText = client.email || 'N/A';
+            document.getElementById('modal-address').innerText = client.address || 'N/A';
+            document.getElementById('modal-website').innerText = client.website;
+            document.getElementById('modal-source').innerText = client.source || 'N/A';
+            
+            const urlEl = document.getElementById('modal-website-url');
+            if (client.websiteUrl) {
+                urlEl.innerText = client.websiteUrl;
+                urlEl.href = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+                urlEl.classList.add('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+                urlEl.classList.remove('text-gray-900', 'dark:text-gray-200');
+            } else {
+                urlEl.innerText = 'Not provided';
+                urlEl.removeAttribute('href');
+                urlEl.classList.remove('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+                urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
+            }
+            
+            const extraCharge = Number(client.extraCharge) || 0;
+            const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+            const discount = Number(client.discount) || 0;
+            const paidAmount = calculatePaidAmount(client);
+            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const balance = Math.max(0, totalExpected - paidAmount);
+
+            document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
+            document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
+            document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+
+            const balanceEl = document.getElementById('modal-balance');
+            if (client.status === 'Completed' || balance <= 0) {
+                balanceEl.innerText = 'Fully Paid';
+                balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
+            } else {
+                balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
+                balanceEl.className = 'font-bold text-xl text-accentPrimary';
+            }
+
+            let instHtml = '';
+            if (client.installments && client.installments.length > 0) {
+                instHtml = client.installments.map(i => {
+                    const isPaid = i.status === 'Paid' || client.status === 'Completed';
+                    const displayStatus = client.status === 'Completed' ? 'Paid' : i.status;
+                    return `
+                    <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
+                            <p class="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><i class="ph ph-calendar-blank"></i> ${i.date ? new Date(i.date).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'}) : 'No due date'}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
+                            <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${isPaid ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${displayStatus}</span>
+                        </div>
+                    </div>
+                `}).join('');
+            } else {
+                instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded.</p>';
+            }
+            document.getElementById('modal-installments-list').innerHTML = instHtml;
+
+            const tasksList = document.getElementById('modal-tasks-list');
+            const progressEl = document.getElementById('modal-task-progress');
+            if (tasksList) {
+                if (client.tasks && client.tasks.length > 0) {
+                    const completedCount = client.tasks.filter(t => t.completed).length;
+                    if(progressEl) progressEl.innerText = `${completedCount}/${client.tasks.length}`;
+                    
+                    tasksList.innerHTML = client.tasks.map((t, index) => `
+                        <div class="flex items-start gap-3 p-2.5 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group">
+                            <input type="checkbox" disabled ${t.completed ? 'checked' : ''} 
+                                   class="mt-0.5 w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer shrink-0">
+                            <label class="text-sm flex-1 cursor-pointer transition-colors ${t.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200 group-hover:text-accentPrimary'}">${t.text}</label>
+                        </div>
+                    `).join('');
+                } else {
+                    if(progressEl) progressEl.innerText = `0/0`;
+                    tasksList.innerHTML = '<p class="text-xs text-gray-500 italic">No tasks added for this project.</p>';
+                }
+            }
+
+            document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
+            document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
+            
+            const statusEl = document.getElementById('modal-status');
+            statusEl.innerText = client.status;
+            statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
+            
+            const addedByEl = document.getElementById('modal-added-by');
+            if (req.requestedByName) {
+                addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
+                addedByEl.classList.remove('hidden');
+            } else {
+                addedByEl.classList.add('hidden');
+            }
+            
+            const cleanPhone = client.phone.replace(/[^0-9]/g, '');
+            const whatsappEl = document.getElementById('modal-whatsapp');
+            if(whatsappEl) whatsappEl.href = `https://wa.me/${cleanPhone}`;
+            
+            const invoiceBtn = document.getElementById('modal-invoice-btn');
+            if(invoiceBtn) {
+                invoiceBtn.classList.remove('hidden');
+                invoiceBtn.onclick = () => openInvoiceModal(currentOpenClientId); 
+            }
+            
+            const emailInvoiceBtn = document.getElementById('modal-email-invoice-btn');
+            if (emailInvoiceBtn) {
+                if (client.email && client.email.trim() !== '') {
+                    emailInvoiceBtn.classList.remove('hidden');
+                    emailInvoiceBtn.classList.add('flex');
+                    emailInvoiceBtn.onclick = () => sendInvoiceEmail(currentOpenClientId);
+                } else {
+                    emailInvoiceBtn.classList.add('hidden');
+                    emailInvoiceBtn.classList.remove('flex');
+                }
+            }
+            
+            const editBtn = document.getElementById('modal-edit-btn');
+            const canEditReq = isSuperAdminUser || (req.requestedByEmail === currentUser.email && req.status === 'Pending');
+            if (canEditReq) {
+                editBtn.classList.remove('hidden');
+                editBtn.onclick = () => {
+                    closeModal();
+                    populateFormWithClientData(req.clientData, req.targetClientId);
+                };
+            } else {
+                editBtn.classList.add('hidden');
+            }
+            
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            if(deleteBtn) deleteBtn.classList.add('hidden');
+            
+            renderActivityLog(client);
+            if(modal) modal.classList.remove('hidden');
+        };
+
+        window.approveReq = async function(reqId) {
+            const req = requestsList.find(r => r.id === reqId);
+            if(!req) return;
+            try {
+                const approvedClientData = { ...req.clientData };
+                
+                const liveClient = clientsList.find(c => c.id === req.targetClientId);
+                if (liveClient) {
+                    approvedClientData.activityLog = liveClient.activityLog || [];
+                    approvedClientData.tasks = liveClient.tasks || [];
+                    approvedClientData.createdAt = liveClient.createdAt; 
+                    
+                    if (liveClient.invoiceNo) approvedClientData.invoiceNo = liveClient.invoiceNo;
+                    if (liveClient.completedAt) approvedClientData.completedAt = liveClient.completedAt;
+                } else {
+                    approvedClientData.activityLog = approvedClientData.activityLog || [];
+                }
+
+                approvedClientData.activityLog.push({
+                    action: `Approved the update request`,
+                    performedBy: ADMIN_NAMES[currentUser.email.toLowerCase()] || "Super Admin",
+                    timestamp: Date.now(),
+                    isManual: false
+                });
+
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', req.targetClientId);
+                await setDoc(clientRef, approvedClientData);
+                
+                const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
+                await updateDoc(reqRef, { status: 'Approved' });
+
+                const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+                await setDoc(notifRef, {
+                    recipientEmail: 'all',
+                    message: `${req.requestedByName}'s request to ${req.type.toLowerCase()} client "${req.clientData.name}" was approved!`,
+                    readBy: [],
+                    createdAt: Date.now(),
+                    type: 'success'
+                });
+
+                showToast("Request Approved Successfully", "success");
+            } catch(e) { 
+                showToast("Error approving request", "error"); 
+            }
+        };
+
+        window.rejectReq = async function(reqId) {
+            const req = requestsList.find(r => r.id === reqId);
+            if(!req) return;
+            try {
+                const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
+                await updateDoc(reqRef, { status: 'Rejected' });
+
+                const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+                await setDoc(notifRef, {
+                    recipientEmail: 'all',
+                    message: `${req.requestedByName}'s request to ${req.type.toLowerCase()} client "${req.clientData.name}" was rejected.`,
+                    readBy: [],
+                    createdAt: Date.now(),
+                    type: 'error'
+                });
+
+                showToast("Request Rejected", "info");
+            } catch(e) { 
+                showToast("Error rejecting request", "error"); 
+            }
+        };
+
+        function renderNotifications() {
+            const myNotifs = notificationsList
+                .sort((a,b) => b.createdAt - a.createdAt);
+
+            const unreadCount = myNotifs.filter(n => n.readBy ? !n.readBy.includes(currentUser.email) : !n.read).length;
+            const badge = document.getElementById('nav-badge-notifications');
+            if (badge) {
+                badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                if (unreadCount > 0) badge.classList.remove('hidden');
+                else badge.classList.add('hidden');
+            }
+
+            const listEl = document.getElementById('notifications-list');
+            const emptyEl = document.getElementById('notifications-empty-state');
+            if (!listEl || !emptyEl) return;
+
+            listEl.innerHTML = '';
+            if (myNotifs.length === 0) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+            } else {
+                emptyEl.classList.add('hidden');
+                emptyEl.classList.remove('flex');
+                myNotifs.forEach(n => {
+                    const isRead = n.readBy ? n.readBy.includes(currentUser.email) : n.read;
+                    const div = document.createElement('div');
+                    div.className = `p-3 md:p-4 rounded-xl border ${isRead ? 'bg-gray-50/50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-800' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/30'} flex items-start gap-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50`;
+                    div.onclick = () => markNotificationRead(n.id, isRead);
+                    
+                    const iconColor = n.type === 'success' ? 'text-green-500' : (n.type === 'error' ? 'text-red-500' : 'text-blue-500');
+                    const iconClass = n.type === 'success' ? 'ph-check-circle' : (n.type === 'error' ? 'ph-x-circle' : 'ph-info');
+
+                    div.innerHTML = `
+                        <i class="ph ${iconClass} text-xl ${iconColor} mt-0.5 shrink-0"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium ${isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'}">${n.message}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500 mt-1">${new Date(n.createdAt).toLocaleString('en-IN')}</p>
+                        </div>
+                        ${!isRead ? '<div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>' : ''}
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
+        }
+
+        window.markNotificationRead = async function(id, isRead) {
+            if (isRead) return; 
+            try {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', id);
+                await updateDoc(ref, { 
+                    readBy: arrayUnion(currentUser.email),
+                    read: true 
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
+        window.markAllNotificationsRead = async function() {
+            const unread = notificationsList.filter(n => n.readBy ? !n.readBy.includes(currentUser.email) : !n.read);
+            if (unread.length === 0) return;
+            try {
+                const promises = unread.map(n => {
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', n.id);
+                    return updateDoc(ref, { 
+                        readBy: arrayUnion(currentUser.email),
+                        read: true
+                    });
+                });
+                await Promise.all(promises);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
 </body>
 </html>
