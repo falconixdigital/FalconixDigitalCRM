@@ -2899,10 +2899,10 @@
         let clientToDelete = null;
 
         window.showDeleteModal = function(id) {
-            clientToDelete = id;
-            const deleteModal = document.getElementById('delete-confirm-modal');
-            if(deleteModal) deleteModal.classList.remove('hidden');
-        };
+    clientToDelete = id;
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    if(deleteModal) deleteModal.classList.remove('hidden');
+};
 
         window.hideDeleteModal = function() {
             clientToDelete = null;
@@ -3014,14 +3014,92 @@
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
-        const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-        window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
+window.sendInvoiceEmail = async function(clientId) {
+    const client = clientsList.find(c => c.id === clientId);
+    if (!client) return;
+
+    if (!client.invoiceNo) {
+        showToast("Please open the Invoice PDF first to generate an official Invoice Number.", "error");
+        return;
+    }
+
+    const btn = document.getElementById('modal-email-invoice-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Sending Email...`;
+    btn.disabled = true;
+
+    // Calculate financials
+    const extraCharge = Number(client.extraCharge) || 0;
+    const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+    const discount = Number(client.discount) || 0;
+    const paidAmount = calculatePaidAmount(client);
+    const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+    const balance = Math.max(0, totalExpected - paidAmount);
+
+    // Map your template variables WITHOUT the PDF
+    const templateParams = {
+        to_email: client.email,
+        to_name: client.name,
+        project_name: client.business || 'Digital Services',
+        invoice_no: client.invoiceNo,
+        total_amount: `₹${totalExpected.toLocaleString('en-IN')}`,
+        paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
+        balance_due: `₹${balance.toLocaleString('en-IN')}`,
+        due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
+        reply_to: currentUser.email,
+        
+        // Detailed Variables
+        client_website: client.websiteUrl || 'Not provided',
+        client_address: client.address || 'Address not provided',
+        client_phone: client.phone || 'N/A',
+        client_email: client.email || 'N/A',
+        base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
+        discount_amount: `₹${discount.toLocaleString('en-IN')}`,
+        extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
+        maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
+        falconix_address: 'Motihari, Bihar, India',
+        falconix_phone: '+91 86370 28337',
+        falconix_email: 'digitalfalconix@gmail.com',
+        falconix_website: 'falconixdigital.netlify.app'
+    };
+
+    try {
+        await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
+        showToast("Invoice details emailed successfully!", "success");
+        
+        // Log the action in the client's activity history
+        const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
+        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+        
+        await updateDoc(clientRef, {
+            activityLog: arrayUnion({
+                action: `Emailed invoice details (${client.invoiceNo}) to ${client.email}`,
+                performedBy: addedName,
+                timestamp: Date.now(),
+                isManual: false
+            })
+        });
+
+        // Refresh the activity log UI
+        renderActivityLog(client);
+
+    } catch (error) {
+        console.error("EmailJS Error:", error);
+        showToast("Failed to send email. Check console.", "error");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+};
+
+window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
             const client = isRequestData 
                 ? clientIdentifier 
                 : clientsList.find(c => c.id === clientIdentifier);
@@ -3035,138 +3113,11 @@
                     showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
                     return;
                 }
-                
-                try {
-                    const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
-                    const counterSnap = await getDoc(counterRef);
-                    let currentCount = 1;
-                    
-                    if (counterSnap.exists()) {
-                        currentCount = counterSnap.data().current || 1;
-                    }
-                    
-                    invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
-                    
-                    await setDoc(counterRef, { current: currentCount + 1 });
-                    
-                    if (client.id) {
-                        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
-                        await updateDoc(clientRef, { invoiceNo: invoiceNo });
-                    }
-                    
-                    client.invoiceNo = invoiceNo; 
-                } catch (err) {
-                    console.error("Counter Error:", err);
-                    showToast("Failed to assign official invoice number.", "error");
-                    const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
-                    invoiceNo = `FD-${createdAtStr.slice(-6)}`;
-                }
-            }
-            
-            setElText('inv-no', invoiceNo);
-            setElText('inv-date', new Date().toLocaleDateString('en-IN'));
-            setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
-            setElText('inv-client-name', client.name);
-            setElText('inv-client-business', client.business || 'N/A');
-            setElText('inv-client-address', client.address || 'Address not provided');
-            setElText('inv-client-phone', client.phone);
-            setElText('inv-client-email', client.email || 'N/A');
+    }
 
-            const deliveryDaysEl = document.getElementById('inv-delivery-days');
-            if (deliveryDaysEl) {
-                if (client.deadline) {
-                    const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
-                } else {
-                    deliveryDaysEl.innerText = '7 - 14';
-                }
-            }
+    window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
 
-            const tbody = document.getElementById('inv-table-body');
-            if (tbody) {
-                tbody.innerHTML = '';
-                let subtotal = 0;
-
-                const addRow = (desc, amount) => {
-                    if (amount > 0) {
-                        subtotal += amount;
-                        const tr = document.createElement('tr');
-                        tr.className = 'hover:bg-gray-50';
-                        tr.innerHTML = `
-                            <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
-                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
-                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-                            <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    }
-                };
-
-                addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
-                addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
-                addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
-
-                const discount = Number(client.discount) || 0;
-                const total = Math.max(0, subtotal - discount);
-                const paidAmount = calculatePaidAmount(client);
-                const balance = Math.max(0, total - paidAmount);
-
-                setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
-                setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
-                setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
-                setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
-                setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
-
-                const stamp = document.getElementById('inv-paid-stamp');
-                if (stamp) {
-                    if ((balance <= 0 && total > 0) || client.status === 'Completed') {
-                        stamp.classList.remove('hidden');
-                    } else {
-                        stamp.classList.add('hidden');
-                    }
-                }
-            }
-
-            const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
-            const milestonesList = document.getElementById('inv-milestones-list');
-            
-            if (milestonesWrapper && milestonesList) {
-                milestonesList.innerHTML = '';
-                if (client.installments && client.installments.length > 0) {
-                    milestonesWrapper.classList.remove('hidden');
-                    client.installments.forEach(inst => {
-                        const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
-                        const isPaid = inst.status === 'Paid' || client.status === 'Completed';
-                        const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
-                        
-                        const row = document.createElement('div');
-                        row.className = 'flex justify-between text-xs text-gray-600';
-                        row.innerHTML = `
-                            <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
-                            <span class="w-1/4">${dateText}</span>
-                            <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
-                        `;
-                        milestonesList.appendChild(row);
-                    });
-                } else if (client.advance > 0) {
-                    milestonesWrapper.classList.remove('hidden');
-                    const row = document.createElement('div');
-                    row.className = 'flex justify-between text-xs text-gray-600';
-                    row.innerHTML = `
-                        <span class="w-1/2 font-medium">Advance Payment</span>
-                        <span class="w-1/4">-</span>
-                        <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
-                    `;
-                    milestonesList.appendChild(row);
-                } else {
-                    milestonesWrapper.classList.add('hidden');
-                }
-            }
-
-            window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
-
-            const invModal = document.getElementById('invoice-modal');
+    const invModal = document.getElementById('invoice-modal');
             if (invModal) {
                 invModal.classList.remove('hidden');
                 invModal.classList.add('flex');
