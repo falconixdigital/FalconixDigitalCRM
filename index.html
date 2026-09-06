@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital CRM - Secure Login</title>
     <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("URukXHeFeG29YjKpl");
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -36,7 +42,6 @@
             }
         }
     </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
@@ -871,10 +876,10 @@
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
                 <button id="modal-email-invoice-btn" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors items-center justify-center gap-2 shadow-sm">
-                    <i class="ph ph-envelope-simple text-xl"></i> Email Invoice
+                    <i class="ph ph-envelope-simple text-xl"></i> Email Details
                 </button>
                 <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-gray-800 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
-                    <i class="ph ph-file-pdf text-xl"></i> PDF Invoice
+                    <i class="ph ph-file-pdf text-xl"></i> Invoice
                 </button>
                 <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
@@ -894,12 +899,9 @@
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
                 <i class="ph ph-x-circle text-2xl"></i> Close
             </button>
-            
-            <div class="flex gap-2">
-                <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
-                    <i class="ph ph-download-simple text-xl"></i> <span class="hidden sm:inline">Download PDF</span>
-                </button>
-            </div>
+            <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                <i class="ph ph-download-simple text-xl"></i> Download PDF
+            </button>
         </div>
 
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
@@ -1100,11 +1102,6 @@
         </div>
     </div>
 
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("URukXHeFeG29YjKpl");
-        })();
-    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
@@ -2464,7 +2461,6 @@
                 timeout = setTimeout(later, wait);
             };
         }
-        
         const debouncedSearch = debounce(() => renderClientTable(true), 300);
         function renderClientTable(resetPage = false) {
             if (resetPage) currentPage = 1;
@@ -2899,10 +2895,10 @@
         let clientToDelete = null;
 
         window.showDeleteModal = function(id) {
-    clientToDelete = id;
-    const deleteModal = document.getElementById('delete-confirm-modal');
-    if(deleteModal) deleteModal.classList.remove('hidden');
-};
+            clientToDelete = id;
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            if(deleteModal) deleteModal.classList.remove('hidden');
+        };
 
         window.hideDeleteModal = function() {
             clientToDelete = null;
@@ -2935,6 +2931,32 @@
             });
         }
 
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
+            let icon = 'ph-info';
+            if (type === 'success') {
+                bgClass = 'bg-green-500 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500 text-white';
+                icon = 'ph-warning-circle';
+            }
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+
         window.sendInvoiceEmail = async function(clientId) {
             const client = clientsList.find(c => c.id === clientId);
             if (!client) return;
@@ -2965,19 +2987,31 @@
                 paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
                 balance_due: `₹${balance.toLocaleString('en-IN')}`,
                 due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
-                reply_to: currentUser.email
+                reply_to: currentUser.email,
+                client_website: client.websiteUrl || 'Not provided',
+                client_address: client.address || 'Address not provided',
+                client_phone: client.phone || 'N/A',
+                client_email: client.email || 'N/A',
+                base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
+                discount_amount: `₹${discount.toLocaleString('en-IN')}`,
+                extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
+                maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
+                falconix_address: 'Motihari, Bihar, India',
+                falconix_phone: '+91 86370 28337',
+                falconix_email: 'digitalfalconix@gmail.com',
+                falconix_website: 'falconixdigital.netlify.app'
             };
 
             try {
                 await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
-                showToast("Invoice emailed to client successfully!", "success");
+                showToast("Invoice details emailed successfully!", "success");
                 
                 const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
                 const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
                 
                 await updateDoc(clientRef, {
                     activityLog: arrayUnion({
-                        action: `Emailed invoice (${client.invoiceNo}) to ${client.email}`,
+                        action: `Emailed invoice details (${client.invoiceNo}) to ${client.email}`,
                         performedBy: addedName,
                         timestamp: Date.now(),
                         isManual: false
@@ -2995,134 +3029,165 @@
             }
         };
 
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if(!container) return;
-            const toast = document.createElement('div');
-            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
-            let icon = 'ph-info';
-            if (type === 'success') {
-                bgClass = 'bg-green-500 text-white';
-                icon = 'ph-check-circle';
-            } else if (type === 'error') {
-                bgClass = 'bg-red-500 text-white';
-                icon = 'ph-warning-circle';
-            }
-            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
-            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+        window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
+            try {
+                const client = isRequestData 
+                    ? clientIdentifier 
+                    : clientsList.find(c => c.id === clientIdentifier);
 
-const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
-
-window.sendInvoiceEmail = async function(clientId) {
-    const client = clientsList.find(c => c.id === clientId);
-    if (!client) return;
-
-    if (!client.invoiceNo) {
-        showToast("Please open the Invoice PDF first to generate an official Invoice Number.", "error");
-        return;
-    }
-
-    const btn = document.getElementById('modal-email-invoice-btn');
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Sending Email...`;
-    btn.disabled = true;
-
-    // Calculate financials
-    const extraCharge = Number(client.extraCharge) || 0;
-    const maintenanceCharge = Number(client.maintenanceCharge) || 0;
-    const discount = Number(client.discount) || 0;
-    const paidAmount = calculatePaidAmount(client);
-    const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
-    const balance = Math.max(0, totalExpected - paidAmount);
-
-    // Map your template variables WITHOUT the PDF
-    const templateParams = {
-        to_email: client.email,
-        to_name: client.name,
-        project_name: client.business || 'Digital Services',
-        invoice_no: client.invoiceNo,
-        total_amount: `₹${totalExpected.toLocaleString('en-IN')}`,
-        paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
-        balance_due: `₹${balance.toLocaleString('en-IN')}`,
-        due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
-        reply_to: currentUser.email,
-        
-        // Detailed Variables added to match the new HTML template
-        client_website: client.websiteUrl || 'Not provided',
-        client_address: client.address || 'Address not provided',
-        client_phone: client.phone || 'N/A',
-        client_email: client.email || 'N/A',
-        base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
-        discount_amount: `₹${discount.toLocaleString('en-IN')}`,
-        extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
-        maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
-        falconix_address: 'Motihari, Bihar, India',
-        falconix_phone: '+91 86370 28337',
-        falconix_email: 'digitalfalconix@gmail.com',
-        falconix_website: 'falconixdigital.netlify.app'
-    };
-
-    try {
-        await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
-        showToast("Invoice details emailed successfully!", "success");
-        
-        // Log the action in the client's activity history
-        const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
-        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-        
-        await updateDoc(clientRef, {
-            activityLog: arrayUnion({
-                action: `Emailed invoice details (${client.invoiceNo}) to ${client.email}`,
-                performedBy: addedName,
-                timestamp: Date.now(),
-                isManual: false
-            })
-        });
-
-        // Refresh the activity log UI
-        renderActivityLog(client);
-
-    } catch (error) {
-        console.error("EmailJS Error:", error);
-        showToast("Failed to send email. Check console.", "error");
-    } finally {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-    }
-};
-
-window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
-            const client = isRequestData 
-                ? clientIdentifier 
-                : clientsList.find(c => c.id === clientIdentifier);
-
-            if (!client) return;
-
-            let invoiceNo = client.invoiceNo;
-            
-            if (!invoiceNo) {
-                if (!isSuperAdminUser) {
-                    showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
+                if (!client) {
+                    showToast("Error: Client data could not be loaded.", "error");
                     return;
                 }
-    }
 
-    window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
+                let invoiceNo = client.invoiceNo;
+                
+                if (!invoiceNo) {
+                    if (!isSuperAdminUser) {
+                        showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
+                        return;
+                    }
+                    
+                    try {
+                        const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
+                        const counterSnap = await getDoc(counterRef);
+                        let currentCount = 1;
+                        
+                        if (counterSnap.exists()) {
+                            currentCount = counterSnap.data().current || 1;
+                        }
+                        
+                        invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
+                        await setDoc(counterRef, { current: currentCount + 1 });
+                        
+                        if (client.id) {
+                            const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
+                            await updateDoc(clientRef, { invoiceNo: invoiceNo });
+                        }
+                        
+                        client.invoiceNo = invoiceNo; 
+                    } catch (err) {
+                        console.error("Counter Error:", err);
+                        showToast("Failed to assign official invoice number.", "error");
+                        const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
+                        invoiceNo = `FD-${createdAtStr.slice(-6)}`;
+                    }
+                }
+                
+                setElText('inv-no', invoiceNo || 'N/A');
+                setElText('inv-date', new Date().toLocaleDateString('en-IN'));
+                setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
+                setElText('inv-client-name', client.name || 'N/A');
+                setElText('inv-client-business', client.business || 'N/A');
+                setElText('inv-client-address', client.address || 'Address not provided');
+                setElText('inv-client-phone', client.phone || 'N/A');
+                setElText('inv-client-email', client.email || 'N/A');
 
-    const invModal = document.getElementById('invoice-modal');
-            if (invModal) {
-                invModal.classList.remove('hidden');
-                invModal.classList.add('flex');
-            } else {
-                showToast('Invoice layout structure is missing.', 'error');
+                const deliveryDaysEl = document.getElementById('inv-delivery-days');
+                if (deliveryDaysEl) {
+                    if (client.deadline) {
+                        const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
+                    } else {
+                        deliveryDaysEl.innerText = '7 - 14';
+                    }
+                }
+
+                const tbody = document.getElementById('inv-table-body');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    let subtotal = 0;
+
+                    const addRow = (desc, amount) => {
+                        if (amount > 0) {
+                            subtotal += amount;
+                            const tr = document.createElement('tr');
+                            tr.className = 'hover:bg-gray-50';
+                            tr.innerHTML = `
+                                <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
+                                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
+                                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                                <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        }
+                    };
+
+                    addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
+                    addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
+                    addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
+
+                    const discount = Number(client.discount) || 0;
+                    const total = Math.max(0, subtotal - discount);
+                    const paidAmount = calculatePaidAmount(client);
+                    const balance = Math.max(0, total - paidAmount);
+
+                    setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
+                    setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
+                    setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
+                    setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
+                    setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
+
+                    const stamp = document.getElementById('inv-paid-stamp');
+                    if (stamp) {
+                        if ((balance <= 0 && total > 0) || client.status === 'Completed') {
+                            stamp.classList.remove('hidden');
+                        } else {
+                            stamp.classList.add('hidden');
+                        }
+                    }
+                }
+
+                const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
+                const milestonesList = document.getElementById('inv-milestones-list');
+                
+                if (milestonesWrapper && milestonesList) {
+                    milestonesList.innerHTML = '';
+                    if (client.installments && client.installments.length > 0) {
+                        milestonesWrapper.classList.remove('hidden');
+                        client.installments.forEach(inst => {
+                            const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
+                            const isPaid = inst.status === 'Paid' || client.status === 'Completed';
+                            const statusColor = isPaid ? 'text-green-600' : 'text-red-500';
+                            
+                            const row = document.createElement('div');
+                            row.className = 'flex justify-between text-xs text-gray-600';
+                            row.innerHTML = `
+                                <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
+                                <span class="w-1/4">${dateText}</span>
+                                <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                            `;
+                            milestonesList.appendChild(row);
+                        });
+                    } else if (client.advance > 0) {
+                        milestonesWrapper.classList.remove('hidden');
+                        const row = document.createElement('div');
+                        row.className = 'flex justify-between text-xs text-gray-600';
+                        row.innerHTML = `
+                            <span class="w-1/2 font-medium">Advance Payment</span>
+                            <span class="w-1/4">-</span>
+                            <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
+                        `;
+                        milestonesList.appendChild(row);
+                    } else {
+                        milestonesWrapper.classList.add('hidden');
+                    }
+                }
+
+                const safeName = (client.name || 'Client').replace(/\s+/g, '_');
+                window.currentInvoiceFilename = `Invoice_${invoiceNo || 'Draft'}_${safeName}.pdf`;
+
+                const invModal = document.getElementById('invoice-modal');
+                if (invModal) {
+                    invModal.classList.remove('hidden');
+                    invModal.classList.add('flex');
+                } else {
+                    showToast('Invoice layout structure is missing.', 'error');
+                }
+            } catch (criticalError) {
+                console.error("Critical error in openInvoiceModal:", criticalError);
+                showToast("An error occurred while generating the invoice. Check console.", "error");
             }
         };
 
