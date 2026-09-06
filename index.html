@@ -3055,7 +3055,7 @@ window.sendInvoiceEmail = async function(clientId) {
         due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
         reply_to: currentUser.email,
         
-        // Detailed Variables
+        // Detailed Variables added to match the new HTML template
         client_website: client.websiteUrl || 'Not provided',
         client_address: client.address || 'Address not provided',
         client_phone: client.phone || 'N/A',
