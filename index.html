@@ -1415,6 +1415,12 @@
             
             (async () => {
                 try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
                     const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
                     const clientSnap = await getDoc(clientRef);
 
