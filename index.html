@@ -132,6 +132,7 @@
 </head>
 <body class="bg-lightBg text-gray-900 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
 
+    <!-- STREAMING_CHUNK:Login screen markup -->
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
         <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
             <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
@@ -147,6 +148,7 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:App layout wrapper -->
     <div id="app-wrapper" class="hidden h-[100dvh] w-full flex-col md:flex-row">
         <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
 
@@ -210,6 +212,7 @@
             </div>
         </aside>
 
+        <!-- STREAMING_CHUNK:Main content area -->
         <div class="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden relative">
             <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-300 dark:border-gray-800 z-20 shrink-0">
                 <div class="flex items-center gap-2">
@@ -237,6 +240,7 @@
                             <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentPrimary ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
+                        <!-- STREAMING_CHUNK:Dashboard stat cards -->
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
                             <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
@@ -323,6 +327,7 @@
                             </div>
                         </div>
 
+                        <!-- STREAMING_CHUNK:Recently Added & Deadlines -->
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 md:mb-10">
                             <div class="lg:col-span-2 flex flex-col">
                                 <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 dark:text-white">Recently Added</h3>
@@ -354,11 +359,12 @@
                             </div>
                         </div>
 
+                        <!-- STREAMING_CHUNK:Analytics Charts -->
                         <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 dark:text-white">Analytics Overview</h3>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-10">
                             <div class="glass p-4 md:p-6 rounded-2xl flex flex-col border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h4 class="font-bold text-gray-900 dark:text-gray-200">Monthly Revenue (Completed)</h4>
+                                    <h4 class="font-bold text-gray-900 dark:text-gray-200">Monthly Net Profit</h4>
                                     <i class="ph ph-trend-up text-accentPrimary text-xl"></i>
                                 </div>
                                 <div class="relative w-full h-[250px]">
@@ -377,6 +383,7 @@
                             </div>
                         </div>
 
+                        <!-- STREAMING_CHUNK:Team Leaderboard -->
                         <div class="mt-8 md:mt-10">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Team Performance</h3>
@@ -422,6 +429,7 @@
                         </div>
                     </section>
 
+                    <!-- STREAMING_CHUNK:Client list section -->
                     <section id="view-client-list" class="view-section">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
                             <div>
@@ -492,6 +500,7 @@
                         </div>
                     </section>
 
+                    <!-- STREAMING_CHUNK:Add client form section -->
                     <section id="view-add-client" class="view-section max-w-4xl mx-auto">
                         <div class="mb-6 md:mb-8">
                             <button onclick="navigate('client-list')" class="text-gray-600 hover:text-accentPrimary transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
@@ -552,6 +561,7 @@
 
                             <hr class="border-gray-300 dark:border-gray-800">
 
+                            <!-- STREAMING_CHUNK:Project Details inputs -->
                             <div>
                                 <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-globe text-accentPrimary"></i> Project Details & Finance</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
@@ -624,6 +634,7 @@
 
                             </div>
                             
+                            <!-- STREAMING_CHUNK:Tasks & Notes inputs -->
                             <div>
                                 <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Project Tasks</label>
                                 <div class="flex gap-2 mb-3">
@@ -647,6 +658,7 @@
                         </form>
                     </section>
 
+                    <!-- STREAMING_CHUNK:Requests section -->
                     <section id="view-requests" class="view-section">
                         <div class="mb-6 md:mb-8">
                             <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Pending Requests</h2>
@@ -677,6 +689,7 @@
                         </div>
                     </section>
 
+                    <!-- STREAMING_CHUNK:Expenses section -->
                     <section id="view-expenses" class="view-section max-w-5xl mx-auto">
                         <div class="mb-6 md:mb-8">
                             <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Agency Expenses</h2>
@@ -771,6 +784,7 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Modals -->
     <div id="toast-container" class="fixed bottom-4 md:bottom-6 right-4 md:right-6 left-4 md:left-auto z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -900,6 +914,7 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Invoice Modal -->
     <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
         <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
@@ -1061,6 +1076,7 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Logout & Delete Modals -->
     <div id="logout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
         <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
             <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
@@ -1097,6 +1113,7 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Javascript Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1296,6 +1313,7 @@
             return data;
         }
 
+        // STREAMING_CHUNK:Financial helpers
         function calculateTotalExpected(client) {
             const base = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
             const extra = (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
@@ -1305,10 +1323,9 @@
 
         function calculateRevenue(client) {
             const base = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
-            const extra = Number(client.extraCharge) || 0;
             const maint = Number(client.maintenanceCharge) || 0;
             const custom = (client.customItems || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-            return base + extra + maint + custom; 
+            return base + maint + custom; // Specifically excludes extraCharge (Domain cost)
         }
 
         function calculatePaidAmount(client) {
@@ -1567,6 +1584,7 @@
             }
         });
 
+        // STREAMING_CHUNK:Database listeners
         function setupDatabaseListener() {
             if (!currentUser) return;
             globalLoader.classList.remove('hidden');
@@ -1625,6 +1643,7 @@
                 
                 renderExpenses();
                 updateDashboardStats();
+                updateCharts();
             });
         }
 
@@ -1668,10 +1687,8 @@
             tbody.innerHTML = '';
             
             const totalManual = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
-            const totalAutoExtra = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
-            const totalCombined = totalManual + totalAutoExtra;
             
-            totalDisplay.innerHTML = `<span class="hidden sm:inline">Manual: <span class="font-bold text-gray-900 dark:text-white">₹${totalManual.toLocaleString('en-IN')}</span> | Domains: <span class="font-bold text-gray-900 dark:text-white">₹${totalAutoExtra.toLocaleString('en-IN')}</span> = </span><span class="font-bold text-red-600 dark:text-red-400">₹${totalCombined.toLocaleString('en-IN')}</span>`;
+            totalDisplay.innerHTML = `<span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span>`;
 
             if (expensesList.length === 0) {
                 tbody.parentElement.classList.add('hidden');
@@ -2111,7 +2128,7 @@
             if(completedEl) completedEl.innerText = clientsList.filter(c => c.status === 'Completed').length;
             
             const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
-                return sum + calculateRevenue(client);
+                return sum + calculateTotalExpected(client);
             }, 0);
             
             const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
@@ -2136,13 +2153,11 @@
             }
 
             const totalManualExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
-            const totalAutoExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
             
-            const totalCombinedExpenses = totalManualExpenses + totalAutoExtraCharges;
-            const trueNetProfit = totalGrossRevenue - totalCombinedExpenses;
+            const trueNetProfit = totalGrossRevenue - totalManualExpenses;
 
             const expEl = document.getElementById('stat-total-expenses');
-            if(expEl) expEl.innerText = '₹' + totalCombinedExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            if(expEl) expEl.innerText = '₹' + totalManualExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
             
             const netEl = document.getElementById('stat-net-profit');
             if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -2227,6 +2242,7 @@
             }
         }
 
+        // STREAMING_CHUNK:Chart rendering
         function updateCharts() {
             if (!document.getElementById('revenueChart')) return;
             const isDark = document.documentElement.classList.contains('dark');
@@ -2241,23 +2257,47 @@
                     label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
                     month: d.getMonth(),
                     year: d.getFullYear(),
-                    revenue: 0
+                    gross: 0,
+                    autoExp: 0,
+                    manualExp: 0,
+                    netProfit: 0
                 });
             }
+            
             const sourcesMap = {};
+            
             clientsList.forEach(client => {
                 const src = client.source || 'Referral';
                 sourcesMap[src] = (sourcesMap[src] || 0) + 1;
+                
                 if (client.status === 'Completed' && client.createdAt) {
                     const d = new Date(client.createdAt);
                     const m = d.getMonth();
                     const y = d.getFullYear();
                     const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
                     if (monthObj) {
-                        monthObj.revenue += calculateRevenue(client);
+                        monthObj.gross += calculateTotalExpected(client);
+                        monthObj.autoExp += (Number(client.extraCharge) || 0);
                     }
                 }
             });
+
+            expensesList.forEach(exp => {
+                if (exp.date) {
+                    const d = new Date(exp.date);
+                    const m = d.getMonth();
+                    const y = d.getFullYear();
+                    const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
+                    if (monthObj) {
+                        monthObj.manualExp += (Number(exp.amount) || 0);
+                    }
+                }
+            });
+
+            last6Months.forEach(m => {
+                m.netProfit = m.gross - m.manualExp - m.autoExp;
+            });
+
             const ctxRev = document.getElementById('revenueChart').getContext('2d');
             if (revenueChartInstance) revenueChartInstance.destroy();
             revenueChartInstance = new Chart(ctxRev, {
@@ -2265,11 +2305,11 @@
                 data: {
                     labels: last6Months.map(m => m.label),
                     datasets: [{
-                        label: 'Revenue (₹)',
-                        data: last6Months.map(m => m.revenue),
-                        backgroundColor: '#7C3AED',
+                        label: 'Net Profit (₹)',
+                        data: last6Months.map(m => m.netProfit),
+                        backgroundColor: '#10B981',
                         borderRadius: 6,
-                        hoverBackgroundColor: '#6D28D9',
+                        hoverBackgroundColor: '#059669',
                     }]
                 },
                 options: {
@@ -2303,6 +2343,7 @@
                     }
                 }
             });
+            
             const ctxSrc = document.getElementById('sourceChart').getContext('2d');
             if (sourceChartInstance) sourceChartInstance.destroy();
             const srcLabels = Object.keys(sourcesMap);
@@ -2467,6 +2508,7 @@
         const leaderboardFilter = document.getElementById('leaderboard-filter');
         if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
 
+        // STREAMING_CHUNK:Table rendering and pagination
         window.loadMoreClients = function() {
             currentPage++;
             renderClientTable(false); 
@@ -2635,6 +2677,7 @@
             }
         };
 
+        // STREAMING_CHUNK:Activity and task tracking
         function renderActivityLog(client) {
             const logContainer = document.getElementById('modal-activity-log');
             if(!logContainer) return;
@@ -2949,32 +2992,7 @@
             });
         }
 
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            if(!container) return;
-            const toast = document.createElement('div');
-            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
-            let icon = 'ph-info';
-            if (type === 'success') {
-                bgClass = 'bg-green-500 text-white';
-                icon = 'ph-check-circle';
-            } else if (type === 'error') {
-                bgClass = 'bg-red-500 text-white';
-                icon = 'ph-warning-circle';
-            }
-            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
-            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
-
+        // STREAMING_CHUNK:Invoice Modal Actions
         window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
             try {
                 const client = isRequestData 
