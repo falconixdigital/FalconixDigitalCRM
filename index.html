@@ -950,8 +950,8 @@
                         <p class="font-bold text-brandDark text-base">Falconix Digital</p>
                         <p class="text-sm text-gray-600 mt-1 leading-relaxed"><a href="https://maps.google.com/?q=Motihari, Bihar, India" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">Motihari, Bihar, India</a></p>
                         <p class="text-sm text-gray-600 leading-relaxed"><a href="tel:+918637028337" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">+91 86370 28337</a></p>
-                        <p class="text-sm text-accentSecondary font-medium leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: inherit; text-decoration: none;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
-                        <p class="text-sm text-gray-600 leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">falconixdigital.netlify.app</a></p>
+                        <p class="text-sm leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
+                        <p class="text-sm leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">falconixdigital.netlify.app</a></p>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
@@ -2969,8 +2969,8 @@
                 const addressHtml = client.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(client.address)}" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.address}</a>` : 'Address not provided';
                 const cleanPhone = client.phone ? client.phone.replace(/[^0-9\+]/g, '') : '';
                 const phoneHtml = client.phone ? `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.phone}</a>` : 'N/A';
-                const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.email}</a>` : 'N/A';
-                
+                const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">${client.email}</a>` : 'N/A';
+
                 let webHtml = '';
                 if (client.websiteUrl) {
                     const cleanUrl = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
