@@ -48,13 +48,13 @@
 
     <div id="loading-screen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader w-12 h-12 mb-4 border-4"></div>
-        <p class="font-medium animate-pulse">Retrieving secure invoice...</p>
+        <p class="font-medium animate-pulse">Authenticating and retrieving secure invoice...</p>
     </div>
 
     <!-- Enhanced Error Screen with detailed troubleshooting messages -->
     <div id="error-screen" class="hidden fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white text-center p-6">
         <i class="ph ph-warning-circle text-5xl text-red-500 mb-4"></i>
-        <h2 class="text-2xl font-bold mb-2">Invoice Error</h2>
+        <h2 class="text-2xl font-bold mb-2">Invoice Unavailable</h2>
         <p id="error-message-text" class="text-gray-400 max-w-md">The invoice you are looking for does not exist or has been removed. Please check the link and try again.</p>
     </div>
 
@@ -211,10 +211,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
     <!-- FIREBASE AND RENDERING LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -246,71 +248,6 @@
                 return Math.max(paid, expected);
             }
             return paid;
-        }
-
-        // Safely resolves the Authentication state to avoid race conditions.
-        function ensureAnonymousAuth() {
-            return new Promise((resolve, reject) => {
-                const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        unsubscribe();
-                        resolve(user);
-                    } else {
-                        try {
-                            const cred = await signInAnonymously(auth);
-                            unsubscribe();
-                            resolve(cred.user);
-                        } catch (error) {
-                            unsubscribe();
-                            reject(error);
-                        }
-                    }
-                });
-            });
-        }
-
-        async function loadInvoice() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const invoiceId = urlParams.get('id');
-
-            if (!invoiceId) {
-                showError("The invoice ID is missing from the URL.");
-                return;
-            }
-
-            try {
-                // 1. Await Secure Authentication State
-                await ensureAnonymousAuth();
-
-                // 2. Fetch document from Firestore
-                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
-                const clientSnap = await getDoc(clientRef);
-
-                if (clientSnap.exists()) {
-                    const client = clientSnap.data();
-                    renderInvoice(client);
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    document.getElementById('invoice-container').classList.remove('hidden');
-                    document.getElementById('invoice-container').classList.add('flex');
-                } else {
-                    showError("The invoice you are looking for does not exist or has been removed.");
-                }
-            } catch (error) {
-                console.error("Firebase Error:", error);
-                if (error.code === 'permission-denied') {
-                    showError("Database Error: Missing or insufficient permissions. Please check your Firebase Firestore rules.");
-                } else if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
-                    showError("Authentication Failed: Please ensure 'Anonymous' sign-in is enabled in your Firebase Console under Authentication > Sign-in method.");
-                } else {
-                    showError(`Database Error: ${error.message}`);
-                }
-            }
-        }
-
-        function showError(message) {
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('error-screen').classList.remove('hidden');
-            document.getElementById('error-message-text').innerText = message;
         }
 
         function renderInvoice(client) {
@@ -425,6 +362,52 @@
             currentInvoiceFilename = `Invoice_${invoiceNo}_${safeName}.pdf`;
         }
 
+        // --- NEW IMPLEMENTATION MATCHING SMART LETTER GENERATOR ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const invoiceId = urlParams.get('id') || urlParams.get('invoice');
+
+        if (!invoiceId) {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('error-screen').classList.remove('hidden');
+            document.getElementById('error-message-text').innerText = "No invoice ID provided in the link.";
+        } else {
+            // CRITICAL SETUP: Trigger Anonymous Auth *prior* to querying database
+            const initReadOnlyAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId));
+            };
+
+            initReadOnlyAuth().then(snap => {
+                if(snap.exists()) {
+                    const client = snap.data();
+                    client.id = snap.id;
+                    renderInvoice(client);
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    document.getElementById('invoice-container').classList.remove('hidden');
+                    document.getElementById('invoice-container').classList.add('flex');
+                } else {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    document.getElementById('error-screen').classList.remove('hidden');
+                    document.getElementById('error-message-text').innerText = "The invoice you are looking for does not exist or has been removed.";
+                }
+            }).catch(err => {
+                console.error("Firebase read failure:", err);
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('error-screen').classList.remove('hidden');
+                
+                if (err.message && err.message.toLowerCase().includes('auth')) {
+                     document.getElementById('error-message-text').innerText = "Authentication Failed: Ensure 'Anonymous' sign-in is enabled in Firebase Authentication.";
+                } else {
+                     document.getElementById('error-message-text').innerText = "Access Denied. Missing or insufficient permissions. Please check database rules.";
+                }
+            });
+        }
+        // -----------------------------------------------------------
+
         document.getElementById('btn-download-pdf').addEventListener('click', () => {
             const element = document.getElementById('invoice-content');
             const btn = document.getElementById('btn-download-pdf');
@@ -452,8 +435,6 @@
             });
         });
 
-        // Start loading the invoice
-        loadInvoice();
     </script>
 </body>
 </html>
