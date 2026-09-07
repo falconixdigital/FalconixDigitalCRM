@@ -1090,7 +1090,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
 
@@ -1422,9 +1422,10 @@
             
             (async () => {
                 try {
-                    // Generate an invisible, temporary guest pass before fetching the invoice
+                    // 1. Authenticate silently in the background
                     await signInAnonymously(auth);
 
+                    // 2. Fetch the invoice securely
                     const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
                     const clientSnap = await getDoc(clientRef);
 
@@ -1445,7 +1446,7 @@
                     }
                 } catch (err) {
                     console.error("Public Invoice Fetch Error:", err);
-                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice.</p><p style="font-size:14px;color:#94a3b8;">Please verify Firestore Security Rules have been published in the Firebase Console.</p></div>';
+                    document.body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice securely.</p><p style="font-size:14px;color:#ef4444;">Error: ${err.message}</p></div>`;
                 }
             })();
         } else {
