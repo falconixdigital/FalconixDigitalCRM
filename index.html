@@ -1303,6 +1303,13 @@
             return base + extra + custom;
         }
 
+        function calculateRevenue(client) {
+            const base = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+            const maint = Number(client.maintenanceCharge) || 0;
+            const custom = (client.customItems || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            return base + maint + custom; // Specifically excludes extraCharge (Domain cost)
+        }
+
         function calculatePaidAmount(client) {
             let paid = 0;
             if (client.installments && client.installments.length > 0) {
@@ -1660,9 +1667,8 @@
             tbody.innerHTML = '';
             
             const totalManual = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
-            const totalAutoExtra = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
             
-            totalDisplay.innerHTML = `Manual: <span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span> + Auto (Extra): <span class="font-bold">₹${totalAutoExtra.toLocaleString('en-IN')}</span>`;
+            totalDisplay.innerHTML = `<span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span>`;
 
             if (expensesList.length === 0) {
                 tbody.parentElement.classList.add('hidden');
@@ -2102,7 +2108,7 @@
             if(completedEl) completedEl.innerText = clientsList.filter(c => c.status === 'Completed').length;
             
             const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
-                return sum + calculateTotalExpected(client);
+                return sum + calculateRevenue(client);
             }, 0);
             
             const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
@@ -2126,14 +2132,12 @@
                 pendingEl.title = formattedPending;
             }
 
-            const totalAutoExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
             const totalManualExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
             
-            const totalCombinedExpenses = totalManualExpenses + totalAutoExtraCharges;
-            const trueNetProfit = totalGrossRevenue - totalCombinedExpenses;
+            const trueNetProfit = totalGrossRevenue - totalManualExpenses;
 
             const expEl = document.getElementById('stat-total-expenses');
-            if(expEl) expEl.innerText = '₹' + totalCombinedExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            if(expEl) expEl.innerText = '₹' + totalManualExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
             
             const netEl = document.getElementById('stat-net-profit');
             if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -2245,7 +2249,7 @@
                     const y = d.getFullYear();
                     const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
                     if (monthObj) {
-                        monthObj.revenue += calculateTotalExpected(client);
+                        monthObj.revenue += calculateRevenue(client);
                     }
                 }
             });
