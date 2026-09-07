@@ -48,10 +48,9 @@
 
     <div id="loading-screen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader w-12 h-12 mb-4 border-4"></div>
-        <p class="font-medium animate-pulse">Authenticating and retrieving secure invoice...</p>
+        <p class="font-medium animate-pulse">Retrieving secure invoice...</p>
     </div>
 
-    <!-- Enhanced Error Screen with detailed troubleshooting messages -->
     <div id="error-screen" class="hidden fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white text-center p-6">
         <i class="ph ph-warning-circle text-5xl text-red-500 mb-4"></i>
         <h2 class="text-2xl font-bold mb-2">Invoice Unavailable</h2>
@@ -60,7 +59,6 @@
 
     <div id="invoice-container" class="hidden flex-col items-center w-full max-w-[210mm]">
         
-        <!-- Top Action Bar -->
         <div class="w-full flex justify-between items-center mb-6 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20">
             <div class="text-white font-medium flex items-center gap-2">
                 <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" class="w-6 h-6 rounded-full">
@@ -71,7 +69,6 @@
             </button>
         </div>
 
-        <!-- The PDF Document Area -->
         <div id="invoice-content" class="bg-white w-full relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
             <img src="Falconix_Digital_Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
             
@@ -217,8 +214,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
-
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
             authDomain: "falconixdigitalbusiness.firebaseapp.com",
@@ -229,13 +225,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        
-        // 🚨 CRITICAL: APP CHECK ADDED 🚨
-        initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'),
-            isTokenAutoRefreshEnabled: true
-        });
-        
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = 'falconix-crm';
@@ -372,21 +361,21 @@
         const urlParams = new URLSearchParams(window.location.search);
         const invoiceId = urlParams.get('id') || urlParams.get('invoice');
 
-        if (!invoiceId) {
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('error-screen').classList.remove('hidden');
-            document.getElementById('error-message-text').innerText = "No invoice ID provided in the link.";
-        } else {
-            const initReadOnlyAuth = async () => {
-                try {
-                    await signInAnonymously(auth);
-                } catch (authError) {
-                    console.warn("Anonymous Sign-In Failed or Blocked. Falling back to public request...", authError);
-                }
-                return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId));
-            };
+        async function loadInvoice() {
+            if (!invoiceId) {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('error-screen').classList.remove('hidden');
+                document.getElementById('error-message-text').innerText = "No invoice ID provided in the link.";
+                return;
+            }
+            
+            try {
+                // Securely sign in anonymously to fetch the document
+                await signInAnonymously(auth);
+                
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
+                const snap = await getDoc(clientRef);
 
-            initReadOnlyAuth().then(snap => {
                 if(snap.exists()) {
                     const client = snap.data();
                     client.id = snap.id;
@@ -399,18 +388,21 @@
                     document.getElementById('error-screen').classList.remove('hidden');
                     document.getElementById('error-message-text').innerText = "The invoice you are looking for does not exist or has been removed.";
                 }
-            }).catch(err => {
+            } catch (err) {
                 console.error("Firebase read failure:", err);
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('error-screen').classList.remove('hidden');
                 
                 if (err.message && err.message.includes('Missing or insufficient permissions')) {
-                     document.getElementById('error-message-text').innerHTML = "Access Denied by App Check.<br><br><span class='text-xs'>If you are testing this on localhost, Firebase is actively blocking your browser. You must upload this file to Netlify to view the link!</span>";
+                     document.getElementById('error-message-text').innerHTML = "Access Denied by Database Rules.<br><br><span class='text-xs'>If you are the admin, please check your Firebase Firestore rules. Ensure they allow reading this document.</span>";
                 } else {
                      document.getElementById('error-message-text').innerText = "An error occurred while fetching the document: " + err.message;
                 }
-            });
+            }
         }
+
+        // Execute load on page load
+        loadInvoice();
 
         document.getElementById('btn-download-pdf').addEventListener('click', () => {
             const element = document.getElementById('invoice-content');
@@ -438,7 +430,6 @@
                 alert('Error saving PDF file.');
             });
         });
-
     </script>
 </body>
 </html>
