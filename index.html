@@ -8,13 +8,13 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
             emailjs.init("URukXHeFeG29YjKpl");
         })();
     </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -134,7 +134,7 @@
 
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
         <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
-            <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
+            <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
             <h1 class="text-2xl font-bold tracking-wide mb-1 text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 text-center">Admin Portal - Restricted Access</p>
             <div class="w-full space-y-4">
@@ -153,7 +153,7 @@
         <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 glass bg-lightBg/95 dark:bg-darkBg/95 border-r border-gray-300 dark:border-gray-800 flex flex-col h-full z-40 shrink-0">
             <div class="p-6 flex items-center justify-between md:justify-start gap-3">
                 <div class="flex items-center gap-3">
-                    <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
+                    <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
                     <h1 class="text-xl font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
                 </div>
                 <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-600 hover:text-accentPrimary">
@@ -213,7 +213,7 @@
         <div class="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden relative">
             <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-300 dark:border-gray-800 z-20 shrink-0">
                 <div class="flex items-center gap-2">
-                    <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
+                    <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
                     <h1 class="text-lg font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
                 </div>
                 <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-accentPrimary transition-colors">
@@ -229,6 +229,7 @@
 
                 <div class="p-4 pb-24 md:p-8 max-w-6xl mx-auto">
                     
+                    <!-- Dashboard Section -->
                     <section id="view-dashboard" class="view-section active">
                         <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Overview</h2>
                         <div class="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 md:mb-8 flex items-center min-h-[1.5rem]">
@@ -875,9 +876,6 @@
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
-                <button id="modal-email-invoice-btn" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors items-center justify-center gap-2 shadow-sm">
-                    <i class="ph ph-envelope-simple text-xl"></i> Email Details
-                </button>
                 <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-gray-800 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-file-pdf text-xl"></i> Invoice
                 </button>
@@ -899,9 +897,17 @@
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
                 <i class="ph ph-x-circle text-2xl"></i> Close
             </button>
-            <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
-                <i class="ph ph-download-simple text-xl"></i> Download PDF
-            </button>
+            <div class="flex flex-wrap items-center justify-end gap-2 md:gap-3">
+                <button id="btn-copy-link" onclick="copyInvoiceLink()" class="bg-gray-200 hover:bg-white text-gray-900 px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-lg transition-transform active:scale-95 text-xs md:text-base">
+                    <i class="ph ph-link text-lg md:text-xl"></i> <span class="hidden sm:inline">Copy Link</span><span class="sm:hidden">Link</span>
+                </button>
+                <button id="inv-email-btn" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-lg transition-transform active:scale-95 text-xs md:text-base">
+                    <i class="ph ph-envelope-simple text-lg md:text-xl"></i> <span class="hidden sm:inline">Email Invoice</span><span class="sm:hidden">Email</span>
+                </button>
+                <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-lg transition-transform active:scale-95 text-xs md:text-base">
+                    <i class="ph ph-download-simple text-lg md:text-xl"></i> <span class="hidden sm:inline">Download PDF</span><span class="sm:hidden">Download</span>
+                </button>
+            </div>
         </div>
 
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
@@ -916,7 +922,7 @@
             <div class="relative z-10 flex flex-col h-full">
                 <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
                     <div class="flex items-center gap-4">
-                        <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
+                        <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
                         <div>
                             <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
                             <p class="text-accentSecondary font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
@@ -943,18 +949,17 @@
                     <div>
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">From</h3>
                         <p class="font-bold text-brandDark text-base">Falconix Digital</p>
-                        <p class="text-sm text-gray-600 mt-1 leading-relaxed">Motihari, Bihar, India</p>
-                        <p class="text-sm text-gray-600 leading-relaxed">+91 86370 28337</p>
-                        <p class="text-sm text-accentSecondary font-medium leading-relaxed">digitalfalconix@gmail.com</p>
-                        <p class="text-sm text-gray-600 leading-relaxed">falconixdigital.netlify.app</p>
+                        <p class="text-sm text-gray-600 mt-1 leading-relaxed"><a href="https://maps.google.com/?q=Motihari, Bihar, India" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">Motihari, Bihar, India</a></p>
+                        <p class="text-sm text-gray-600 leading-relaxed"><a href="tel:+918637028337" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">+91 86370 28337</a></p>
+                        <p class="text-sm text-accentSecondary font-medium leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: inherit; text-decoration: none;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
+                        <p class="text-sm text-gray-600 leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">falconixdigital.netlify.app</a></p>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
                         <p id="inv-client-name" class="font-bold text-brandDark text-lg">-</p>
-                        <p id="inv-client-business" class="text-sm font-medium text-gray-700 mt-1">-</p>
-                        <p id="inv-client-address" class="text-sm text-gray-600 mt-1 leading-relaxed whitespace-pre-wrap">-</p>
-                        <p id="inv-client-phone" class="text-sm text-gray-600 mt-1 leading-relaxed">-</p>
-                        <p id="inv-client-email" class="text-sm text-gray-600 leading-relaxed">-</p>
+                        <div id="inv-client-details" class="text-sm text-gray-600 mt-1 leading-relaxed">
+                            -
+                        </div>
                     </div>
                 </div>
 
@@ -1071,8 +1076,8 @@
             <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
                 <i class="ph ph-warning-circle text-3xl"></i>
             </div>
-            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Client</h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">Are you sure you want to permanently delete this client? This action cannot be undone.</p>
+            <h3 id="delete-modal-title" class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Client</h3>
+            <p id="delete-modal-text" class="text-gray-600 dark:text-gray-400 mb-6 text-sm">Are you sure you want to permanently delete this client? This action cannot be undone.</p>
             <div class="flex w-full gap-3">
                 <button onclick="hideDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
                     Cancel
@@ -1084,28 +1089,10 @@
         </div>
     </div>
 
-    <div id="expense-delete-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
-        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
-            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
-                <i class="ph ph-warning-circle text-3xl"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Expense</h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">Are you sure you want to permanently delete this expense log?</p>
-            <div class="flex w-full gap-3">
-                <button onclick="hideExpenseDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
-                    Cancel
-                </button>
-                <button id="confirm-expense-delete-btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
-                    Yes, Delete
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
@@ -1399,12 +1386,12 @@
                 if (isDeleting) {
                     el.innerText = fullText.substring(0, charIndex - 1);
                     charIndex--;
-                    emojiEl.innerText = ''; 
+                    if(emojiEl) emojiEl.innerText = ''; 
                 } else {
                     el.innerText = fullText.substring(0, charIndex + 1);
                     charIndex++;
                     if (charIndex === fullText.length) {
-                        emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
+                        if(emojiEl) emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
                     }
                 }
                 let typingSpeed = isDeleting ? 30 : 70;
@@ -1426,7 +1413,45 @@
         }
 
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const publicInvoiceId = urlParams.get('invoice');
+
+            if (publicInvoiceId) {
+                if (!user) {
+                    signInAnonymously(auth).catch(err => console.error("Anon auth failed", err));
+                    return;
+                }
+                document.getElementById('login-wrapper').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.add('hidden');
+                document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
+                document.body.classList.add('bg-gray-900'); 
+                
+                try {
+                    const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
+                    const clientSnap = await getDoc(clientRef);
+                    if (clientSnap.exists()) {
+                        window.isPublicInvoiceView = true;
+                        const clientData = { id: clientSnap.id, ...clientSnap.data() };
+                        window.currentOpenClientId = clientSnap.id;
+                        await window.openInvoiceModal(clientData, true);
+                        
+                        const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
+                        if(closeBtn) closeBtn.classList.add('hidden');
+                        const emailBtn = document.getElementById('inv-email-btn');
+                        if(emailBtn) emailBtn.classList.add('hidden');
+                        const copyBtn = document.getElementById('btn-copy-link');
+                        if(copyBtn) copyBtn.classList.add('hidden');
+                    } else {
+                        document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Failed to load invoice details.</div>';
+                }
+                return;
+            }
+
+            if (user && !user.isAnonymous) {
                 const isAdmin = await checkIfAdmin(user.email);
                 if (isAdmin) {
                     currentUser = user;
@@ -1679,33 +1704,10 @@
         let expenseToDelete = null;
         window.deleteExpense = function(id) {
             expenseToDelete = id;
-            document.getElementById('expense-delete-modal').classList.remove('hidden');
-        };
-        
-        window.hideExpenseDeleteModal = function() {
-            expenseToDelete = null;
-            document.getElementById('expense-delete-modal').classList.add('hidden');
-        };
-
-        const confirmExpenseDeleteBtn = document.getElementById('confirm-expense-delete-btn');
-        if (confirmExpenseDeleteBtn) {
-            confirmExpenseDeleteBtn.addEventListener('click', async () => {
-                if (!expenseToDelete) return;
-                const btn = document.getElementById('confirm-expense-delete-btn');
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
-                btn.disabled = true;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', expenseToDelete));
-                    showToast("Expense removed.", "success");
-                    hideExpenseDeleteModal();
-                } catch(e) {
-                    showToast("Error deleting expense.", "error");
-                } finally {
-                    btn.innerHTML = orig;
-                    btn.disabled = false;
-                }
-            });
+            document.getElementById('delete-modal-title').innerText = "Delete Expense";
+            document.getElementById('delete-modal-text').innerText = "Are you sure you want to delete this expense log? This action cannot be undone.";
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            if(deleteModal) deleteModal.classList.remove('hidden');
         }
 
         document.getElementById('client-form').addEventListener('submit', async (e) => {
@@ -2450,6 +2452,7 @@
             currentPage++;
             renderClientTable(false); 
         };
+        
         function debounce(func, wait) {
             let timeout;
             return function(...args) {
@@ -2461,6 +2464,7 @@
                 timeout = setTimeout(later, wait);
             };
         }
+        
         const debouncedSearch = debounce(() => renderClientTable(true), 300);
         function renderClientTable(resetPage = false) {
             if (resetPage) currentPage = 1;
@@ -2834,18 +2838,6 @@
             if (invoiceBtn) {
                 invoiceBtn.onclick = () => openInvoiceModal(id);
             }
-
-            const emailInvoiceBtn = document.getElementById('modal-email-invoice-btn');
-            if (emailInvoiceBtn) {
-                if (client.email && client.email.trim() !== '') {
-                    emailInvoiceBtn.classList.remove('hidden');
-                    emailInvoiceBtn.classList.add('flex');
-                    emailInvoiceBtn.onclick = () => sendInvoiceEmail(currentOpenClientId);
-                } else {
-                    emailInvoiceBtn.classList.add('hidden');
-                    emailInvoiceBtn.classList.remove('flex');
-                }
-            }
             
             const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
             const editBtn = document.getElementById('modal-edit-btn');
@@ -2896,12 +2888,15 @@
 
         window.showDeleteModal = function(id) {
             clientToDelete = id;
+            document.getElementById('delete-modal-title').innerText = "Delete Client";
+            document.getElementById('delete-modal-text').innerText = "Are you sure you want to permanently delete this client? This action cannot be undone.";
             const deleteModal = document.getElementById('delete-confirm-modal');
             if(deleteModal) deleteModal.classList.remove('hidden');
         };
 
         window.hideDeleteModal = function() {
             clientToDelete = null;
+            expenseToDelete = null;
             const deleteModal = document.getElementById('delete-confirm-modal');
             if(deleteModal) deleteModal.classList.add('hidden');
         };
@@ -2909,21 +2904,25 @@
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         if(confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', async () => {
-                if (!clientToDelete || !isSuperAdminUser) return;
-                
                 const btn = document.getElementById('confirm-delete-btn');
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
                 btn.disabled = true;
                 
                 try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
-                    await deleteDoc(docRef);
-                    showToast("Client deleted successfully.", "success");
+                    if (clientToDelete && isSuperAdminUser) {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
+                        await deleteDoc(docRef);
+                        showToast("Client deleted successfully.", "success");
+                    } else if (expenseToDelete && isSuperAdminUser) {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'expenses', expenseToDelete);
+                        await deleteDoc(docRef);
+                        showToast("Expense removed.", "success");
+                    }
                     hideDeleteModal();
-                    closeModal();
+                    if(clientToDelete) closeModal();
                 } catch (error) {
-                    showToast("Failed to delete client.", "error");
+                    showToast("Failed to process deletion.", "error");
                 } finally {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
@@ -2957,78 +2956,6 @@
 
         const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-        window.sendInvoiceEmail = async function(clientId) {
-            const client = clientsList.find(c => c.id === clientId);
-            if (!client) return;
-
-            if (!client.invoiceNo) {
-                showToast("Please open the Invoice PDF first to generate an official Invoice Number.", "error");
-                return;
-            }
-
-            const btn = document.getElementById('modal-email-invoice-btn');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Sending...`;
-            btn.disabled = true;
-
-            const extraCharge = Number(client.extraCharge) || 0;
-            const maintenanceCharge = Number(client.maintenanceCharge) || 0;
-            const discount = Number(client.discount) || 0;
-            const paidAmount = calculatePaidAmount(client);
-            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
-            const balance = Math.max(0, totalExpected - paidAmount);
-
-            const templateParams = {
-                to_email: client.email,
-                to_name: client.name,
-                project_name: client.business || 'Digital Services',
-                invoice_no: client.invoiceNo,
-                total_amount: `₹${totalExpected.toLocaleString('en-IN')}`,
-                paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
-                balance_due: `₹${balance.toLocaleString('en-IN')}`,
-                due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
-                reply_to: currentUser.email,
-                client_website: client.websiteUrl || 'Not provided',
-                client_address: client.address || 'Address not provided',
-                client_phone: client.phone || 'N/A',
-                client_email: client.email || 'N/A',
-                base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
-                discount_amount: `₹${discount.toLocaleString('en-IN')}`,
-                extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
-                maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
-                falconix_address: 'Motihari, Bihar, India',
-                falconix_phone: '+91 86370 28337',
-                falconix_email: 'digitalfalconix@gmail.com',
-                falconix_website: 'falconixdigital.netlify.app'
-            };
-
-            try {
-                await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
-                showToast("Invoice details emailed successfully!", "success");
-                
-                const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
-                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-                
-                await updateDoc(clientRef, {
-                    activityLog: arrayUnion({
-                        action: `Emailed invoice details (${client.invoiceNo}) to ${client.email}`,
-                        performedBy: addedName,
-                        timestamp: Date.now(),
-                        isManual: false
-                    })
-                });
-
-                renderActivityLog(client);
-
-            } catch (error) {
-                console.error("EmailJS Error:", error);
-                showToast("Failed to send email. Check console.", "error");
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-            }
-        };
-
         window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
             try {
                 const client = isRequestData 
@@ -3043,45 +2970,65 @@
                 let invoiceNo = client.invoiceNo;
                 
                 if (!invoiceNo) {
-                    if (!isSuperAdminUser) {
+                    if (window.isPublicInvoiceView) {
+                        invoiceNo = "Draft";
+                    } else if (!isSuperAdminUser) {
                         showToast("A Super Admin must open this invoice first to generate an official Invoice Number.", "error");
                         return;
-                    }
-                    
-                    try {
-                        const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
-                        const counterSnap = await getDoc(counterRef);
-                        let currentCount = 1;
-                        
-                        if (counterSnap.exists()) {
-                            currentCount = counterSnap.data().current || 1;
+                    } else {
+                        try {
+                            const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'invoice');
+                            const counterSnap = await getDoc(counterRef);
+                            let currentCount = 1;
+                            
+                            if (counterSnap.exists()) {
+                                currentCount = counterSnap.data().current || 1;
+                            }
+                            
+                            invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
+                            await setDoc(counterRef, { current: currentCount + 1 });
+                            
+                            if (client.id) {
+                                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
+                                await updateDoc(clientRef, { invoiceNo: invoiceNo });
+                            }
+                            
+                            client.invoiceNo = invoiceNo; 
+                        } catch (err) {
+                            console.error("Counter Error:", err);
+                            showToast("Failed to assign official invoice number.", "error");
+                            const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
+                            invoiceNo = `FD-${createdAtStr.slice(-6)}`;
                         }
-                        
-                        invoiceNo = `FD-${String(currentCount).padStart(3, '0')}`;
-                        await setDoc(counterRef, { current: currentCount + 1 });
-                        
-                        if (client.id) {
-                            const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', client.id);
-                            await updateDoc(clientRef, { invoiceNo: invoiceNo });
-                        }
-                        
-                        client.invoiceNo = invoiceNo; 
-                    } catch (err) {
-                        console.error("Counter Error:", err);
-                        showToast("Failed to assign official invoice number.", "error");
-                        const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
-                        invoiceNo = `FD-${createdAtStr.slice(-6)}`;
                     }
                 }
                 
                 setElText('inv-no', invoiceNo || 'N/A');
                 setElText('inv-date', new Date().toLocaleDateString('en-IN'));
                 setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
+                
                 setElText('inv-client-name', client.name || 'N/A');
-                setElText('inv-client-business', client.business || 'N/A');
-                setElText('inv-client-address', client.address || 'Address not provided');
-                setElText('inv-client-phone', client.phone || 'N/A');
-                setElText('inv-client-email', client.email || 'N/A');
+
+                const addressHtml = client.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(client.address)}" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.address}</a>` : 'Address not provided';
+                const cleanPhone = client.phone ? client.phone.replace(/[^0-9\+]/g, '') : '';
+                const phoneHtml = client.phone ? `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.phone}</a>` : 'N/A';
+                const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.email}</a>` : 'N/A';
+                
+                let webHtml = '';
+                if (client.websiteUrl) {
+                    const cleanUrl = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+                    webHtml = `<a href="${cleanUrl}" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">${client.websiteUrl}</a>`;
+                }
+
+                const clientDetailsEl = document.getElementById('inv-client-details');
+                if (clientDetailsEl) {
+                    clientDetailsEl.innerHTML = `
+                        ${addressHtml}<br>
+                        ${phoneHtml}<br>
+                        ${emailHtml}<br>
+                        ${webHtml}
+                    `;
+                }
 
                 const deliveryDaysEl = document.getElementById('inv-delivery-days');
                 if (deliveryDaysEl) {
@@ -3175,6 +3122,16 @@
                     }
                 }
 
+                const emailInvoiceBtn = document.getElementById('inv-email-btn');
+                if (emailInvoiceBtn && !window.isPublicInvoiceView) {
+                    if (client.email && client.email.trim() !== '') {
+                        emailInvoiceBtn.classList.remove('hidden');
+                        emailInvoiceBtn.onclick = () => sendInvoiceEmail(client.id);
+                    } else {
+                        emailInvoiceBtn.classList.add('hidden');
+                    }
+                }
+
                 const safeName = (client.name || 'Client').replace(/\s+/g, '_');
                 window.currentInvoiceFilename = `Invoice_${invoiceNo || 'Draft'}_${safeName}.pdf`;
 
@@ -3199,6 +3156,39 @@
             }
         };
 
+        window.copyInvoiceLink = function() {
+            if (!currentOpenClientId) return;
+            
+            const url = new URL(window.location.href);
+            url.searchParams.set('invoice', currentOpenClientId);
+            const link = url.toString();
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast("Public link copied to clipboard!", "success");
+                }).catch(() => fallbackCopyTextToClipboard(link));
+            } else {
+                fallbackCopyTextToClipboard(link);
+            }
+        };
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Public link copied to clipboard!", "success");
+            } catch (err) {
+                showToast("Failed to copy link. Check permissions.", "error");
+            }
+            document.body.removeChild(textArea);
+        }
+
         window.downloadInvoicePDF = function() {
             const element = document.getElementById('invoice-content');
             const btn = document.getElementById('btn-download-pdf');
@@ -3213,7 +3203,8 @@
                 filename:     window.currentInvoiceFilename || 'Falconix_Invoice.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                enableLinks:  true 
             };
             
             let originalHtml = '';
@@ -3243,6 +3234,78 @@
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 }
+            }
+        };
+
+        window.sendInvoiceEmail = async function(clientId) {
+            const client = clientsList.find(c => c.id === clientId);
+            if (!client) return;
+
+            if (!client.invoiceNo) {
+                showToast("Please open the Invoice PDF first to generate an official Invoice Number.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('inv-email-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg md:text-xl"></i> <span class="hidden sm:inline">Sending...</span><span class="sm:hidden">Send</span>`;
+            btn.disabled = true;
+
+            const extraCharge = Number(client.extraCharge) || 0;
+            const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+            const discount = Number(client.discount) || 0;
+            const paidAmount = calculatePaidAmount(client);
+            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const balance = Math.max(0, totalExpected - paidAmount);
+
+            const templateParams = {
+                to_email: client.email,
+                to_name: client.name,
+                project_name: client.business || 'Digital Services',
+                invoice_no: client.invoiceNo,
+                total_amount: `₹${totalExpected.toLocaleString('en-IN')}`,
+                paid_amount: `₹${paidAmount.toLocaleString('en-IN')}`,
+                balance_due: `₹${balance.toLocaleString('en-IN')}`,
+                due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
+                base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
+                extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
+                maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
+                discount_amount: `₹${discount.toLocaleString('en-IN')}`,
+                client_address: client.address || 'Address not provided',
+                client_phone: client.phone || 'N/A',
+                client_email: client.email || 'N/A',
+                client_website: client.websiteUrl || 'Not provided',
+                falconix_address: 'Motihari, Bihar, India',
+                falconix_phone: '+91 86370 28337',
+                falconix_email: 'digitalfalconix@gmail.com',
+                falconix_website: 'https://falconixdigital.netlify.app',
+                reply_to: currentUser.email
+            };
+
+            try {
+                await emailjs.send('service_eswjmdp', 'template_rqloz66', templateParams);
+                showToast("Invoice emailed to client successfully!", "success");
+                
+                const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                
+                await updateDoc(clientRef, {
+                    activityLog: arrayUnion({
+                        action: `Emailed invoice (${client.invoiceNo}) to ${client.email}`,
+                        performedBy: addedName,
+                        timestamp: Date.now(),
+                        isManual: false
+                    })
+                });
+
+                renderActivityLog(client);
+
+            } catch (error) {
+                console.error("EmailJS Error:", error);
+                showToast("Failed to send email. Check console.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         };
 
@@ -3530,18 +3593,6 @@
             if(invoiceBtn) {
                 invoiceBtn.classList.remove('hidden');
                 invoiceBtn.onclick = () => openInvoiceModal(currentOpenClientId); 
-            }
-            
-            const emailInvoiceBtn = document.getElementById('modal-email-invoice-btn');
-            if (emailInvoiceBtn) {
-                if (client.email && client.email.trim() !== '') {
-                    emailInvoiceBtn.classList.remove('hidden');
-                    emailInvoiceBtn.classList.add('flex');
-                    emailInvoiceBtn.onclick = () => sendInvoiceEmail(currentOpenClientId);
-                } else {
-                    emailInvoiceBtn.classList.add('hidden');
-                    emailInvoiceBtn.classList.remove('flex');
-                }
             }
             
             const editBtn = document.getElementById('modal-edit-btn');
