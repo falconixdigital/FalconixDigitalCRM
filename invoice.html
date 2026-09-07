@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Invoice - Falconix Digital</title>
-    <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png">
+    <title>Falconix Digital - Invoice</title>
+    <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png" onerror="this.href='https://placehold.co/80x80/7C3AED/ffffff?text=FD'">
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         brandDark: '#0B0F19',
+                        accentPrimary: '#7C3AED',
                         accentSecondary: '#0EA5E9',
                         brandGray: '#F8F9FA'
                     },
@@ -28,49 +28,56 @@
         }
     </script>
     <style>
-        body { font-family: 'Poppins', sans-serif; }
-        .loader {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid #ffffff;
-            width: 24px;
-            height: 24px;
-            -webkit-animation: spin 1s linear infinite;
-            animation: spin 1s linear infinite;
+        body { font-family: 'Poppins', sans-serif; background-color: #111827; margin: 0; padding: 0; }
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 2rem auto;
+            padding: 15mm 20mm;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .a4-container { box-shadow: none; margin: 0; padding: 10mm; width: auto; min-height: auto; }
         }
     </style>
 </head>
-<body class="bg-gray-900 min-h-[100dvh] flex flex-col items-center p-4 md:p-8 font-poppins">
+<body class="flex flex-col min-h-screen text-gray-800">
 
-    <div id="loading-screen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white">
-        <div class="loader w-12 h-12 mb-4 border-4"></div>
-        <p class="font-medium animate-pulse">Retrieving secure invoice...</p>
+    <!-- Loading State -->
+    <div id="loading-screen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center">
+        <i class="ph ph-spinner animate-spin text-5xl text-accentSecondary mb-4"></i>
+        <p class="text-white font-medium tracking-wide">Retrieving Secure Invoice...</p>
     </div>
 
-    <div id="error-screen" class="hidden fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white text-center p-6">
-        <i class="ph ph-warning-circle text-5xl text-red-500 mb-4"></i>
-        <h2 class="text-2xl font-bold mb-2">Invoice Unavailable</h2>
-        <p id="error-message-text" class="text-gray-400 max-w-md">The invoice you are looking for does not exist or has been removed.</p>
+    <!-- Error State -->
+    <div id="error-screen" class="fixed inset-0 bg-gray-900 z-40 hidden flex-col items-center justify-center text-center p-6">
+        <i class="ph ph-file-x text-6xl text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">Invoice Unavailable</h2>
+        <p id="error-message" class="text-gray-400 max-w-md mx-auto">The invoice you are looking for does not exist or has been removed. Please check the link and try again.</p>
     </div>
 
-    <div id="invoice-container" class="hidden flex-col items-center w-full max-w-[210mm]">
-        
-        <div class="w-full flex justify-between items-center mb-6 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20">
-            <div class="text-white font-medium flex items-center gap-2">
-                <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" class="w-6 h-6 rounded-full">
-                Falconix Digital
-            </div>
-            <button id="btn-download-pdf" class="bg-accentSecondary hover:bg-sky-600 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95 text-sm md:text-base">
-                <i class="ph ph-download-simple text-lg md:text-xl"></i> Download PDF
+    <!-- Action Bar -->
+    <div id="action-bar" class="w-full max-w-[210mm] mx-auto flex justify-between items-center bg-gray-800/80 backdrop-blur-md p-4 mt-6 rounded-2xl border border-gray-700 shadow-xl hidden no-print">
+        <div class="flex items-center gap-3">
+            <img src="Falconix_Digital_Logo.png" alt="Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-10 h-10 rounded-full border border-gray-600 object-cover">
+            <h1 class="text-white font-bold tracking-wide">Falconix<span class="text-accentSecondary">Digital</span></h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="downloadPDF()" id="btn-download" class="bg-accentSecondary hover:bg-sky-600 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-transform active:scale-95 shadow-lg">
+                <i class="ph ph-download-simple text-xl"></i> <span>Download PDF</span>
             </button>
         </div>
+    </div>
 
-        <div id="invoice-content" class="bg-white w-full relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
-            <img src="Falconix_Digital_Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
+    <!-- Invoice Content -->
+    <div id="invoice-wrapper" class="hidden pb-10">
+        <div id="invoice-content" class="a4-container text-gray-800">
+            <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
             
             <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
                 <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
@@ -81,7 +88,7 @@
             <div class="relative z-10 flex flex-col h-full">
                 <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
                     <div class="flex items-center gap-4">
-                        <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
+                        <img src="Falconix_Digital_Logo.png" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" alt="Falconix Logo" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
                         <div>
                             <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
                             <p class="text-accentSecondary font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
@@ -110,8 +117,8 @@
                         <p class="font-bold text-brandDark text-base">Falconix Digital</p>
                         <p class="text-sm text-gray-600 mt-1 leading-relaxed"><a href="https://maps.google.com/?q=Motihari, Bihar, India" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">Motihari, Bihar, India</a></p>
                         <p class="text-sm text-gray-600 leading-relaxed"><a href="tel:+918637028337" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">+91 86370 28337</a></p>
-                        <p class="text-sm text-accentSecondary font-medium leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: inherit; text-decoration: none;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
-                        <p class="text-sm text-gray-600 leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">falconixdigital.netlify.app</a></p>
+                        <p class="text-sm leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
+                        <p class="text-sm leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">falconixdigital.netlify.app</a></p>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
@@ -133,6 +140,7 @@
                             </tr>
                         </thead>
                         <tbody id="inv-table-body" class="divide-y divide-gray-200">
+                            
                         </tbody>
                     </table>
                 </div>
@@ -183,6 +191,7 @@
                     <div class="mb-6 hidden" id="inv-payment-milestones-wrapper">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Payment Milestones</h3>
                         <div id="inv-milestones-list" class="space-y-1.5">
+                            
                         </div>
                     </div>
 
@@ -210,10 +219,14 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+
+        // Firebase Setup
         const firebaseConfig = {
             apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
             authDomain: "falconixdigitalbusiness.firebaseapp.com",
@@ -222,14 +235,30 @@
             messagingSenderId: "835356453879",
             appId: "1:835356453879:web:b321312b9b9e0881b35cf2"
         };
-
         const app = initializeApp(firebaseConfig);
-        
-        // NO AUTHENTICATION CODE HERE. IT TALKS DIRECTLY TO FIRESTORE.
         const db = getFirestore(app);
         
-        const appId = 'falconix-crm';
-        let currentInvoiceFilename = 'Invoice.pdf';
+        // Use exact CRM app ID path
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
+
+        window.currentInvoiceFilename = 'Falconix_Invoice.pdf';
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgClass = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-gray-800');
+            let icon = type === 'success' ? 'ph-check-circle' : (type === 'error' ? 'ph-warning-circle' : 'ph-info');
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white ${bgClass} pointer-events-auto transition-all duration-300 transform translate-x-full`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 50);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
@@ -247,11 +276,40 @@
             return paid;
         }
 
+        async function initPublicViewer() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const invoiceId = urlParams.get('id') || urlParams.get('invoice');
+
+            if (!invoiceId) {
+                showError("No invoice ID provided in the URL link.");
+                return;
+            }
+
+            try {
+                // Fetch directly - Firestore rules now allow `get` without authentication
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    renderInvoice(snap.data());
+                } else {
+                    showError("The invoice you are looking for does not exist or has been removed.");
+                }
+            } catch (err) {
+                console.error("Direct Fetch Error:", err);
+                showError(err.message || "Failed to connect to the database.");
+            }
+        }
+
         function renderInvoice(client) {
-            const invoiceNo = client.invoiceNo || "Draft";
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('action-bar').classList.remove('hidden');
+            document.getElementById('invoice-wrapper').classList.remove('hidden');
+
+            const invoiceNo = client.invoiceNo || 'Draft';
             
             setElText('inv-no', invoiceNo);
-            setElText('inv-date', new Date().toLocaleDateString('en-IN'));
+            setElText('inv-date', client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'));
             setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
             
             setElText('inv-client-name', client.name || 'N/A');
@@ -259,7 +317,7 @@
             const addressHtml = client.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(client.address)}" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.address}</a>` : 'Address not provided';
             const cleanPhone = client.phone ? client.phone.replace(/[^0-9\+]/g, '') : '';
             const phoneHtml = client.phone ? `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.phone}</a>` : 'N/A';
-            const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.email}</a>` : 'N/A';
+            const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">${client.email}</a>` : 'N/A';
             
             let webHtml = '';
             if (client.websiteUrl) {
@@ -267,12 +325,15 @@
                 webHtml = `<a href="${cleanUrl}" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">${client.websiteUrl}</a>`;
             }
 
-            document.getElementById('inv-client-details').innerHTML = `
-                ${addressHtml}<br>
-                ${phoneHtml}<br>
-                ${emailHtml}<br>
-                ${webHtml}
-            `;
+            const clientDetailsEl = document.getElementById('inv-client-details');
+            if (clientDetailsEl) {
+                clientDetailsEl.innerHTML = `
+                    ${addressHtml}<br>
+                    ${phoneHtml}<br>
+                    ${emailHtml}<br>
+                    ${webHtml}
+                `;
+            }
 
             const deliveryDaysEl = document.getElementById('inv-delivery-days');
             if (deliveryDaysEl) {
@@ -286,149 +347,124 @@
             }
 
             const tbody = document.getElementById('inv-table-body');
-            tbody.innerHTML = '';
-            let subtotal = 0;
+            if (tbody) {
+                tbody.innerHTML = '';
+                let subtotal = 0;
 
-            const addRow = (desc, amount) => {
-                if (amount > 0) {
-                    subtotal += amount;
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-gray-50';
-                    tr.innerHTML = `
-                        <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
-                        <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
-                        <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-                        <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-                    `;
-                    tbody.appendChild(tr);
+                const addRow = (desc, amount) => {
+                    if (amount > 0) {
+                        subtotal += amount;
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-gray-50';
+                        tr.innerHTML = `
+                            <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
+                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
+                            <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                            <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                };
+
+                addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
+                addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
+                addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
+
+                const discount = Number(client.discount) || 0;
+                const total = Math.max(0, subtotal - discount);
+                const paidAmount = calculatePaidAmount(client);
+                const balance = Math.max(0, total - paidAmount);
+
+                setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
+                setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
+                setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
+                setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
+                setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
+
+                const stamp = document.getElementById('inv-paid-stamp');
+                if (stamp) {
+                    if ((balance <= 0 && total > 0) || client.status === 'Completed') {
+                        stamp.classList.remove('hidden');
+                    }
                 }
-            };
-
-            addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
-            addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
-            addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
-
-            const discount = Number(client.discount) || 0;
-            const total = Math.max(0, subtotal - discount);
-            const paidAmount = calculatePaidAmount(client);
-            const balance = Math.max(0, total - paidAmount);
-
-            setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
-            setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
-            setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
-            setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
-            setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
-
-            const stamp = document.getElementById('inv-paid-stamp');
-            if ((balance <= 0 && total > 0) || client.status === 'Completed') {
-                stamp.classList.remove('hidden');
             }
 
             const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
             const milestonesList = document.getElementById('inv-milestones-list');
             
-            if (client.installments && client.installments.length > 0) {
-                milestonesWrapper.classList.remove('hidden');
-                client.installments.forEach(inst => {
-                    const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
-                    const isPaid = inst.status === 'Paid' || client.status === 'Completed';
-                    const statusColor = isPaid ? 'text-green-600' : 'text-red-500';
-                    
+            if (milestonesWrapper && milestonesList) {
+                milestonesList.innerHTML = '';
+                if (client.installments && client.installments.length > 0) {
+                    milestonesWrapper.classList.remove('hidden');
+                    client.installments.forEach(inst => {
+                        const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
+                        const isPaid = inst.status === 'Paid' || client.status === 'Completed';
+                        const statusColor = isPaid ? 'text-green-600' : 'text-red-500';
+                        
+                        const row = document.createElement('div');
+                        row.className = 'flex justify-between text-xs text-gray-600';
+                        row.innerHTML = `
+                            <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
+                            <span class="w-1/4">${dateText}</span>
+                            <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                        `;
+                        milestonesList.appendChild(row);
+                    });
+                } else if (client.advance > 0) {
+                    milestonesWrapper.classList.remove('hidden');
                     const row = document.createElement('div');
                     row.className = 'flex justify-between text-xs text-gray-600';
                     row.innerHTML = `
-                        <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
-                        <span class="w-1/4">${dateText}</span>
-                        <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                        <span class="w-1/2 font-medium">Advance Payment</span>
+                        <span class="w-1/4">-</span>
+                        <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
                     `;
                     milestonesList.appendChild(row);
-                });
-            } else if (client.advance > 0) {
-                milestonesWrapper.classList.remove('hidden');
-                const row = document.createElement('div');
-                row.className = 'flex justify-between text-xs text-gray-600';
-                row.innerHTML = `
-                    <span class="w-1/2 font-medium">Advance Payment</span>
-                    <span class="w-1/4">-</span>
-                    <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
-                `;
-                milestonesList.appendChild(row);
+                }
             }
 
             const safeName = (client.name || 'Client').replace(/\s+/g, '_');
-            currentInvoiceFilename = `Invoice_${invoiceNo}_${safeName}.pdf`;
+            window.currentInvoiceFilename = `Invoice_${invoiceNo}_${safeName}.pdf`;
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const invoiceId = urlParams.get('id') || urlParams.get('invoice');
-
-        async function loadInvoice() {
-            if (!invoiceId) {
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('error-screen').classList.remove('hidden');
-                document.getElementById('error-message-text').innerText = "No invoice ID provided in the link.";
-                return;
-            }
-            
-            try {
-                // Direct database fetch, completely ignoring authentication
-                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
-                const snap = await getDoc(clientRef);
-
-                if(snap.exists()) {
-                    const client = snap.data();
-                    client.id = snap.id;
-                    renderInvoice(client);
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    document.getElementById('invoice-container').classList.remove('hidden');
-                    document.getElementById('invoice-container').classList.add('flex');
-                } else {
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    document.getElementById('error-screen').classList.remove('hidden');
-                    document.getElementById('error-message-text').innerText = "The invoice you are looking for does not exist or has been removed.";
-                }
-            } catch (err) {
-                console.error("Direct Firebase read failure:", err);
-                document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('error-screen').classList.remove('hidden');
-                
-                // Show the ACTUAL error message generated by Firebase so we aren't guessing!
-                document.getElementById('error-message-text').innerHTML = `
-                    <strong class="text-red-400">Database Connection Error</strong><br><br>
-                    <span class="text-xs text-gray-400 font-mono text-left block w-full max-w-sm mx-auto bg-gray-800 p-3 rounded">${err.message}</span>
-                `;
-            }
+        function showError(msg) {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('error-screen').classList.remove('hidden');
+            document.getElementById('error-screen').classList.add('flex');
+            document.getElementById('error-message').innerText = msg;
         }
 
-        // Execute load on page load
-        loadInvoice();
-
-        document.getElementById('btn-download-pdf').addEventListener('click', () => {
+        window.downloadPDF = function() {
             const element = document.getElementById('invoice-content');
-            const btn = document.getElementById('btn-download-pdf');
+            const btn = document.getElementById('btn-download');
             
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> <span>Saving...</span>`;
+            btn.disabled = true;
+
             const opt = {
                 margin:       0,
-                filename:     currentInvoiceFilename,
-                image:        { type: 'jpeg', quality: 0.98 },
+                filename:     window.currentInvoiceFilename,
+                image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 enableLinks:  true 
             };
-            
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating...`;
-            btn.disabled = true;
 
             html2pdf().set(opt).from(element).save().then(() => {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
+                showToast("Invoice saved successfully!", "success");
             }).catch(err => {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-                alert('Error saving PDF file.');
+                showToast("Failed to generate PDF.", "error");
             });
-        });
+        };
+
+        // Start initialization immediately
+        initPublicViewer();
+
     </script>
 </body>
 </html>
