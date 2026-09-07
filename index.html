@@ -3293,6 +3293,12 @@
                 const totalExpected = calculateTotalExpected(client);
                 const balance = Math.max(0, totalExpected - paidAmount);
 
+                const customItemsTotal = (client.customItems || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                const totalExtra = extraCharge + customItemsTotal;
+                
+                const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+                const invoiceLink = `${baseUrl}invoice.html?id=${client.id}`;
+
                 const templateParams = {
                     to_email: client.email,
                     to_name: client.name,
@@ -3303,7 +3309,7 @@
                     balance_due: `₹${balance.toLocaleString('en-IN')}`,
                     due_date: client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion',
                     base_price: `₹${(Number(client.price) || 0).toLocaleString('en-IN')}`,
-                    extra_charges: `₹${extraCharge.toLocaleString('en-IN')}`,
+                    extra_charges: `₹${totalExtra.toLocaleString('en-IN')}`,
                     maintenance_charges: `₹${maintenanceCharge.toLocaleString('en-IN')}`,
                     discount_amount: `₹${discount.toLocaleString('en-IN')}`,
                     client_address: client.address || 'Address not provided',
@@ -3314,6 +3320,7 @@
                     falconix_phone: '+91 86370 28337',
                     falconix_email: 'digitalfalconix@gmail.com',
                     falconix_website: 'https://falconixdigital.netlify.app',
+                    invoice_link: invoiceLink,
                     reply_to: currentUser.email
                 };
 
