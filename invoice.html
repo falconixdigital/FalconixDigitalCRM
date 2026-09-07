@@ -146,8 +146,8 @@
                 </div>
 
                 <div class="flex justify-between items-start gap-8 mb-10">
-                    <div class="flex-1">
-                        <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                    <a id="inv-upi-link" href="#" class="flex-1 cursor-pointer block group" style="text-decoration: none;">
+                        <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group-hover:bg-gray-100 transition-colors">
                             <div>
                                 <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-accentSecondary text-lg"></i> Payment Method</h3>
                                 <div class="space-y-1.5 text-sm">
@@ -157,10 +157,10 @@
                             </div>
                             <div class="flex flex-col items-center pl-5 border-l border-gray-300 ml-2 shrink-0">
                                 <img src="https://i.ibb.co/wr8prtqY/Payment-QR.jpg" alt="Scan to Pay QR" class="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 bg-white shadow-sm p-0.5">
-                                <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider">Scan to Pay</span>
+                                <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider text-center group-hover:text-blue-600 transition-colors">Click or Scan<br>to Pay</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                     <div class="w-64 shrink-0">
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between text-gray-600">
@@ -380,6 +380,17 @@
                 setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
                 setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
                 setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
+
+                const upiLinkEl = document.getElementById('inv-upi-link');
+                if (upiLinkEl) {
+                    if (balance > 0) {
+                        upiLinkEl.href = `upi://pay?pa=pabitramondal2635@oksbi&pn=Pabitra%20Mondal&am=${balance}&cu=INR`;
+                        upiLinkEl.style.pointerEvents = 'auto'; 
+                    } else {
+                        upiLinkEl.removeAttribute('href');
+                        upiLinkEl.style.pointerEvents = 'none'; 
+                    }
+                }
 
                 const stamp = document.getElementById('inv-paid-stamp');
                 if (stamp) {
