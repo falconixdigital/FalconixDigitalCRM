@@ -1404,52 +1404,16 @@
             setTimeout(type, 300);
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const publicInvoiceId = urlParams.get('invoice');
-
-        if (publicInvoiceId) {
-            document.getElementById('login-wrapper').classList.add('hidden');
-            document.getElementById('app-wrapper').classList.add('hidden');
-            document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
-            document.body.classList.add('bg-gray-900'); 
-            
-            (async () => {
-                try {
-                    // Directly fetch the document. Authentication is not required because of 'allow get: if true;'
-                    const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
-                    const clientSnap = await getDoc(clientRef);
-
-                    if (clientSnap.exists()) {
-                        window.isPublicInvoiceView = true;
-                        const clientData = { id: clientSnap.id, ...clientSnap.data() };
-                        window.currentOpenClientId = clientSnap.id;
-                        await window.openInvoiceModal(clientData, true);
-                        
-                        const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
-                        if(closeBtn) closeBtn.classList.add('hidden');
-                        const emailBtn = document.getElementById('inv-email-btn');
-                        if(emailBtn) emailBtn.classList.add('hidden');
-                        const copyBtn = document.getElementById('btn-copy-link');
-                        if(copyBtn) copyBtn.classList.add('hidden');
-                    } else {
-                        document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
-                    }
-                } catch (err) {
-                    console.error("Public Invoice Fetch Error:", err);
-                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice.</p><p style="font-size:14px;color:#94a3b8;">Please verify Firestore Security Rules have been published in the Firebase Console.</p></div>';
-                }
-            })();
-        } else {
-            onAuthStateChanged(auth, async (user) => {
-                if (user && !user.isAnonymous) {
-                    const isAdmin = await checkIfAdmin(user.email);
-                    if (isAdmin) {
-                        currentUser = user;
-                        isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-                        loggedInEmailText.innerText = user.email;
-                        
-                        document.getElementById('nav-requests').classList.remove('hidden');
-                        document.getElementById('nav-requests').classList.add('flex');
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !user.isAnonymous) {
+                const isAdmin = await checkIfAdmin(user.email);
+                if (isAdmin) {
+                    currentUser = user;
+                    isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                    loggedInEmailText.innerText = user.email;
+                    
+                    document.getElementById('nav-requests').classList.remove('hidden');
+                    document.getElementById('nav-requests').classList.add('flex');
                         
                         const navDashboard = document.getElementById('nav-dashboard');
                         const navClientList = document.getElementById('nav-client-list');
@@ -1521,33 +1485,32 @@
                         loginWrapper.classList.add('opacity-0', 'pointer-events-none');
                         setTimeout(() => {
                             loginWrapper.classList.add('hidden');
-                            appWrapper.classList.remove('hidden');
-                            appWrapper.classList.add('flex');
-                            const defaultName = user.email.split('@')[0];
-                            const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-                            startContinuousTypewriter(adminName);
-                        }, 500);
-                        setupDatabaseListener();
-                    } else {
-                        await signOut(auth);
-                        loginError.innerText = "Access Denied: Email not authorized as Admin.";
-                        loginError.classList.remove('hidden');
-                        googleLoginBtn.innerHTML = defaultBtnHtml;
-                    }
+                        appWrapper.classList.remove('hidden');
+                        appWrapper.classList.add('flex');
+                        const defaultName = user.email.split('@')[0];
+                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                        startContinuousTypewriter(adminName);
+                    }, 500);
+                    setupDatabaseListener();
                 } else {
-                    currentUser = null;
-                    isSuperAdminUser = false;
-                    if(unsubscribeClients) unsubscribeClients();
-                    if(unsubscribeRequests) unsubscribeRequests();
-                    if(unsubscribeNotifications) unsubscribeNotifications();
-                    if(unsubscribeExpenses) unsubscribeExpenses();
-                    appWrapper.classList.add('hidden');
-                    appWrapper.classList.remove('flex');
-                    loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                    loginError.classList.remove('hidden');
                     googleLoginBtn.innerHTML = defaultBtnHtml;
                 }
-            });
-        }
+            } else {
+                currentUser = null;
+                isSuperAdminUser = false;
+                if(unsubscribeClients) unsubscribeClients();
+                if(unsubscribeRequests) unsubscribeRequests();
+                if(unsubscribeNotifications) unsubscribeNotifications();
+                if(unsubscribeExpenses) unsubscribeExpenses();
+                appWrapper.classList.add('hidden');
+                appWrapper.classList.remove('flex');
+                loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                googleLoginBtn.innerHTML = defaultBtnHtml;
+            }
+        });
 
         function setupDatabaseListener() {
             if (!currentUser) return;
@@ -3153,9 +3116,15 @@
         window.copyInvoiceLink = function() {
             if (!currentOpenClientId) return;
             
-            const url = new URL(window.location.href);
-            url.searchParams.set('invoice', currentOpenClientId);
-            const link = url.toString();
+            // Build the URL pointing to your new invoice.html file
+            let baseUrl = window.location.origin;
+            if (window.location.pathname.includes('index.html')) {
+                baseUrl += window.location.pathname.replace('index.html', '');
+            } else if (!baseUrl.endsWith('/')) {
+                baseUrl += '/';
+            }
+            
+            const link = baseUrl + 'invoice.html?id=' + currentOpenClientId;
             
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(link).then(() => {
