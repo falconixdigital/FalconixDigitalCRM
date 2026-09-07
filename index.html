@@ -589,6 +589,15 @@
                                         <input type="number" id="form-maintenance-charge" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                 </div>
+
+                                <div class="mt-4 border border-gray-300 dark:border-gray-800 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-900/30">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100"><i class="ph ph-list-plus text-accentPrimary"></i> Custom Invoice Items</h4>
+                                        <button type="button" onclick="addCustomItemRow()" class="text-xs bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm font-medium text-gray-800 dark:text-gray-200">+ Add Item</button>
+                                    </div>
+                                    <div id="custom-items-container" class="space-y-2"></div>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-4 md:mt-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Target Deadline</label>
@@ -979,8 +988,8 @@
                 </div>
 
                 <div class="flex justify-between items-start gap-8 mb-10">
-                    <div class="flex-1">
-                        <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                    <a id="inv-upi-link" href="#" class="flex-1 cursor-pointer block group" style="text-decoration: none;">
+                        <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group-hover:bg-gray-100 transition-colors">
                             <div>
                                 <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-accentSecondary text-lg"></i> Payment Method</h3>
                                 <div class="space-y-1.5 text-sm">
@@ -990,10 +999,10 @@
                             </div>
                             <div class="flex flex-col items-center pl-5 border-l border-gray-300 ml-2 shrink-0">
                                 <img src="https://i.ibb.co/wr8prtqY/Payment-QR.jpg" alt="Scan to Pay QR" class="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 bg-white shadow-sm p-0.5">
-                                <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider">Scan to Pay</span>
+                                <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider text-center group-hover:text-blue-600 transition-colors">Click or Scan<br>to Pay</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                     <div class="w-64 shrink-0">
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between text-gray-600">
@@ -1256,6 +1265,44 @@
             return data;
         }
 
+        window.addCustomItemRow = function(desc = '', amount = '') {
+            const container = document.getElementById('custom-items-container');
+            const row = document.createElement('div');
+            row.className = 'flex flex-col md:flex-row gap-2 items-center custom-item-row';
+            row.innerHTML = `
+                <div class="w-full md:w-3/5">
+                    <input type="text" placeholder="Item Description (e.g. Logo Design, Content Writing)" value="${desc}" class="ci-desc w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                </div>
+                <div class="w-full md:w-1/3">
+                    <input type="number" placeholder="Amt (₹)" value="${amount}" class="ci-amount w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                </div>
+                <div class="w-full md:w-auto flex items-center shrink-0">
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" class="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"><i class="ph ph-trash text-lg"></i></button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function getCustomItemsData() {
+            const rows = document.querySelectorAll('.custom-item-row');
+            const data = [];
+            rows.forEach(row => {
+                const desc = row.querySelector('.ci-desc').value.trim();
+                const amt = parseFloat(row.querySelector('.ci-amount').value) || 0;
+                if (desc || amt > 0) {
+                    data.push({ description: desc, amount: amt });
+                }
+            });
+            return data;
+        }
+
+        function calculateTotalExpected(client) {
+            const base = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+            const extra = (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+            const custom = (client.customItems || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            return base + extra + custom;
+        }
+
         function calculatePaidAmount(client) {
             let paid = 0;
             if (client.installments && client.installments.length > 0) {
@@ -1265,7 +1312,7 @@
             }
             
             if (client.status === 'Completed') {
-                const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                const expected = calculateTotalExpected(client);
                 return Math.max(paid, expected);
             }
             return paid;
@@ -1414,77 +1461,77 @@
                     
                     document.getElementById('nav-requests').classList.remove('hidden');
                     document.getElementById('nav-requests').classList.add('flex');
-                        
-                        const navDashboard = document.getElementById('nav-dashboard');
-                        const navClientList = document.getElementById('nav-client-list');
-                        
-                        const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
-                        const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
+                    
+                    const navDashboard = document.getElementById('nav-dashboard');
+                    const navClientList = document.getElementById('nav-client-list');
+                    
+                    const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
+                    const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
 
-                        if (navDashboard) {
-                            navDashboard.classList.remove('hidden');
-                            navDashboard.classList.add('flex');
-                            if (isRestrictedFromDashboard) {
-                                navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
-                            } else {
-                                navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
-                            }
-                        }
-
-                        if (navClientList) {
-                            if (isRestrictedFromClients) {
-                                navClientList.classList.add('opacity-50', 'cursor-not-allowed');
-                            } else {
-                                navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
-                            }
-                        }
-
-                        if (isRestrictedFromDashboard && !isRestrictedFromClients) {
-                            navigate('client-list'); 
-                        } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
-                            navigate('dashboard'); 
-                        } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
-                            navigate('add-client'); 
+                    if (navDashboard) {
+                        navDashboard.classList.remove('hidden');
+                        navDashboard.classList.add('flex');
+                        if (isRestrictedFromDashboard) {
+                            navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
                         } else {
-                            navigate('dashboard');
+                            navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
                         }
+                    }
 
-                        const expCard = document.getElementById('stat-card-expenses');
-                        if (expCard) {
-                            expCard.classList.remove('hidden');
-                            expCard.classList.add('flex');
+                    if (navClientList) {
+                        if (isRestrictedFromClients) {
+                            navClientList.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
                         }
-                        
-                        const netCard = document.getElementById('stat-card-net-profit');
-                        if (netCard) {
-                            netCard.classList.remove('hidden');
-                            netCard.classList.add('flex');
-                        }
+                    }
 
-                        const navExp = document.getElementById('nav-expenses');
-                        if (navExp) {
-                            navExp.classList.remove('hidden');
-                            navExp.classList.add('flex');
-                        }
+                    if (isRestrictedFromDashboard && !isRestrictedFromClients) {
+                        navigate('client-list'); 
+                    } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
+                        navigate('dashboard'); 
+                    } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
+                        navigate('add-client'); 
+                    } else {
+                        navigate('dashboard');
+                    }
 
-                        const expFormContainer = document.getElementById('expense-form')?.parentElement;
-                        const expHistoryContainer = expFormContainer?.nextElementSibling;
-                        
-                        if (expFormContainer && expHistoryContainer) {
-                            if (!isSuperAdminUser) {
-                                expFormContainer.classList.add('hidden');
-                                expHistoryContainer.classList.remove('lg:col-span-2');
-                                expHistoryContainer.classList.add('lg:col-span-3');
-                            } else {
-                                expFormContainer.classList.remove('hidden');
-                                expHistoryContainer.classList.add('lg:col-span-2');
-                                expHistoryContainer.classList.remove('lg:col-span-3');
-                            }
-                        }
+                    const expCard = document.getElementById('stat-card-expenses');
+                    if (expCard) {
+                        expCard.classList.remove('hidden');
+                        expCard.classList.add('flex');
+                    }
+                    
+                    const netCard = document.getElementById('stat-card-net-profit');
+                    if (netCard) {
+                        netCard.classList.remove('hidden');
+                        netCard.classList.add('flex');
+                    }
 
-                        loginWrapper.classList.add('opacity-0', 'pointer-events-none');
-                        setTimeout(() => {
-                            loginWrapper.classList.add('hidden');
+                    const navExp = document.getElementById('nav-expenses');
+                    if (navExp) {
+                        navExp.classList.remove('hidden');
+                        navExp.classList.add('flex');
+                    }
+
+                    const expFormContainer = document.getElementById('expense-form')?.parentElement;
+                    const expHistoryContainer = expFormContainer?.nextElementSibling;
+                    
+                    if (expFormContainer && expHistoryContainer) {
+                        if (!isSuperAdminUser) {
+                            expFormContainer.classList.add('hidden');
+                            expHistoryContainer.classList.remove('lg:col-span-2');
+                            expHistoryContainer.classList.add('lg:col-span-3');
+                        } else {
+                            expFormContainer.classList.remove('hidden');
+                            expHistoryContainer.classList.add('lg:col-span-2');
+                            expHistoryContainer.classList.remove('lg:col-span-3');
+                        }
+                    }
+
+                    loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        loginWrapper.classList.add('hidden');
                         appWrapper.classList.remove('hidden');
                         appWrapper.classList.add('flex');
                         const defaultName = user.email.split('@')[0];
@@ -1573,39 +1620,36 @@
             });
         }
 
-        const expenseFormEl = document.getElementById('expense-form');
-        if (expenseFormEl) {
-            expenseFormEl.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!isSuperAdminUser) return;
-                
-                const btn = document.getElementById('exp-submit-btn');
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Logging...`;
-                btn.disabled = true;
+        document.getElementById('expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isSuperAdminUser) return;
+            
+            const btn = document.getElementById('exp-submit-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Logging...`;
+            btn.disabled = true;
 
-                try {
-                    const newExp = {
-                        description: document.getElementById('exp-desc').value.trim(),
-                        amount: parseFloat(document.getElementById('exp-amount').value),
-                        category: document.getElementById('exp-category').value,
-                        date: document.getElementById('exp-date').value,
-                        addedAt: Date.now()
-                    };
-                    const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
-                    await setDoc(ref, newExp);
-                    
-                    document.getElementById('expense-form').reset();
-                    document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-                    showToast("Expense logged successfully!", "success");
-                } catch (err) {
-                    showToast("Error logging expense.", "error");
-                } finally {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            });
-        }
+            try {
+                const newExp = {
+                    description: document.getElementById('exp-desc').value.trim(),
+                    amount: parseFloat(document.getElementById('exp-amount').value),
+                    category: document.getElementById('exp-category').value,
+                    date: document.getElementById('exp-date').value,
+                    addedAt: Date.now()
+                };
+                const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
+                await setDoc(ref, newExp);
+                
+                document.getElementById('expense-form').reset();
+                document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+                showToast("Expense logged successfully!", "success");
+            } catch (err) {
+                showToast("Error logging expense.", "error");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
 
         function renderExpenses() {
             const tbody = document.getElementById('expenses-tbody');
@@ -1773,6 +1817,7 @@
                 discount: parseFloat(document.getElementById('form-discount').value) || 0,
                 extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
                 maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
+                customItems: getCustomItemsData(),
                 installments: getInstallmentsData(),
                 tasks: getTasksData(),
                 deadline: document.getElementById('form-deadline').value || null,
@@ -1784,6 +1829,7 @@
                 addedByEmail: addedEmail,
                 addedByName: addedName,
                 activityLog: activityLog,
+                invoiceEmailSent: false,
                 ...(isEditing && existingClient?.invoiceNo ? { invoiceNo: existingClient.invoiceNo } : {})
             };
 
@@ -1836,6 +1882,7 @@
                 }
                 document.getElementById('client-form').reset();
                 document.getElementById('client-id').value = "";
+                document.getElementById('custom-items-container').innerHTML = '';
                 document.getElementById('installments-container').innerHTML = '';
                 document.getElementById('form-tasks-container').innerHTML = '';
                 document.getElementById('form-title').innerText = "Add New Client";
@@ -1903,10 +1950,12 @@
                 const clientIdEl = document.getElementById('client-id');
                 const clientForm = document.getElementById('client-form');
                 const instContainer = document.getElementById('installments-container');
+                const customItemsContainer = document.getElementById('custom-items-container');
                 const tasksContainer = document.getElementById('form-tasks-container');
                 if(clientIdEl) clientIdEl.value = "";
                 if(clientForm) clientForm.reset();
                 if(instContainer) instContainer.innerHTML = '';
+                if(customItemsContainer) customItemsContainer.innerHTML = '';
                 if(tasksContainer) tasksContainer.innerHTML = '';
             }
             if(viewId === 'client-list' || viewId === 'dashboard') {
@@ -1976,6 +2025,11 @@
             document.getElementById('form-deadline').value = client.deadline || '';
             document.getElementById('form-status').value = client.status || 'Pending';
             document.getElementById('form-notes').value = client.notes || ''; 
+
+            document.getElementById('custom-items-container').innerHTML = '';
+            if (client.customItems && client.customItems.length > 0) {
+                client.customItems.forEach(item => addCustomItemRow(item.description, item.amount));
+            }
 
             document.getElementById('installments-container').innerHTML = '';
             if (client.installments && client.installments.length > 0) {
@@ -2048,14 +2102,11 @@
             if(completedEl) completedEl.innerText = clientsList.filter(c => c.status === 'Completed').length;
             
             const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
-                const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
-                const extra = Number(client.extraCharge) || 0;
-                const maintenance = Number(client.maintenanceCharge) || 0;
-                return sum + baseRevenue + extra + maintenance;
+                return sum + calculateTotalExpected(client);
             }, 0);
             
             const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
-                const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                const expected = calculateTotalExpected(client);
                 const paid = calculatePaidAmount(client);
                 return sum + Math.max(0, expected - paid);
             }, 0);
@@ -2096,7 +2147,7 @@
                     tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
                     tr.onclick = () => openModal(client.id);
                     
-                    const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                    const expected = calculateTotalExpected(client);
                     const paid = calculatePaidAmount(client);
                     const balance = Math.max(0, expected - paid);
 
@@ -2194,7 +2245,7 @@
                     const y = d.getFullYear();
                     const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
                     if (monthObj) {
-                        monthObj.revenue += Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.maintenanceCharge) || 0);
+                        monthObj.revenue += calculateTotalExpected(client);
                     }
                 }
             });
@@ -2337,7 +2388,8 @@
                     
                     if (client.status === 'Completed') {
                         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
-                        statsMap[email].revenue += baseRevenue;
+                        const customRevenue = (client.customItems || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                        statsMap[email].revenue += (baseRevenue + customRevenue);
                         
                         const maintenance = Number(client.maintenanceCharge) || 0;
                         if (maintenance > 0) {
@@ -2461,7 +2513,7 @@
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
                     
-                    const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+                    const expected = calculateTotalExpected(client);
                     const paid = calculatePaidAmount(client);
                     const balance = Math.max(0, expected - paid);
 
@@ -2713,7 +2765,7 @@
             const maintenanceCharge = Number(client.maintenanceCharge) || 0;
             const discount = Number(client.discount) || 0;
             const paidAmount = calculatePaidAmount(client);
-            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const totalExpected = calculateTotalExpected(client);
             const balance = Math.max(0, totalExpected - paidAmount);
 
             document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
@@ -2970,7 +3022,7 @@
                 const cleanPhone = client.phone ? client.phone.replace(/[^0-9\+]/g, '') : '';
                 const phoneHtml = client.phone ? `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">${client.phone}</a>` : 'N/A';
                 const emailHtml = client.email ? `<a href="mailto:${client.email}" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">${client.email}</a>` : 'N/A';
-
+                
                 let webHtml = '';
                 if (client.websiteUrl) {
                     const cleanUrl = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
@@ -3022,6 +3074,14 @@
                     addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
                     addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
 
+                    if (client.customItems && client.customItems.length > 0) {
+                        client.customItems.forEach(item => {
+                            if (item.description || item.amount) {
+                                addRow(item.description || 'Custom Item', Number(item.amount) || 0);
+                            }
+                        });
+                    }
+
                     const discount = Number(client.discount) || 0;
                     const total = Math.max(0, subtotal - discount);
                     const paidAmount = calculatePaidAmount(client);
@@ -3039,6 +3099,17 @@
                             stamp.classList.remove('hidden');
                         } else {
                             stamp.classList.add('hidden');
+                        }
+                    }
+
+                    const upiLinkEl = document.getElementById('inv-upi-link');
+                    if (upiLinkEl) {
+                        if (balance > 0) {
+                            upiLinkEl.href = `upi://pay?pa=pabitramondal2635@oksbi&pn=Pabitra%20Mondal&am=${balance}&cu=INR`;
+                            upiLinkEl.style.pointerEvents = 'auto'; 
+                        } else {
+                            upiLinkEl.removeAttribute('href');
+                            upiLinkEl.style.pointerEvents = 'none'; 
                         }
                     }
                 }
@@ -3083,7 +3154,15 @@
                 if (emailInvoiceBtn && !window.isPublicInvoiceView) {
                     if (client.email && client.email.trim() !== '') {
                         emailInvoiceBtn.classList.remove('hidden');
-                        emailInvoiceBtn.onclick = () => sendInvoiceEmail(client.id);
+                        if (client.invoiceEmailSent) {
+                            emailInvoiceBtn.className = "bg-emerald-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-sm text-xs md:text-base opacity-80 cursor-not-allowed";
+                            emailInvoiceBtn.innerHTML = `<i class="ph ph-check-circle text-lg md:text-xl"></i> <span class="hidden sm:inline">Email Sent</span><span class="sm:hidden">Sent</span>`;
+                            emailInvoiceBtn.onclick = null;
+                        } else {
+                            emailInvoiceBtn.className = "bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-lg transition-transform active:scale-95 text-xs md:text-base";
+                            emailInvoiceBtn.innerHTML = `<i class="ph ph-envelope-simple text-lg md:text-xl"></i> <span class="hidden sm:inline">Email Invoice</span><span class="sm:hidden">Email</span>`;
+                            emailInvoiceBtn.onclick = () => sendInvoiceEmail(client.id);
+                        }
                     } else {
                         emailInvoiceBtn.classList.add('hidden');
                     }
@@ -3116,15 +3195,7 @@
         window.copyInvoiceLink = function() {
             if (!currentOpenClientId) return;
             
-            // Build the URL pointing to your new invoice.html file
-            let baseUrl = window.location.origin;
-            if (window.location.pathname.includes('index.html')) {
-                baseUrl += window.location.pathname.replace('index.html', '');
-            } else if (!baseUrl.endsWith('/')) {
-                baseUrl += '/';
-            }
-            
-            const link = baseUrl + 'invoice.html?id=' + currentOpenClientId;
+            const link = window.location.origin + window.location.pathname.replace('index.html', '') + 'invoice.html?id=' + currentOpenClientId;
             
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(link).then(() => {
@@ -3219,7 +3290,7 @@
                 const maintenanceCharge = Number(client.maintenanceCharge) || 0;
                 const discount = Number(client.discount) || 0;
                 const paidAmount = calculatePaidAmount(client);
-                const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+                const totalExpected = calculateTotalExpected(client);
                 const balance = Math.max(0, totalExpected - paidAmount);
 
                 const templateParams = {
@@ -3253,6 +3324,7 @@
                 const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
                 
                 await updateDoc(clientRef, {
+                    invoiceEmailSent: true,
                     activityLog: arrayUnion({
                         action: `Emailed invoice (${client.invoiceNo}) to ${client.email}`,
                         performedBy: addedName,
@@ -3261,11 +3333,15 @@
                     })
                 });
 
+                client.invoiceEmailSent = true;
                 renderActivityLog(client);
+
+                btn.innerHTML = `<i class="ph ph-check-circle text-lg md:text-xl"></i> <span class="hidden sm:inline">Email Sent</span><span class="sm:hidden">Sent</span>`;
+                btn.className = "bg-emerald-500 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-xl font-semibold flex items-center gap-1.5 md:gap-2 shadow-sm text-xs md:text-base opacity-80 cursor-not-allowed";
+                btn.onclick = null;
             } catch (error) {
                 console.error("EmailJS Error:", error);
                 showToast("Failed to send email. Check console.", "error");
-            } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
@@ -3376,7 +3452,7 @@
                             <td class="p-3 md:p-4 text-right">${col4Html}</td>
                         `;
                     } else {
-                        const expected = Math.max(0, (Number(clientToRender.price) || 0) - (Number(clientToRender.discount) || 0)) + (Number(clientToRender.extraCharge) || 0) + (Number(clientToRender.maintenanceCharge) || 0);
+                        const expected = calculateTotalExpected(clientToRender);
                         const paid = calculatePaidAmount(clientToRender);
                         const balance = Math.max(0, expected - paid);
 
@@ -3474,7 +3550,7 @@
             const maintenanceCharge = Number(client.maintenanceCharge) || 0;
             const discount = Number(client.discount) || 0;
             const paidAmount = calculatePaidAmount(client);
-            const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
+            const totalExpected = calculateTotalExpected(client);
             const balance = Math.max(0, totalExpected - paidAmount);
 
             document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
