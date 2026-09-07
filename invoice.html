@@ -213,11 +213,11 @@
         </div>
     </div>
 
-    <!-- FIREBASE AND RENDERING LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
@@ -229,6 +229,13 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        
+        // 🚨 CRITICAL: APP CHECK ADDED 🚨
+        initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'),
+            isTokenAutoRefreshEnabled: true
+        });
+        
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = 'falconix-crm';
@@ -362,7 +369,6 @@
             currentInvoiceFilename = `Invoice_${invoiceNo}_${safeName}.pdf`;
         }
 
-        // --- NEW IMPLEMENTATION MATCHING SMART LETTER GENERATOR ---
         const urlParams = new URLSearchParams(window.location.search);
         const invoiceId = urlParams.get('id') || urlParams.get('invoice');
 
@@ -371,12 +377,11 @@
             document.getElementById('error-screen').classList.remove('hidden');
             document.getElementById('error-message-text').innerText = "No invoice ID provided in the link.";
         } else {
-            // CRITICAL SETUP: Trigger Anonymous Auth *prior* to querying database
             const initReadOnlyAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
+                try {
                     await signInAnonymously(auth);
+                } catch (authError) {
+                    console.warn("Anonymous Sign-In Failed or Blocked. Falling back to public request...", authError);
                 }
                 return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId));
             };
@@ -399,14 +404,13 @@
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('error-screen').classList.remove('hidden');
                 
-                if (err.message && err.message.toLowerCase().includes('auth')) {
-                     document.getElementById('error-message-text').innerText = "Authentication Failed: Ensure 'Anonymous' sign-in is enabled in Firebase Authentication.";
+                if (err.message && err.message.includes('Missing or insufficient permissions')) {
+                     document.getElementById('error-message-text').innerHTML = "Access Denied by App Check.<br><br><span class='text-xs'>If you are testing this on localhost, Firebase is actively blocking your browser. You must upload this file to Netlify to view the link!</span>";
                 } else {
-                     document.getElementById('error-message-text').innerText = "Access Denied. Missing or insufficient permissions. Please check database rules.";
+                     document.getElementById('error-message-text').innerText = "An error occurred while fetching the document: " + err.message;
                 }
             });
         }
-        // -----------------------------------------------------------
 
         document.getElementById('btn-download-pdf').addEventListener('click', () => {
             const element = document.getElementById('invoice-content');
