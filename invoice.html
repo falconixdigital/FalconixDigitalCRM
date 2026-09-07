@@ -51,10 +51,11 @@
         <p class="font-medium animate-pulse">Retrieving secure invoice...</p>
     </div>
 
+    <!-- Enhanced Error Screen with detailed troubleshooting messages -->
     <div id="error-screen" class="hidden fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white text-center p-6">
         <i class="ph ph-warning-circle text-5xl text-red-500 mb-4"></i>
         <h2 class="text-2xl font-bold mb-2">Invoice Not Found</h2>
-        <p class="text-gray-400 max-w-md">The invoice you are looking for does not exist or has been removed. Please check the link and try again.</p>
+        <p id="error-message-text" class="text-gray-400 max-w-md">The invoice you are looking for does not exist or has been removed. Please check the link and try again.</p>
     </div>
 
     <div id="invoice-container" class="hidden flex-col items-center w-full max-w-[210mm]">
@@ -258,17 +259,27 @@
             }
 
             try {
-                // 1. MANDATORY: Authenticate securely as a Guest BEFORE querying
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
+                // 1. Attempt Secure Authentication with Error Catching
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (authErr) {
+                    console.error("Firebase Authentication Failed:", authErr);
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    document.getElementById('error-screen').classList.remove('hidden');
+                    document.getElementById('error-message-text').innerText = 
+                        "Authentication Failed: Please ensure 'Anonymous' sign-in is enabled in your Firebase Console under Authentication > Sign-in method.";
+                    return;
                 }
 
-                // Guard the operation: Only proceed if the user is authenticated
-                if (!auth.currentUser) return;
+                if (!auth.currentUser) {
+                    throw new Error("Current user session could not be established.");
+                }
 
-                // 2. Fetch document now that we have a secure token
+                // 2. Fetch document from Firestore
                 const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
                 const clientSnap = await getDoc(clientRef);
 
@@ -286,7 +297,7 @@
                 console.error("Error fetching invoice:", error);
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('error-screen').classList.remove('hidden');
-                document.getElementById('error-screen').innerHTML += `<p class="text-xs text-gray-500 mt-4">${error.message}</p>`;
+                document.getElementById('error-message-text').innerHTML = `Database Error: ${error.message}`;
             }
         }
 
