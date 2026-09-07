@@ -1090,7 +1090,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
@@ -1407,14 +1407,15 @@
         const urlParams = new URLSearchParams(window.location.search);
         const publicInvoiceId = urlParams.get('invoice');
 
-        onAuthStateChanged(auth, async (user) => {
-            if (publicInvoiceId) {
-                document.getElementById('login-wrapper').classList.add('hidden');
-                document.getElementById('app-wrapper').classList.add('hidden');
-                document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
-                document.body.classList.add('bg-gray-900'); 
-                
+        if (publicInvoiceId) {
+            document.getElementById('login-wrapper').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
+            document.body.classList.add('bg-gray-900'); 
+            
+            (async () => {
                 try {
+                    // Directly fetch the document. Authentication is not required because of 'allow get: if true;'
                     const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
                     const clientSnap = await getDoc(clientRef);
 
@@ -1437,115 +1438,116 @@
                     console.error("Public Invoice Fetch Error:", err);
                     document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice.</p><p style="font-size:14px;color:#94a3b8;">Please verify Firestore Security Rules have been published in the Firebase Console.</p></div>';
                 }
-                return;
-            }
+            })();
+        } else {
+            onAuthStateChanged(auth, async (user) => {
+                if (user && !user.isAnonymous) {
+                    const isAdmin = await checkIfAdmin(user.email);
+                    if (isAdmin) {
+                        currentUser = user;
+                        isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                        loggedInEmailText.innerText = user.email;
+                        
+                        document.getElementById('nav-requests').classList.remove('hidden');
+                        document.getElementById('nav-requests').classList.add('flex');
+                        
+                        const navDashboard = document.getElementById('nav-dashboard');
+                        const navClientList = document.getElementById('nav-client-list');
+                        
+                        const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
+                        const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
 
-            if (user && !user.isAnonymous) {
-                const isAdmin = await checkIfAdmin(user.email);
-                if (isAdmin) {
-                    currentUser = user;
-                    isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-                    loggedInEmailText.innerText = user.email;
-                    
-                    document.getElementById('nav-requests').classList.remove('hidden');
-                    document.getElementById('nav-requests').classList.add('flex');
-                    
-                    const navDashboard = document.getElementById('nav-dashboard');
-                    const navClientList = document.getElementById('nav-client-list');
-                    
-                    const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
-                    const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
-
-                    if (navDashboard) {
-                        navDashboard.classList.remove('hidden');
-                        navDashboard.classList.add('flex');
-                        if (isRestrictedFromDashboard) {
-                            navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
-                        } else {
-                            navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
+                        if (navDashboard) {
+                            navDashboard.classList.remove('hidden');
+                            navDashboard.classList.add('flex');
+                            if (isRestrictedFromDashboard) {
+                                navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
+                            } else {
+                                navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
+                            }
                         }
-                    }
 
-                    if (navClientList) {
-                        if (isRestrictedFromClients) {
-                            navClientList.classList.add('opacity-50', 'cursor-not-allowed');
-                        } else {
-                            navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
+                        if (navClientList) {
+                            if (isRestrictedFromClients) {
+                                navClientList.classList.add('opacity-50', 'cursor-not-allowed');
+                            } else {
+                                navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
+                            }
                         }
-                    }
 
-                    if (isRestrictedFromDashboard && !isRestrictedFromClients) {
-                        navigate('client-list'); 
-                    } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
-                        navigate('dashboard'); 
-                    } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
-                        navigate('add-client'); 
+                        if (isRestrictedFromDashboard && !isRestrictedFromClients) {
+                            navigate('client-list'); 
+                        } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
+                            navigate('dashboard'); 
+                        } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
+                            navigate('add-client'); 
+                        } else {
+                            navigate('dashboard');
+                        }
+
+                        const expCard = document.getElementById('stat-card-expenses');
+                        if (expCard) {
+                            expCard.classList.remove('hidden');
+                            expCard.classList.add('flex');
+                        }
+                        
+                        const netCard = document.getElementById('stat-card-net-profit');
+                        if (netCard) {
+                            netCard.classList.remove('hidden');
+                            netCard.classList.add('flex');
+                        }
+
+                        const navExp = document.getElementById('nav-expenses');
+                        if (navExp) {
+                            navExp.classList.remove('hidden');
+                            navExp.classList.add('flex');
+                        }
+
+                        const expFormContainer = document.getElementById('expense-form')?.parentElement;
+                        const expHistoryContainer = expFormContainer?.nextElementSibling;
+                        
+                        if (expFormContainer && expHistoryContainer) {
+                            if (!isSuperAdminUser) {
+                                expFormContainer.classList.add('hidden');
+                                expHistoryContainer.classList.remove('lg:col-span-2');
+                                expHistoryContainer.classList.add('lg:col-span-3');
+                            } else {
+                                expFormContainer.classList.remove('hidden');
+                                expHistoryContainer.classList.add('lg:col-span-2');
+                                expHistoryContainer.classList.remove('lg:col-span-3');
+                            }
+                        }
+
+                        loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                        setTimeout(() => {
+                            loginWrapper.classList.add('hidden');
+                            appWrapper.classList.remove('hidden');
+                            appWrapper.classList.add('flex');
+                            const defaultName = user.email.split('@')[0];
+                            const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                            startContinuousTypewriter(adminName);
+                        }, 500);
+                        setupDatabaseListener();
                     } else {
-                        navigate('dashboard');
+                        await signOut(auth);
+                        loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                        loginError.classList.remove('hidden');
+                        googleLoginBtn.innerHTML = defaultBtnHtml;
                     }
-
-                    const expCard = document.getElementById('stat-card-expenses');
-                    if (expCard) {
-                        expCard.classList.remove('hidden');
-                        expCard.classList.add('flex');
-                    }
-                    
-                    const netCard = document.getElementById('stat-card-net-profit');
-                    if (netCard) {
-                        netCard.classList.remove('hidden');
-                        netCard.classList.add('flex');
-                    }
-
-                    const navExp = document.getElementById('nav-expenses');
-                    if (navExp) {
-                        navExp.classList.remove('hidden');
-                        navExp.classList.add('flex');
-                    }
-
-                    const expFormContainer = document.getElementById('expense-form')?.parentElement;
-                    const expHistoryContainer = expFormContainer?.nextElementSibling;
-                    
-                    if (expFormContainer && expHistoryContainer) {
-                        if (!isSuperAdminUser) {
-                            expFormContainer.classList.add('hidden');
-                            expHistoryContainer.classList.remove('lg:col-span-2');
-                            expHistoryContainer.classList.add('lg:col-span-3');
-                        } else {
-                            expFormContainer.classList.remove('hidden');
-                            expHistoryContainer.classList.add('lg:col-span-2');
-                            expHistoryContainer.classList.remove('lg:col-span-3');
-                        }
-                    }
-
-                    loginWrapper.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => {
-                        loginWrapper.classList.add('hidden');
-                        appWrapper.classList.remove('hidden');
-                        appWrapper.classList.add('flex');
-                        const defaultName = user.email.split('@')[0];
-                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-                        startContinuousTypewriter(adminName);
-                    }, 500);
-                    setupDatabaseListener();
                 } else {
-                    await signOut(auth);
-                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
-                    loginError.classList.remove('hidden');
+                    currentUser = null;
+                    isSuperAdminUser = false;
+                    if(unsubscribeClients) unsubscribeClients();
+                    if(unsubscribeRequests) unsubscribeRequests();
+                    if(unsubscribeNotifications) unsubscribeNotifications();
+                    if(unsubscribeExpenses) unsubscribeExpenses();
+                    appWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('flex');
+                    loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
                     googleLoginBtn.innerHTML = defaultBtnHtml;
                 }
-            } else {
-                currentUser = null;
-                isSuperAdminUser = false;
-                if(unsubscribeClients) unsubscribeClients();
-                if(unsubscribeRequests) unsubscribeRequests();
-                if(unsubscribeNotifications) unsubscribeNotifications();
-                if(unsubscribeExpenses) unsubscribeExpenses();
-                appWrapper.classList.add('hidden');
-                appWrapper.classList.remove('flex');
-                loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-                googleLoginBtn.innerHTML = defaultBtnHtml;
-            }
-        });
+            });
+        }
 
         function setupDatabaseListener() {
             if (!currentUser) return;
