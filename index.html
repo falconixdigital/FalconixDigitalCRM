@@ -131,7 +131,6 @@
     </style>
 </head>
 <body class="bg-lightBg text-gray-900 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
-
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
         <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
             <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
@@ -1165,7 +1164,7 @@
         const googleLoginBtn = document.getElementById('google-login-btn');
         const loginError = document.getElementById('login-error');
 
-        const defaultBtnHtml = googleLoginBtn.innerHTML;
+        const defaultBtnHtml = googleLoginBtn ? googleLoginBtn.innerHTML : '';
 
         window.addTaskToForm = function(textStr, isCompleted) {
             const input = document.getElementById('new-task-input');
@@ -1297,27 +1296,29 @@
             }
         }
 
-        googleLoginBtn.addEventListener('click', async () => {
-            loginError.classList.add('hidden');
-            googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                const user = result.user;
-                const isAdmin = await checkIfAdmin(user.email);
-                if (!isAdmin) {
-                    await signOut(auth);
-                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
+        if(googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', async () => {
+                loginError.classList.add('hidden');
+                googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+                try {
+                    const result = await signInWithPopup(auth, googleProvider);
+                    const user = result.user;
+                    const isAdmin = await checkIfAdmin(user.email);
+                    if (!isAdmin) {
+                        await signOut(auth);
+                        loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                        loginError.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    loginError.innerText = "Login process was cancelled or failed.";
                     loginError.classList.remove('hidden');
+                } finally {
+                    if (!currentUser) {
+                        googleLoginBtn.innerHTML = defaultBtnHtml;
+                    }
                 }
-            } catch (error) {
-                loginError.innerText = "Login process was cancelled or failed.";
-                loginError.classList.remove('hidden');
-            } finally {
-                if (!currentUser) {
-                    googleLoginBtn.innerHTML = defaultBtnHtml;
-                }
-            }
-        });
+            });
+        }
 
         window.showLogoutModal = function() {
             document.getElementById('logout-modal').classList.remove('hidden');
@@ -1420,37 +1421,40 @@
             document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
             document.body.classList.add('bg-gray-900'); 
             
-            (async () => {
-                try {
-                    // 1. Authenticate silently in the background
-                    await signInAnonymously(auth);
+            signInAnonymously(auth).catch(err => {
+                console.error("Anonymous auth failed:", err);
+                document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Secure Connection Failed.</div>';
+            });
+        }
 
-                    // 2. Fetch the invoice securely
-                    const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
-                    const clientSnap = await getDoc(clientRef);
-
-                    if (clientSnap.exists()) {
-                        window.isPublicInvoiceView = true;
-                        const clientData = { id: clientSnap.id, ...clientSnap.data() };
-                        window.currentOpenClientId = clientSnap.id;
-                        await window.openInvoiceModal(clientData, true);
+        onAuthStateChanged(auth, async (user) => {
+            if (publicInvoiceId) {
+                if (user) {
+                    try {
+                        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
+                        const clientSnap = await getDoc(clientRef);
                         
-                        const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
-                        if(closeBtn) closeBtn.classList.add('hidden');
-                        const emailBtn = document.getElementById('inv-email-btn');
-                        if(emailBtn) emailBtn.classList.add('hidden');
-                        const copyBtn = document.getElementById('btn-copy-link');
-                        if(copyBtn) copyBtn.classList.add('hidden');
-                    } else {
-                        document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
+                        if (clientSnap.exists()) {
+                            window.isPublicInvoiceView = true;
+                            const clientData = { id: clientSnap.id, ...clientSnap.data() };
+                            window.currentOpenClientId = clientSnap.id;
+                            await window.openInvoiceModal(clientData, true);
+                            
+                            const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
+                            if(closeBtn) closeBtn.classList.add('hidden');
+                            const emailBtn = document.getElementById('inv-email-btn');
+                            if(emailBtn) emailBtn.classList.add('hidden');
+                            const copyBtn = document.getElementById('btn-copy-link');
+                            if(copyBtn) copyBtn.classList.add('hidden');
+                        } else {
+                            document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
+                        }
+                    } catch (err) {
+                        console.error("Public Invoice Fetch Error:", err);
+                        document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice securely.</p><p style="font-size:14px;color:#94a3b8;">Please verify App Check and Firestore permissions.</p></div>';
                     }
-                } catch (err) {
-                    console.error("Public Invoice Fetch Error:", err);
-                    document.body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice securely.</p><p style="font-size:14px;color:#ef4444;">Error: ${err.message}</p></div>`;
                 }
-            })();
-        } else {
-            onAuthStateChanged(auth, async (user) => {
+            } else {
                 if (user && !user.isAnonymous) {
                     const isAdmin = await checkIfAdmin(user.email);
                     if (isAdmin) {
@@ -1542,7 +1546,7 @@
                         await signOut(auth);
                         loginError.innerText = "Access Denied: Email not authorized as Admin.";
                         loginError.classList.remove('hidden');
-                        googleLoginBtn.innerHTML = defaultBtnHtml;
+                        if(googleLoginBtn) googleLoginBtn.innerHTML = defaultBtnHtml;
                     }
                 } else {
                     currentUser = null;
@@ -1554,10 +1558,10 @@
                     appWrapper.classList.add('hidden');
                     appWrapper.classList.remove('flex');
                     loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                    if(googleLoginBtn) googleLoginBtn.innerHTML = defaultBtnHtml;
                 }
-            });
-        }
+            }
+        });
 
         function setupDatabaseListener() {
             if (!currentUser) return;
@@ -1620,9 +1624,9 @@
             });
         }
 
-        const expForm = document.getElementById('expense-form');
-        if (expForm) {
-            expForm.addEventListener('submit', async (e) => {
+        const expenseFormEl = document.getElementById('expense-form');
+        if(expenseFormEl) {
+            expenseFormEl.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!isSuperAdminUser) return;
                 
@@ -1714,9 +1718,9 @@
             if(deleteModal) deleteModal.classList.remove('hidden');
         }
 
-        const clientForm = document.getElementById('client-form');
-        if (clientForm) {
-            clientForm.addEventListener('submit', async (e) => {
+        const clientFormEl = document.getElementById('client-form');
+        if(clientFormEl) {
+            clientFormEl.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!currentUser) return;
 
