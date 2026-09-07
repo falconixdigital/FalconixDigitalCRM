@@ -210,11 +210,10 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- FIREBASE AND RENDERING LOGIC (NO AUTHENTICATION REQUIRED) -->
+    <!-- FIREBASE AND RENDERING LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -227,6 +226,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = 'falconix-crm';
         let currentInvoiceFilename = 'Invoice.pdf';
@@ -258,7 +258,17 @@
             }
 
             try {
-                // Fetch document directly. Requires 'allow get: if true;' in Firestore rules.
+                // 1. MANDATORY: Authenticate securely as a Guest BEFORE querying
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Guard the operation: Only proceed if the user is authenticated
+                if (!auth.currentUser) return;
+
+                // 2. Fetch document now that we have a secure token
                 const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', invoiceId);
                 const clientSnap = await getDoc(clientRef);
 
