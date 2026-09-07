@@ -131,6 +131,7 @@
     </style>
 </head>
 <body class="bg-lightBg text-gray-900 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
+
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
         <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
             <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
@@ -1091,7 +1092,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
 
         const SUPER_ADMIN_EMAIL = 'digitalfalconix@gmail.com';
 
@@ -1127,12 +1127,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        
-        const appCheck = initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider('6Ldp4NMsAAAAAJ1hdoSHQ5bO9z0BGmSX2o-5Lnkx'),
-            isTokenAutoRefreshEnabled: true
-        });
-
         const auth = getAuth(app);
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
@@ -1164,7 +1158,7 @@
         const googleLoginBtn = document.getElementById('google-login-btn');
         const loginError = document.getElementById('login-error');
 
-        const defaultBtnHtml = googleLoginBtn ? googleLoginBtn.innerHTML : '';
+        const defaultBtnHtml = googleLoginBtn.innerHTML;
 
         window.addTaskToForm = function(textStr, isCompleted) {
             const input = document.getElementById('new-task-input');
@@ -1296,29 +1290,27 @@
             }
         }
 
-        if(googleLoginBtn) {
-            googleLoginBtn.addEventListener('click', async () => {
-                loginError.classList.add('hidden');
-                googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
-                try {
-                    const result = await signInWithPopup(auth, googleProvider);
-                    const user = result.user;
-                    const isAdmin = await checkIfAdmin(user.email);
-                    if (!isAdmin) {
-                        await signOut(auth);
-                        loginError.innerText = "Access Denied: Email not authorized as Admin.";
-                        loginError.classList.remove('hidden');
-                    }
-                } catch (error) {
-                    loginError.innerText = "Login process was cancelled or failed.";
+        googleLoginBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                const isAdmin = await checkIfAdmin(user.email);
+                if (!isAdmin) {
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
                     loginError.classList.remove('hidden');
-                } finally {
-                    if (!currentUser) {
-                        googleLoginBtn.innerHTML = defaultBtnHtml;
-                    }
                 }
-            });
-        }
+            } catch (error) {
+                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.classList.remove('hidden');
+            } finally {
+                if (!currentUser) {
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                }
+            }
+        });
 
         window.showLogoutModal = function() {
             document.getElementById('logout-modal').classList.remove('hidden');
@@ -1415,151 +1407,143 @@
         const urlParams = new URLSearchParams(window.location.search);
         const publicInvoiceId = urlParams.get('invoice');
 
-        if (publicInvoiceId) {
-            document.getElementById('login-wrapper').classList.add('hidden');
-            document.getElementById('app-wrapper').classList.add('hidden');
-            document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
-            document.body.classList.add('bg-gray-900'); 
-            
-            signInAnonymously(auth).catch(err => {
-                console.error("Anonymous auth failed:", err);
-                document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Secure Connection Failed.</div>';
-            });
-        }
-
         onAuthStateChanged(auth, async (user) => {
             if (publicInvoiceId) {
-                if (user) {
-                    try {
-                        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
-                        const clientSnap = await getDoc(clientRef);
+                document.getElementById('login-wrapper').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.add('hidden');
+                document.body.classList.remove('bg-lightBg', 'dark:bg-darkBg');
+                document.body.classList.add('bg-gray-900'); 
+                
+                try {
+                    const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', publicInvoiceId);
+                    const clientSnap = await getDoc(clientRef);
+
+                    if (clientSnap.exists()) {
+                        window.isPublicInvoiceView = true;
+                        const clientData = { id: clientSnap.id, ...clientSnap.data() };
+                        window.currentOpenClientId = clientSnap.id;
+                        await window.openInvoiceModal(clientData, true);
                         
-                        if (clientSnap.exists()) {
-                            window.isPublicInvoiceView = true;
-                            const clientData = { id: clientSnap.id, ...clientSnap.data() };
-                            window.currentOpenClientId = clientSnap.id;
-                            await window.openInvoiceModal(clientData, true);
-                            
-                            const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
-                            if(closeBtn) closeBtn.classList.add('hidden');
-                            const emailBtn = document.getElementById('inv-email-btn');
-                            if(emailBtn) emailBtn.classList.add('hidden');
-                            const copyBtn = document.getElementById('btn-copy-link');
-                            if(copyBtn) copyBtn.classList.add('hidden');
-                        } else {
-                            document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
-                        }
-                    } catch (err) {
-                        console.error("Public Invoice Fetch Error:", err);
-                        document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice securely.</p><p style="font-size:14px;color:#94a3b8;">Please verify App Check and Firestore permissions.</p></div>';
+                        const closeBtn = document.querySelector('#invoice-modal button[onclick="closeInvoiceModal()"]');
+                        if(closeBtn) closeBtn.classList.add('hidden');
+                        const emailBtn = document.getElementById('inv-email-btn');
+                        if(emailBtn) emailBtn.classList.add('hidden');
+                        const copyBtn = document.getElementById('btn-copy-link');
+                        if(copyBtn) copyBtn.classList.add('hidden');
+                    } else {
+                        document.body.innerHTML = '<div style="display:flex;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;color:white;">Invoice not found or has been deleted.</div>';
                     }
+                } catch (err) {
+                    console.error("Public Invoice Fetch Error:", err);
+                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;height:100dvh;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;color:white;text-align:center;padding:20px;"><p>Unable to load invoice.</p><p style="font-size:14px;color:#94a3b8;">Please verify Firestore Security Rules have been published in the Firebase Console.</p></div>';
+                }
+                return;
+            }
+
+            if (user && !user.isAnonymous) {
+                const isAdmin = await checkIfAdmin(user.email);
+                if (isAdmin) {
+                    currentUser = user;
+                    isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                    loggedInEmailText.innerText = user.email;
+                    
+                    document.getElementById('nav-requests').classList.remove('hidden');
+                    document.getElementById('nav-requests').classList.add('flex');
+                    
+                    const navDashboard = document.getElementById('nav-dashboard');
+                    const navClientList = document.getElementById('nav-client-list');
+                    
+                    const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
+                    const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
+
+                    if (navDashboard) {
+                        navDashboard.classList.remove('hidden');
+                        navDashboard.classList.add('flex');
+                        if (isRestrictedFromDashboard) {
+                            navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+
+                    if (navClientList) {
+                        if (isRestrictedFromClients) {
+                            navClientList.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+
+                    if (isRestrictedFromDashboard && !isRestrictedFromClients) {
+                        navigate('client-list'); 
+                    } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
+                        navigate('dashboard'); 
+                    } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
+                        navigate('add-client'); 
+                    } else {
+                        navigate('dashboard');
+                    }
+
+                    const expCard = document.getElementById('stat-card-expenses');
+                    if (expCard) {
+                        expCard.classList.remove('hidden');
+                        expCard.classList.add('flex');
+                    }
+                    
+                    const netCard = document.getElementById('stat-card-net-profit');
+                    if (netCard) {
+                        netCard.classList.remove('hidden');
+                        netCard.classList.add('flex');
+                    }
+
+                    const navExp = document.getElementById('nav-expenses');
+                    if (navExp) {
+                        navExp.classList.remove('hidden');
+                        navExp.classList.add('flex');
+                    }
+
+                    const expFormContainer = document.getElementById('expense-form')?.parentElement;
+                    const expHistoryContainer = expFormContainer?.nextElementSibling;
+                    
+                    if (expFormContainer && expHistoryContainer) {
+                        if (!isSuperAdminUser) {
+                            expFormContainer.classList.add('hidden');
+                            expHistoryContainer.classList.remove('lg:col-span-2');
+                            expHistoryContainer.classList.add('lg:col-span-3');
+                        } else {
+                            expFormContainer.classList.remove('hidden');
+                            expHistoryContainer.classList.add('lg:col-span-2');
+                            expHistoryContainer.classList.remove('lg:col-span-3');
+                        }
+                    }
+
+                    loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        loginWrapper.classList.add('hidden');
+                        appWrapper.classList.remove('hidden');
+                        appWrapper.classList.add('flex');
+                        const defaultName = user.email.split('@')[0];
+                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                        startContinuousTypewriter(adminName);
+                    }, 500);
+                    setupDatabaseListener();
+                } else {
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                    loginError.classList.remove('hidden');
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
                 }
             } else {
-                if (user && !user.isAnonymous) {
-                    const isAdmin = await checkIfAdmin(user.email);
-                    if (isAdmin) {
-                        currentUser = user;
-                        isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-                        loggedInEmailText.innerText = user.email;
-                        
-                        document.getElementById('nav-requests').classList.remove('hidden');
-                        document.getElementById('nav-requests').classList.add('flex');
-                        
-                        const navDashboard = document.getElementById('nav-dashboard');
-                        const navClientList = document.getElementById('nav-client-list');
-                        
-                        const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
-                        const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
-
-                        if (navDashboard) {
-                            navDashboard.classList.remove('hidden');
-                            navDashboard.classList.add('flex');
-                            if (isRestrictedFromDashboard) {
-                                navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
-                            } else {
-                                navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
-                            }
-                        }
-
-                        if (navClientList) {
-                            if (isRestrictedFromClients) {
-                                navClientList.classList.add('opacity-50', 'cursor-not-allowed');
-                            } else {
-                                navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
-                            }
-                        }
-
-                        if (isRestrictedFromDashboard && !isRestrictedFromClients) {
-                            navigate('client-list'); 
-                        } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
-                            navigate('dashboard'); 
-                        } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
-                            navigate('add-client'); 
-                        } else {
-                            navigate('dashboard');
-                        }
-
-                        const expCard = document.getElementById('stat-card-expenses');
-                        if (expCard) {
-                            expCard.classList.remove('hidden');
-                            expCard.classList.add('flex');
-                        }
-                        
-                        const netCard = document.getElementById('stat-card-net-profit');
-                        if (netCard) {
-                            netCard.classList.remove('hidden');
-                            netCard.classList.add('flex');
-                        }
-
-                        const navExp = document.getElementById('nav-expenses');
-                        if (navExp) {
-                            navExp.classList.remove('hidden');
-                            navExp.classList.add('flex');
-                        }
-
-                        const expFormContainer = document.getElementById('expense-form')?.parentElement;
-                        const expHistoryContainer = expFormContainer?.nextElementSibling;
-                        
-                        if (expFormContainer && expHistoryContainer) {
-                            if (!isSuperAdminUser) {
-                                expFormContainer.classList.add('hidden');
-                                expHistoryContainer.classList.remove('lg:col-span-2');
-                                expHistoryContainer.classList.add('lg:col-span-3');
-                            } else {
-                                expFormContainer.classList.remove('hidden');
-                                expHistoryContainer.classList.add('lg:col-span-2');
-                                expHistoryContainer.classList.remove('lg:col-span-3');
-                            }
-                        }
-
-                        loginWrapper.classList.add('opacity-0', 'pointer-events-none');
-                        setTimeout(() => {
-                            loginWrapper.classList.add('hidden');
-                            appWrapper.classList.remove('hidden');
-                            appWrapper.classList.add('flex');
-                            const defaultName = user.email.split('@')[0];
-                            const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-                            startContinuousTypewriter(adminName);
-                        }, 500);
-                        setupDatabaseListener();
-                    } else {
-                        await signOut(auth);
-                        loginError.innerText = "Access Denied: Email not authorized as Admin.";
-                        loginError.classList.remove('hidden');
-                        if(googleLoginBtn) googleLoginBtn.innerHTML = defaultBtnHtml;
-                    }
-                } else {
-                    currentUser = null;
-                    isSuperAdminUser = false;
-                    if(unsubscribeClients) unsubscribeClients();
-                    if(unsubscribeRequests) unsubscribeRequests();
-                    if(unsubscribeNotifications) unsubscribeNotifications();
-                    if(unsubscribeExpenses) unsubscribeExpenses();
-                    appWrapper.classList.add('hidden');
-                    appWrapper.classList.remove('flex');
-                    loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-                    if(googleLoginBtn) googleLoginBtn.innerHTML = defaultBtnHtml;
-                }
+                currentUser = null;
+                isSuperAdminUser = false;
+                if(unsubscribeClients) unsubscribeClients();
+                if(unsubscribeRequests) unsubscribeRequests();
+                if(unsubscribeNotifications) unsubscribeNotifications();
+                if(unsubscribeExpenses) unsubscribeExpenses();
+                appWrapper.classList.add('hidden');
+                appWrapper.classList.remove('flex');
+                loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                googleLoginBtn.innerHTML = defaultBtnHtml;
             }
         });
 
@@ -1625,7 +1609,7 @@
         }
 
         const expenseFormEl = document.getElementById('expense-form');
-        if(expenseFormEl) {
+        if (expenseFormEl) {
             expenseFormEl.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (!isSuperAdminUser) return;
@@ -1718,192 +1702,189 @@
             if(deleteModal) deleteModal.classList.remove('hidden');
         }
 
-        const clientFormEl = document.getElementById('client-form');
-        if(clientFormEl) {
-            clientFormEl.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if (!currentUser) return;
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
 
-                const phoneInputEl = document.getElementById('form-phone');
-                const rawPhone = phoneInputEl.value.trim();
-                const numericPhone = rawPhone.replace(/\D/g, ''); 
-                
-                let formattedPhone = "";
-                if (numericPhone.length === 10) {
-                    formattedPhone = "+91 " + numericPhone;
-                } else if (numericPhone.length === 12 && numericPhone.startsWith('91')) {
-                    formattedPhone = "+91 " + numericPhone.substring(2);
-                } else {
-                    showToast("Please enter a valid 10-digit mobile number.", "error");
-                    phoneInputEl.focus();
-                    return; 
-                }
-                
-                const emailInput = document.getElementById('form-email').value.trim();
-                if (emailInput !== "") {
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(emailInput)) {
-                        showToast("Please enter a valid email address.", "error");
-                        document.getElementById('form-email').focus();
-                        return;
-                    }
-                }
-
-                const priceInput = parseFloat(document.getElementById('form-price').value);
-                const discountInput = parseFloat(document.getElementById('form-discount').value) || 0;
-                const extraInput = parseFloat(document.getElementById('form-extra-charge').value) || 0;
-                const maintInput = parseFloat(document.getElementById('form-maintenance-charge').value) || 0;
-
-                if (isNaN(priceInput) || priceInput <= 0) {
-                    showToast("Project price must be greater than ₹0.", "error");
-                    document.getElementById('form-price').focus();
+            const phoneInputEl = document.getElementById('form-phone');
+            const rawPhone = phoneInputEl.value.trim();
+            const numericPhone = rawPhone.replace(/\D/g, ''); 
+            
+            let formattedPhone = "";
+            if (numericPhone.length === 10) {
+                formattedPhone = "+91 " + numericPhone;
+            } else if (numericPhone.length === 12 && numericPhone.startsWith('91')) {
+                formattedPhone = "+91 " + numericPhone.substring(2);
+            } else {
+                showToast("Please enter a valid 10-digit mobile number.", "error");
+                phoneInputEl.focus();
+                return; 
+            }
+            
+            const emailInput = document.getElementById('form-email').value.trim();
+            if (emailInput !== "") {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailInput)) {
+                    showToast("Please enter a valid email address.", "error");
+                    document.getElementById('form-email').focus();
                     return;
                 }
-                if (discountInput < 0 || extraInput < 0 || maintInput < 0) {
-                    showToast("Charges and discounts cannot be negative.", "error");
-                    return;
-                }
-                if (discountInput > priceInput) {
-                    showToast("Discount cannot be greater than the project price.", "error");
-                    document.getElementById('form-discount').focus();
-                    return;
-                }
+            }
 
-                phoneInputEl.value = formattedPhone;
+            const priceInput = parseFloat(document.getElementById('form-price').value);
+            const discountInput = parseFloat(document.getElementById('form-discount').value) || 0;
+            const extraInput = parseFloat(document.getElementById('form-extra-charge').value) || 0;
+            const maintInput = parseFloat(document.getElementById('form-maintenance-charge').value) || 0;
 
-                const submitBtn = document.getElementById('form-submit-btn');
-                const idField = document.getElementById('client-id').value;
-                const isEditing = !!idField;
-                const clientId = isEditing ? idField : crypto.randomUUID();
+            if (isNaN(priceInput) || priceInput <= 0) {
+                showToast("Project price must be greater than ₹0.", "error");
+                document.getElementById('form-price').focus();
+                return;
+            }
+            if (discountInput < 0 || extraInput < 0 || maintInput < 0) {
+                showToast("Charges and discounts cannot be negative.", "error");
+                return;
+            }
+            if (discountInput > priceInput) {
+                showToast("Discount cannot be greater than the project price.", "error");
+                document.getElementById('form-discount').focus();
+                return;
+            }
 
-                submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> <span>Processing...</span>`;
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            phoneInputEl.value = formattedPhone;
 
-                const existingClient = isEditing ? clientsList.find(c => c.id === clientId) : null;
-                const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
-                const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
+            const submitBtn = document.getElementById('form-submit-btn');
+            const idField = document.getElementById('client-id').value;
+            const isEditing = !!idField;
+            const clientId = isEditing ? idField : crypto.randomUUID();
 
-                let logAction = "Client details updated";
-                const statusField = document.getElementById('form-status').value;
-                if (isEditing && existingClient && existingClient.status !== statusField) {
-                    logAction = `Status changed to ${statusField}`;
-                } else if (!isEditing) {
-                    logAction = "Added new client";
-                }
+            submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> <span>Processing...</span>`;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
-                if (!isSuperAdminUser) {
-                    logAction = isEditing ? "Requested client update" : "Requested client creation";
-                }
+            const existingClient = isEditing ? clientsList.find(c => c.id === clientId) : null;
+            const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
+            const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
 
-                const newLogEntry = {
-                    action: logAction,
-                    performedBy: addedName,
-                    timestamp: Date.now(),
-                    isManual: false
-                };
+            let logAction = "Client details updated";
+            const statusField = document.getElementById('form-status').value;
+            if (isEditing && existingClient && existingClient.status !== statusField) {
+                logAction = `Status changed to ${statusField}`;
+            } else if (!isEditing) {
+                logAction = "Added new client";
+            }
 
-                const activityLog = isEditing && existingClient?.activityLog ? [...existingClient.activityLog] : [];
-                activityLog.push(newLogEntry);
+            if (!isSuperAdminUser) {
+                logAction = isEditing ? "Requested client update" : "Requested client creation";
+            }
 
-                let completedAt = isEditing ? (existingClient?.completedAt || null) : null;
-                if (statusField === 'Completed' && (!isEditing || existingClient?.status !== 'Completed')) {
-                    completedAt = Date.now();
-                } else if (statusField !== 'Completed') {
-                    completedAt = null;
-                }
+            const newLogEntry = {
+                action: logAction,
+                performedBy: addedName,
+                timestamp: Date.now(),
+                isManual: false
+            };
 
-                const clientData = {
-                    name: document.getElementById('form-name').value.trim(),
-                    business: document.getElementById('form-business').value.trim(),
-                    source: document.getElementById('form-source').value,
-                    phone: document.getElementById('form-phone').value.trim(),
-                    email: document.getElementById('form-email').value.trim(),
-                    address: document.getElementById('form-address').value.trim(),
-                    website: document.getElementById('form-website').value,
-                    websiteUrl: document.getElementById('form-website-url').value.trim(),
-                    price: parseFloat(document.getElementById('form-price').value) || 0,
-                    discount: parseFloat(document.getElementById('form-discount').value) || 0,
-                    extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
-                    maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
-                    installments: getInstallmentsData(),
-                    tasks: getTasksData(),
-                    deadline: document.getElementById('form-deadline').value || null,
-                    status: statusField,
-                    notes: document.getElementById('form-notes').value.trim(),
-                    createdAt: isEditing ? (existingClient?.createdAt || Date.now()) : Date.now(),
-                    updatedAt: Date.now(),
-                    completedAt: completedAt,
-                    addedByEmail: addedEmail,
-                    addedByName: addedName,
-                    activityLog: activityLog,
-                    ...(isEditing && existingClient?.invoiceNo ? { invoiceNo: existingClient.invoiceNo } : {})
-                };
+            const activityLog = isEditing && existingClient?.activityLog ? [...existingClient.activityLog] : [];
+            activityLog.push(newLogEntry);
 
-                try {
-                    if (isSuperAdminUser) {
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-                        await setDoc(docRef, clientData);
-                        
-                        try {
-                            const pendingReq = requestsList.find(r => 
-                                r.status === 'Pending' && r.targetClientId === clientId
-                            );
+            let completedAt = isEditing ? (existingClient?.completedAt || null) : null;
+            if (statusField === 'Completed' && (!isEditing || existingClient?.status !== 'Completed')) {
+                completedAt = Date.now();
+            } else if (statusField !== 'Completed') {
+                completedAt = null;
+            }
 
-                            if (pendingReq) {
-                                const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', pendingReq.id);
-                                await updateDoc(reqRef, { 
-                                    status: 'Approved',
-                                    targetClientId: clientId,
-                                    updatedAt: Date.now()
-                                });
-                            }
-                        } catch (err) {
-                            console.error("Auto-resolve failed", err);
+            const clientData = {
+                name: document.getElementById('form-name').value.trim(),
+                business: document.getElementById('form-business').value.trim(),
+                source: document.getElementById('form-source').value,
+                phone: document.getElementById('form-phone').value.trim(),
+                email: document.getElementById('form-email').value.trim(),
+                address: document.getElementById('form-address').value.trim(),
+                website: document.getElementById('form-website').value,
+                websiteUrl: document.getElementById('form-website-url').value.trim(),
+                price: parseFloat(document.getElementById('form-price').value) || 0,
+                discount: parseFloat(document.getElementById('form-discount').value) || 0,
+                extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
+                maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
+                installments: getInstallmentsData(),
+                tasks: getTasksData(),
+                deadline: document.getElementById('form-deadline').value || null,
+                status: statusField,
+                notes: document.getElementById('form-notes').value.trim(),
+                createdAt: isEditing ? (existingClient?.createdAt || Date.now()) : Date.now(),
+                updatedAt: Date.now(),
+                completedAt: completedAt,
+                addedByEmail: addedEmail,
+                addedByName: addedName,
+                activityLog: activityLog,
+                ...(isEditing && existingClient?.invoiceNo ? { invoiceNo: existingClient.invoiceNo } : {})
+            };
+
+            try {
+                if (isSuperAdminUser) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                    await setDoc(docRef, clientData);
+                    
+                    try {
+                        const pendingReq = requestsList.find(r => 
+                            r.status === 'Pending' && r.targetClientId === clientId
+                        );
+
+                        if (pendingReq) {
+                            const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', pendingReq.id);
+                            await updateDoc(reqRef, { 
+                                status: 'Approved',
+                                targetClientId: clientId,
+                                updatedAt: Date.now()
+                            });
                         }
-                        
-                        showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
-                    } else {
-                        const reqId = crypto.randomUUID();
-                        const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
-                        await setDoc(reqRef, {
-                            type: isEditing ? 'UPDATE' : 'ADD',
-                            status: 'Pending',
-                            requestedByEmail: currentUser.email,
-                            requestedByName: ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0],
-                            clientData: clientData,
-                            targetClientId: isEditing ? clientId : reqId,
-                            createdAt: Date.now()
-                        });
-
-                        const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
-                        await setDoc(notifRef, {
-                            recipientEmail: 'all',
-                            message: `New Request: ${addedName} wants to ${isEditing ? 'update' : 'add'} client "${clientData.name}".`,
-                            readBy: [],
-                            createdAt: Date.now(),
-                            type: 'info'
-                        });
-
-                        showToast("Request sent to Super Admin for approval.", "success");
+                    } catch (err) {
+                        console.error("Auto-resolve failed", err);
                     }
-                    document.getElementById('client-form').reset();
-                    document.getElementById('client-id').value = "";
-                    document.getElementById('installments-container').innerHTML = '';
-                    document.getElementById('form-tasks-container').innerHTML = '';
-                    document.getElementById('form-title').innerText = "Add New Client";
-                    navigate('client-list');
-                } catch (error) {
-                    showToast("Failed to process action.", "error");
-                } finally {
-                    submitBtn.innerHTML = isSuperAdminUser 
-                        ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
-                        : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    
+                    showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
+                } else {
+                    const reqId = crypto.randomUUID();
+                    const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
+                    await setDoc(reqRef, {
+                        type: isEditing ? 'UPDATE' : 'ADD',
+                        status: 'Pending',
+                        requestedByEmail: currentUser.email,
+                        requestedByName: ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0],
+                        clientData: clientData,
+                        targetClientId: isEditing ? clientId : reqId,
+                        createdAt: Date.now()
+                    });
+
+                    const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+                    await setDoc(notifRef, {
+                        recipientEmail: 'all',
+                        message: `New Request: ${addedName} wants to ${isEditing ? 'update' : 'add'} client "${clientData.name}".`,
+                        readBy: [],
+                        createdAt: Date.now(),
+                        type: 'info'
+                    });
+
+                    showToast("Request sent to Super Admin for approval.", "success");
                 }
-            });
-        }
+                document.getElementById('client-form').reset();
+                document.getElementById('client-id').value = "";
+                document.getElementById('installments-container').innerHTML = '';
+                document.getElementById('form-tasks-container').innerHTML = '';
+                document.getElementById('form-title').innerText = "Add New Client";
+                navigate('client-list');
+            } catch (error) {
+                showToast("Failed to process action.", "error");
+            } finally {
+                submitBtn.innerHTML = isSuperAdminUser 
+                    ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
+                    : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        });
 
         window.toggleMobileMenu = function() {
             const sidebar = document.getElementById('sidebar');
