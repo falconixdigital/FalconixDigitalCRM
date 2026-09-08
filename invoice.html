@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital - Invoice</title>
     <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png" onerror="this.href='https://placehold.co/80x80/7C3AED/ffffff?text=FD'">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -26,20 +28,13 @@
             }
         }
     </script>
+    
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #111827; margin: 0; padding: 0; }
         
-        .invoice-wrapper-outer {
-            width: 100%;
-            max-width: 210mm;
-            margin: 2rem auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .no-print { display: none !important; }
-            .invoice-wrapper-outer { box-shadow: none; margin: 0; max-width: none; }
         }
     </style>
 </head>
@@ -68,223 +63,240 @@
         </div>
     </div>
 
-    <div id="invoice-wrapper" class="hidden pb-10">
-        <div id="invoice-content" class="bg-white invoice-wrapper-outer text-gray-800">
-            <div class="relative overflow-hidden flex flex-col bg-white" style="min-height: 295mm; padding: 15mm 20mm;">
-                <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
+    <div id="invoice-wrapper" class="hidden pb-10 w-full mt-6 flex justify-center">
+        
+        <div class="bg-white shadow-2xl">
+            <!-- Strict container for html2pdf (No margins) -->
+            <div id="invoice-content" class="bg-white text-gray-800 m-0 p-0" style="width: 210mm; max-width: 100%;">
                 
-                <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
-                    <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
-                        <p class="text-green-500/30 font-black text-7xl md:text-8xl uppercase tracking-[0.3em] m-0 leading-none">PAID</p>
-                    </div>
-                </div>
-
-                <div class="relative z-10 flex flex-col h-full flex-1">
-                    <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
-                        <div class="flex items-center gap-4">
-                            <img src="Falconix_Digital_Logo.png" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" alt="Falconix Logo" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
-                            <div>
-                                <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
-                                <p class="text-accentSecondary font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-4xl font-bold text-gray-200 uppercase tracking-widest mb-2">Invoice</h2>
-                            <div class="flex gap-4 justify-end text-sm">
-                                <div class="text-gray-500 font-medium space-y-1">
-                                    <p>Invoice No:</p>
-                                    <p>Date:</p>
-                                    <p>Due Date:</p>
-                                </div>
-                                <div class="text-brandDark font-semibold space-y-1 text-right">
-                                    <p id="inv-no">-</p>
-                                    <p id="inv-date">-</p>
-                                    <p id="inv-due-date">-</p>
-                                </div>
-                            </div>
+                <!-- ================= PAGE 1 ================= -->
+                <div class="relative overflow-hidden flex flex-col bg-white" style="height: 296mm; width: 210mm; padding: 15mm 20mm; box-sizing: border-box; margin: 0 auto;">
+                    
+                    <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
+                    
+                    <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
+                        <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
+                            <p class="text-green-500/30 font-black text-7xl md:text-8xl uppercase tracking-[0.3em] m-0 leading-none">PAID</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-12 mb-10">
-                        <div>
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">From</h3>
-                            <p class="font-bold text-brandDark text-base">Falconix Digital</p>
-                            <p class="text-sm text-gray-600 mt-1 leading-relaxed"><a href="https://maps.google.com/?q=Motihari, Bihar, India" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">Motihari, Bihar, India</a></p>
-                            <p class="text-sm text-gray-600 leading-relaxed"><a href="tel:+918637028337" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">+91 86370 28337</a></p>
-                            <p class="text-sm leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
-                            <p class="text-sm leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">falconixdigital.netlify.app</a></p>
-                        </div>
-                        <div>
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
-                            <p id="inv-client-name" class="font-bold text-brandDark text-lg">-</p>
-                            <div id="inv-client-details" class="text-sm text-gray-600 mt-1 leading-relaxed">
-                                -
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-8">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-brandDark text-white">
-                                    <th class="py-3 px-4 font-semibold text-sm rounded-tl-lg w-[50%]">Description</th>
-                                    <th class="py-3 px-4 font-semibold text-sm text-center w-[15%]">Quantity</th>
-                                    <th class="py-3 px-4 font-semibold text-sm text-right w-[15%]">Rate (₹)</th>
-                                    <th class="py-3 px-4 font-semibold text-sm text-right rounded-tr-lg w-[20%]">Amount (₹)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inv-table-body" class="divide-y divide-gray-200">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="flex justify-between items-start gap-8 mb-10">
-                        <a id="inv-upi-link" href="#" class="flex-1 cursor-pointer block group" style="text-decoration: none;">
-                            <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group-hover:bg-gray-100 transition-colors">
+                    <div class="relative z-10 flex flex-col h-full flex-1">
+                        <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
+                            <div class="flex items-center gap-4">
+                                <img src="Falconix_Digital_Logo.png" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" alt="Falconix Logo" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
                                 <div>
-                                    <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-accentSecondary text-lg"></i> Payment Method</h3>
-                                    <div class="space-y-1.5 text-sm">
-                                        <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
-                                        <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
+                                    <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
+                                    <p class="text-accentSecondary font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-4xl font-bold text-gray-200 uppercase tracking-widest mb-2">Invoice</h2>
+                                <div class="flex gap-4 justify-end text-sm">
+                                    <div class="text-gray-500 font-medium space-y-1">
+                                        <p>Invoice No:</p>
+                                        <p>Date:</p>
+                                        <p>Due Date:</p>
+                                    </div>
+                                    <div class="text-brandDark font-semibold space-y-1 text-right">
+                                        <p id="inv-no">-</p>
+                                        <p id="inv-date">-</p>
+                                        <p id="inv-due-date">-</p>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-center pl-5 border-l border-gray-300 ml-2 shrink-0">
-                                    <img src="https://i.ibb.co/wr8prtqY/Payment-QR.jpg" alt="Scan to Pay QR" class="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 bg-white shadow-sm p-0.5">
-                                    <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider text-center group-hover:text-blue-600 transition-colors">Click or Scan<br>to Pay</span>
-                                </div>
                             </div>
-                        </a>
-                        <div class="w-64 shrink-0">
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between text-gray-600">
-                                    <span class="font-medium">Subtotal:</span>
-                                    <span id="inv-subtotal" class="font-semibold text-gray-800">₹0</span>
-                                </div>
-                                <div class="flex justify-between text-gray-600 border-b border-gray-200 pb-3">
-                                    <span class="font-medium">Discount:</span>
-                                    <span id="inv-discount" class="font-semibold text-gray-800">₹0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-lg font-bold text-brandDark pt-1">
-                                    <span>Total Amount:</span>
-                                    <span id="inv-total" class="text-accentSecondary">₹0</span>
-                                </div>
-                                <div class="flex justify-between text-green-600 pt-1">
-                                    <span class="font-medium">Amount Paid:</span>
-                                    <span id="inv-paid" class="font-semibold">- ₹0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-lg border-t border-gray-200 pt-2">
-                                    <span class="font-bold text-brandDark">Balance Due:</span>
-                                    <span id="inv-balance" class="font-bold text-accentPrimary">₹0</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-12 mb-10">
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">From</h3>
+                                <p class="font-bold text-brandDark text-base">Falconix Digital</p>
+                                <p class="text-sm text-gray-600 mt-1 leading-relaxed"><a href="https://maps.google.com/?q=Motihari, Bihar, India" target="_blank" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">Motihari, Bihar, India</a></p>
+                                <p class="text-sm text-gray-600 leading-relaxed"><a href="tel:+918637028337" style="color: inherit; text-decoration: none;" class="hover:text-blue-600 transition-colors">+91 86370 28337</a></p>
+                                <p class="text-sm leading-relaxed"><a href="mailto:digitalfalconix@gmail.com" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">digitalfalconix@gmail.com</a></p>
+                                <p class="text-sm leading-relaxed"><a href="https://falconixdigital.netlify.app" target="_blank" style="color: #0EA5E9; text-decoration: none; font-weight: 500;" class="hover:text-blue-700 transition-colors">falconixdigital.netlify.app</a></p>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
+                                <p id="inv-client-name" class="font-bold text-brandDark text-lg">-</p>
+                                <div id="inv-client-details" class="text-sm text-gray-600 mt-1 leading-relaxed">
+                                    -
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="mb-6 hidden" id="inv-payment-milestones-wrapper">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Payment Milestones</h3>
-                        <div id="inv-milestones-list" class="space-y-1.5">
+                        <div class="mb-8">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-brandDark text-white">
+                                        <th class="py-3 px-4 font-semibold text-sm rounded-tl-lg w-[50%]">Description</th>
+                                        <th class="py-3 px-4 font-semibold text-sm text-center w-[15%]">Quantity</th>
+                                        <th class="py-3 px-4 font-semibold text-sm text-right w-[15%]">Rate (₹)</th>
+                                        <th class="py-3 px-4 font-semibold text-sm text-right rounded-tr-lg w-[20%]">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-table-body" class="divide-y divide-gray-200">
+                                    
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
 
-                    <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
-                        <div class="flex justify-between items-end">
-                            <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
-                            <div class="text-center flex flex-col items-center">
-                                <div class="w-40 border-b-2 border-brandDark mb-2 flex justify-center pb-1">
-                                    <img src="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" alt="Signature" class="h-10 object-contain mix-blend-multiply" crossorigin="anonymous">
+                        <div class="flex justify-between items-start gap-8 mb-10">
+                            <a id="inv-upi-link" href="#" class="flex-1 cursor-pointer block group" style="text-decoration: none;">
+                                <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between group-hover:bg-gray-100 transition-colors">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-accentSecondary text-lg"></i> Payment Method</h3>
+                                        <div class="space-y-1.5 text-sm">
+                                            <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
+                                            <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center pl-5 border-l border-gray-300 ml-2 shrink-0">
+                                        <img src="https://i.ibb.co/wr8prtqY/Payment-QR.jpg" alt="Scan to Pay QR" class="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 bg-white shadow-sm p-0.5">
+                                        <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider text-center group-hover:text-blue-600 transition-colors">Click or Scan<br>to Pay</span>
+                                    </div>
                                 </div>
-                                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Authorized Signature</p>
-                                <p class="text-xs text-gray-400 mt-1">Falconix Digital</p>
+                            </a>
+                            <div class="w-64 shrink-0">
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between text-gray-600">
+                                        <span class="font-medium">Subtotal:</span>
+                                        <span id="inv-subtotal" class="font-semibold text-gray-800">₹0</span>
+                                    </div>
+                                    <div class="flex justify-between text-gray-600 border-b border-gray-200 pb-3">
+                                        <span class="font-medium">Discount:</span>
+                                        <span id="inv-discount" class="font-semibold text-gray-800">₹0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-lg font-bold text-brandDark pt-1">
+                                        <span>Total Amount:</span>
+                                        <span id="inv-total" class="text-accentSecondary">₹0</span>
+                                    </div>
+                                    <div class="flex justify-between text-green-600 pt-1">
+                                        <span class="font-medium">Amount Paid:</span>
+                                        <span id="inv-paid" class="font-semibold">- ₹0</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-lg border-t border-gray-200 pt-2">
+                                        <span class="font-bold text-brandDark">Balance Due:</span>
+                                        <span id="inv-balance" class="font-bold text-accentPrimary">₹0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6 hidden" id="inv-payment-milestones-wrapper">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Payment Milestones</h3>
+                            <div id="inv-milestones-list" class="space-y-1.5">
+                                
+                            </div>
+                        </div>
+
+                        <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
+                            <div class="flex justify-between items-end">
+                                <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
+                                <div class="text-center flex flex-col items-center">
+                                    <div class="w-40 border-b-2 border-brandDark mb-2 flex justify-center pb-1">
+                                        <img src="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" alt="Signature" class="h-10 object-contain mix-blend-multiply" crossorigin="anonymous">
+                                    </div>
+                                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Authorized Signature</p>
+                                    <p class="text-xs text-gray-400 mt-1">Falconix Digital</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="html2pdf__page-break no-print"></div>
+                <!-- HTML2PDF PAGE BREAK -->
+                <div class="html2pdf__page-break no-print"></div>
 
-            <div class="relative overflow-hidden flex flex-col bg-white" style="min-height: 295mm; padding: 15mm 20mm;">
-                <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
-                
-                <div class="relative z-10 flex flex-col h-full flex-1">
+                <!-- ================= PAGE 2 ================= -->
+                <div class="relative overflow-hidden flex flex-col bg-white" style="height: 296mm; width: 210mm; padding: 15mm 20mm; box-sizing: border-box; margin: 0 auto;">
+                    <!-- Watermark Page 2 -->
+                    <img src="Falconix_Digital_Logo.png" onerror="this.style.display='none'" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
                     
-                    <div class="flex items-center gap-4 border-b-2 border-brandDark/10 pb-6 mb-8">
-                        <img src="Falconix_Digital_Logo.png" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" alt="Falconix Logo" class="w-12 h-12 rounded-full shadow-sm border border-gray-100 object-cover">
-                        <div>
-                            <h2 class="text-2xl font-bold text-brandDark tracking-wide m-0 uppercase">Our Services & Terms</h2>
-                            <p class="text-accentSecondary font-medium text-xs mt-0.5 tracking-wider">Falconix Digital</p>
-                        </div>
-                    </div>
-
-                    <div class="mb-8">
-                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
-                            <i class="ph ph-laptop text-lg text-accentSecondary"></i> Services We Provide
-                        </h3>
-                        <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 list-disc list-inside font-medium pl-2">
-                            <li>Website Design & Development</li>
-                            <li>Custom Website Development</li>
-                            <li>Frontend Development</li>
-                            <li>Backend Development</li>
-                            <li>Full-Stack Web Development</li>
-                            <li>Portfolio & Business Websites</li>
-                            <li>E-Commerce Website Development</li>
-                            <li>Blog & Content Management Systems</li>
-                            <li>Website Maintenance & Support</li>
-                            <li>Website Redesign & Enhancement</li>
-                            <li>Domain & Hosting Setup Assistance</li>
-                            <li>Search Engine Optimization (SEO)</li>
-                            <li>Technical SEO Setup</li>
-                            <li>Google Search Console Setup</li>
-                            <li>Website Performance Optimization</li>
-                            <li>API Integration</li>
-                            <li>Database Integration</li>
-                            <li>Payment Gateway Integration</li>
-                            <li>Email Service Integration</li>
-                            <li>Website Deployment & Configuration</li>
-                        </ul>
-                    </div>
-
-                    <div class="mb-8 flex-1">
-                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
-                            <i class="ph ph-file-text text-lg text-accentSecondary"></i> Terms & Conditions
-                        </h3>
-                        <ul class="text-xs text-gray-600 space-y-2.5 list-decimal list-outside ml-4 pl-1 text-justify">
-                            <li>Payment must be made within the agreed payment period mentioned on this invoice.</li>
-                            <li>Any advance payment made is non-refundable once the project work has commenced.</li>
-                            <li>Final website files, credentials, or project ownership may be transferred after full payment is received.</li>
-                            <li>Additional features, revisions, or changes outside the agreed project scope may incur additional charges.</li>
-                            <li>The client is responsible for providing accurate content, images, logos, and other required materials.</li>
-                            <li>Falconix Digital is not responsible for issues caused by third-party services, hosting providers, domain providers, APIs, or changes made by the client after project delivery.</li>
-                            <li>Website maintenance, hosting, domain renewal, and third-party service charges are not included unless specifically mentioned in the invoice.</li>
-                            <li>Delayed payments may result in suspension of ongoing support or services.</li>
-                            <li>Expected project delivery is within <span id="inv-delivery-days" class="font-semibold text-gray-800 underline decoration-gray-300">___</span> days from the start date.</li>
-                            <li>By making payment against this invoice, the client agrees to the applicable terms and conditions.</li>
-                        </ul>
-                    </div>
-
-                    <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
-                        <h3 class="text-xs font-bold text-brandDark uppercase tracking-wider mb-3 text-center">Contact Information</h3>
-                        <div class="flex justify-between items-center text-xs text-gray-600 bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-envelope-simple text-lg"></i></div>
-                                <span class="font-medium">digitalfalconix@gmail.com</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-phone text-lg"></i></div>
-                                <span class="font-medium">+91 86370 28337</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-globe text-lg"></i></div>
-                                <span class="font-medium">falconixdigital.netlify.app</span>
+                    <div class="relative z-10 flex flex-col h-full flex-1">
+                        
+                        <!-- Header Page 2 -->
+                        <div class="flex items-center gap-4 border-b-2 border-brandDark/10 pb-6 mb-8">
+                            <img src="Falconix_Digital_Logo.png" onerror="this.src='https://placehold.co/80x80/7C3AED/ffffff?text=FD'" alt="Falconix Logo" class="w-12 h-12 rounded-full shadow-sm border border-gray-100 object-cover">
+                            <div>
+                                <h2 class="text-2xl font-bold text-brandDark tracking-wide m-0 uppercase">Our Services & Terms</h2>
+                                <p class="text-accentSecondary font-medium text-xs mt-0.5 tracking-wider">Falconix Digital</p>
                             </div>
                         </div>
-                    </div>
 
+                        <!-- Services Provided -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
+                                <i class="ph ph-laptop text-lg text-accentSecondary"></i> Services We Provide
+                            </h3>
+                            <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 list-disc list-inside font-medium pl-2">
+                                <li>Website Design & Development</li>
+                                <li>Custom Website Development</li>
+                                <li>Frontend Development</li>
+                                <li>Backend Development</li>
+                                <li>Full-Stack Web Development</li>
+                                <li>Portfolio & Business Websites</li>
+                                <li>E-Commerce Website Development</li>
+                                <li>Blog & Content Management Systems</li>
+                                <li>Website Maintenance & Support</li>
+                                <li>Website Redesign & Enhancement</li>
+                                <li>Domain & Hosting Setup Assistance</li>
+                                <li>Search Engine Optimization (SEO)</li>
+                                <li>Technical SEO Setup</li>
+                                <li>Google Search Console Setup</li>
+                                <li>Website Performance Optimization</li>
+                                <li>API Integration</li>
+                                <li>Database Integration</li>
+                                <li>Payment Gateway Integration</li>
+                                <li>Email Service Integration</li>
+                                <li>Website Deployment & Configuration</li>
+                            </ul>
+                        </div>
+
+                        <!-- Terms & Conditions -->
+                        <div class="mb-8 flex-1">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
+                                <i class="ph ph-file-text text-lg text-accentSecondary"></i> Terms & Conditions
+                            </h3>
+                            <ul class="text-xs text-gray-600 space-y-2.5 list-decimal list-outside ml-4 pl-1 text-justify">
+                                <li>Payment must be made within the agreed payment period mentioned on this invoice.</li>
+                                <li>Any advance payment made is non-refundable once the project work has commenced.</li>
+                                <li>Final website files, credentials, or project ownership may be transferred after full payment is received.</li>
+                                <li>Additional features, revisions, or changes outside the agreed project scope may incur additional charges.</li>
+                                <li>The client is responsible for providing accurate content, images, logos, and other required materials.</li>
+                                <li>Falconix Digital is not responsible for issues caused by third-party services, hosting providers, domain providers, APIs, or changes made by the client after project delivery.</li>
+                                <li>Website maintenance, hosting, domain renewal, and third-party service charges are not included unless specifically mentioned in the invoice.</li>
+                                <li>Delayed payments may result in suspension of ongoing support or services.</li>
+                                <li>By making payment against this invoice, the client agrees to the applicable terms and conditions.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Contact Footer Page 2 -->
+                        <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
+                            <h3 class="text-xs font-bold text-brandDark uppercase tracking-wider mb-3 text-center">Contact Information</h3>
+                            <div class="flex justify-between items-center text-xs text-gray-600 bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-envelope-simple text-lg"></i></div>
+                                    <span class="font-medium">digitalfalconix@gmail.com</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-phone text-lg"></i></div>
+                                    <span class="font-medium">+91 86370 28337</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-accentSecondary"><i class="ph ph-globe text-lg"></i></div>
+                                    <span class="font-medium">falconixdigital.netlify.app</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
 
+    <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
 
     <script type="module">
@@ -395,17 +407,6 @@
                     ${emailHtml}<br>
                     ${webHtml}
                 `;
-            }
-
-            const deliveryDaysEl = document.getElementById('inv-delivery-days');
-            if (deliveryDaysEl) {
-                if (client.deadline) {
-                    const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
-                } else {
-                    deliveryDaysEl.innerText = '7 - 14';
-                }
             }
 
             const tbody = document.getElementById('inv-table-body');
@@ -542,6 +543,7 @@
                 showToast("Failed to generate PDF.", "error");
             });
         };
+
         initPublicViewer();
 
     </script>
