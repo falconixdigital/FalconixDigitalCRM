@@ -1159,6 +1159,29 @@
 
         let revenueChartInstance = null;
         let sourceChartInstance = null;
+        
+        // --- Added Missing Functions that caused the Invoice generation & Toasts to fail ---
+        window.showToast = function(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : (type === 'info' ? 'bg-blue-500' : 'bg-green-500');
+            const icon = type === 'error' ? 'ph-warning-circle' : (type === 'info' ? 'ph-info' : 'ph-check-circle');
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 toast-enter transition-all duration-300`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="text-sm font-medium">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        function setElText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
+        // ----------------------------------------------------------------------------------
 
         const loginWrapper = document.getElementById('login-wrapper');
         const appWrapper = document.getElementById('app-wrapper');
@@ -2484,7 +2507,6 @@
         const leaderboardFilter = document.getElementById('leaderboard-filter');
         if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
 
-        // STREAMING_CHUNK:Table rendering and pagination
         window.loadMoreClients = function() {
             currentPage++;
             renderClientTable(false); 
@@ -2967,7 +2989,6 @@
             });
         }
 
-        // STREAMING_CHUNK:Invoice Modal Actions
         window.openInvoiceModal = async function(clientIdentifier, isRequestData = false) {
             try {
                 const client = isRequestData 
@@ -3774,19 +3795,6 @@
                 });
             }
         }
-
-        window.markNotificationRead = async function(id, isRead) {
-            if (isRead) return; 
-            try {
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', id);
-                await updateDoc(ref, { 
-                    readBy: arrayUnion(currentUser.email),
-                    read: true 
-                });
-            } catch(e) {
-                console.error(e);
-            }
-        };
 
         window.markAllNotificationsRead = async function() {
             const unread = notificationsList.filter(n => n.readBy ? !n.readBy.includes(currentUser.email) : !n.read);
