@@ -8,6 +8,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -191,7 +192,16 @@
 
                         <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
                             <div class="flex justify-between items-end">
-                                <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div id="invoice-qr-code" class="w-[80px] h-[80px] bg-white border border-gray-200 p-1 rounded-lg shadow-sm flex items-center justify-center"></div>
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-bold text-gray-800 uppercase tracking-wider">Scan to Verify</span>
+                                            <span class="text-[9px] text-gray-500">Official Invoice Link</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-brandDark font-semibold italic text-sm mt-1">"Thank you for your business!"</p>
+                                </div>
                                 <div class="text-center flex flex-col items-center">
                                     <div class="w-40 border-b-2 border-brandDark mb-2 flex justify-center pb-1">
                                         <img src="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" alt="Signature" class="h-10 object-contain mix-blend-multiply" crossorigin="anonymous">
@@ -296,7 +306,6 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col gap-3 pointer-events-none"></div>
 
     <script type="module">
@@ -365,7 +374,7 @@
                 const snap = await getDoc(docRef);
 
                 if (snap.exists()) {
-                    renderInvoice(snap.data());
+                    renderInvoice(snap.data(), invoiceId);
                 } else {
                     showError("The invoice you are looking for does not exist or has been removed.");
                 }
@@ -375,13 +384,30 @@
             }
         }
 
-        function renderInvoice(client) {
+        function renderInvoice(client, invoiceIdUrl) {
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('action-bar').classList.remove('hidden');
             document.getElementById('invoice-wrapper').classList.remove('hidden');
 
             const invoiceNo = client.invoiceNo || 'Draft';
             
+            // Generate Verifying QR Code
+            const baseUrl = window.location.origin + window.location.pathname;
+            const targetId = client.id || invoiceIdUrl;
+            const invoiceLink = `${baseUrl}?id=${targetId}`;
+            const qrContainer = document.getElementById('invoice-qr-code');
+            if (qrContainer) {
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: invoiceLink,
+                    width: 80,
+                    height: 80,
+                    colorDark : "#0f172a",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.M
+                });
+            }
+
             setElText('inv-no', invoiceNo);
             setElText('inv-date', client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'));
             setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
