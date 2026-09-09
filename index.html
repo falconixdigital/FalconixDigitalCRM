@@ -8,6 +8,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
@@ -1041,10 +1042,19 @@
                         </div>
                     </div>
 
-                    <!-- Signature aligned to bottom of page 1 -->
+                    <!-- Signature aligned to bottom of page 1 with Verification QR -->
                     <div class="mt-auto pt-6 border-t-2 border-brandDark/10">
                         <div class="flex justify-between items-end">
-                            <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div id="invoice-qr-code" class="w-[80px] h-[80px] bg-white border border-gray-200 p-1 rounded-lg shadow-sm flex items-center justify-center"></div>
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-bold text-gray-800 uppercase tracking-wider">Scan to Verify</span>
+                                        <span class="text-[9px] text-gray-500">Official Invoice Link</span>
+                                    </div>
+                                </div>
+                                <p class="text-brandDark font-semibold italic text-sm mt-1">"Thank you for your business!"</p>
+                            </div>
                             <div class="text-center flex flex-col items-center">
                                 <div class="w-40 border-b-2 border-brandDark mb-2 flex justify-center pb-1">
                                     <img src="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" alt="Signature" class="h-10 object-contain mix-blend-multiply" crossorigin="anonymous">
@@ -3119,6 +3129,22 @@
                             invoiceNo = `FD-${createdAtStr.slice(-6)}`;
                         }
                     }
+                }
+                
+                // Add QR code logic here
+                const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+                const invoiceLink = `${baseUrl}invoice.html?id=${client.id}`;
+                const qrContainer = document.getElementById('invoice-qr-code');
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: invoiceLink,
+                        width: 80,
+                        height: 80,
+                        colorDark : "#0f172a",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.M
+                    });
                 }
                 
                 setElText('inv-no', invoiceNo || 'N/A');
